@@ -11,6 +11,7 @@ cd "$SCRIPT_DIR"
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Starting Waybill Printer...${NC}"
@@ -58,6 +59,14 @@ fi
 
 # Create PDF cache directory
 mkdir -p /tmp/waybills 2>/dev/null
+
+# Kill any existing Flask processes on port 5000
+echo -e "${BLUE}🔄 Checking for existing Flask processes...${NC}"
+if lsof -ti:5000 >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️ Port 5000 is busy, stopping existing processes...${NC}"
+    lsof -ti:5000 | xargs kill -9 2>/dev/null || true
+    sleep 1
+fi
 
 echo -e "${GREEN}✅ Environment ready!${NC}"
 echo -e "${BLUE}🌐 Starting Flask app...${NC}"
