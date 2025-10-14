@@ -18,11 +18,15 @@ A Raspberry Pi-based print server that allows multiple mobile devices to print P
 ### For Windows WSL (Development)
 
 ```bash
-# 1. Clone repository
+# 1. Install system dependencies
+sudo apt update
+sudo apt install -y python3.12-venv python3-pip curl git
+
+# 2. Clone repository
 git clone https://github.com/komento-sideprojects/rpi-waybill-printer.git
 cd waybill-printer
 
-# 2. Run setup script
+# 3. Run setup script
 chmod +x setup/setup_wsl.sh
 ./setup/setup_wsl.sh
 ```

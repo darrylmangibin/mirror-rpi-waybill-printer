@@ -47,24 +47,14 @@ else
     exit 1
 fi
 
-# Step 2: Update system packages
-print_status "Updating system packages..."
-sudo apt update -qq
+# Step 2: Create virtual environment
+print_status "Creating Python virtual environment..."
 
-# Step 3: Install required system packages
-print_status "Installing system dependencies..."
-sudo apt install -y python3.12-venv python3-pip curl git
-
-# Step 4: Check if we're in the right directory
-if [ ! -f "backend/app.py" ]; then
-    print_error "backend/app.py not found. Make sure you're in the project root directory."
-    print_status "Current directory: $(pwd)"
-    print_status "Expected files: backend/app.py, backend/requirements.txt"
+# Ensure we are in the backend directory for venv creation and dependency installation
+if [ ! -d "backend" ]; then
+    print_error "Backend directory not found. Please run this script from the project root."
     exit 1
 fi
-
-# Step 5: Create virtual environment
-print_status "Creating Python virtual environment..."
 cd backend
 
 if [ -d "venv" ]; then
@@ -75,7 +65,7 @@ fi
 python3 -m venv venv
 print_success "Virtual environment created"
 
-# Step 6: Activate virtual environment and install dependencies
+# Step 3: Activate virtual environment and install dependencies
 print_status "Installing Python dependencies..."
 source venv/bin/activate
 
@@ -88,7 +78,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 print_success "Python dependencies installed"
 
-# Step 7: Create environment file
+# Step 4: Create environment file
 print_status "Setting up configuration..."
 if [ ! -f ".env" ]; then
     if [ -f "env.example" ]; then
@@ -118,13 +108,13 @@ else
     print_warning "Environment file already exists"
 fi
 
-# Step 8: Create PDF cache directory
+# Step 5: Create PDF cache directory
 print_status "Creating PDF cache directory..."
 mkdir -p /tmp/waybills
 chmod 755 /tmp/waybills
 print_success "PDF cache directory created"
 
-# Step 9: Create run script
+# Step 6: Create run script
 print_status "Creating run script..."
 cat > run.sh << 'EOF'
 #!/bin/bash
@@ -138,7 +128,7 @@ EOF
 chmod +x run.sh
 print_success "Run script created"
 
-# Step 10: Test the installation
+# Step 7: Test the installation
 print_status "Testing installation..."
 source venv/bin/activate
 
@@ -150,7 +140,7 @@ else
     exit 1
 fi
 
-# Step 11: Display success message and next steps
+# Step 8: Display success message and next steps
 echo ""
 echo "🎉 WSL Setup Complete!"
 echo "======================"
