@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from handlers import handle_print_job
+from domains.print_jobs import CreatePrintJobAction
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -19,15 +19,6 @@ def create_print_job():
         201: Print job received successfully
         400: Invalid JSON or missing required fields
     """
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "Invalid JSON"}), 400
-
-    invoice_number = data.get("invoice_number")
-    waybill_url = data.get("waybill_url")
-
-    if not invoice_number or not waybill_url:
-        return jsonify({"error": "Missing invoice_number or waybill_url"}), 400
-
-    result = handle_print_job(request.app, invoice_number, waybill_url)
-    return jsonify(result), 201
+    action = CreatePrintJobAction()
+    result, status_code = action(request.get_json(), request.app)
+    return jsonify(result), status_code
