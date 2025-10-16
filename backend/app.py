@@ -1,6 +1,7 @@
 from flask import Flask
 from utils import setup_logger
 from routes import api_bp
+from database import init_app as init_db
 
 
 def create_app():
@@ -12,6 +13,9 @@ def create_app():
     
     # Configure logging
     setup_logger(app)
+    
+    # Initialize database
+    init_db(app)
     
     # Register blueprints
     app.register_blueprint(api_bp)
