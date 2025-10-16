@@ -66,31 +66,30 @@ class PrintJobService:
             Exception: If database insertion fails
         """
         try:
-            with app.app_context():
-                # Create a new WaybillPrintJob instance
-                waybill_print_job = WaybillPrintJob(
-                    invoice_number=invoice_number,
-                    waybill_url=waybill_url,
-                    status='pending'  # New jobs start with pending status
-                )
-                
-                # Add to session and commit to database
-                db.session.add(waybill_print_job)
-                db.session.commit()
-                
-                # Convert to dict while session is still active
-                job_data = waybill_print_job.to_dict()
-                
-                # Log the successful creation
-                log_message = f"Created print job - ID: {waybill_print_job.id}, Invoice Number: {invoice_number}, PDF URL: {waybill_url}"
-                app.logger.info(log_message)
-                print(log_message)  # Also log to console for immediate feedback
-                
-                # Return success response with complete model data
-                return {
-                    "message": "Print job created successfully",
-                    "data": job_data
-                }
+            # Create a new WaybillPrintJob instance
+            waybill_print_job = WaybillPrintJob(
+                invoice_number=invoice_number,
+                waybill_url=waybill_url,
+                status='pending'  # New jobs start with pending status
+            )
+            
+            # Add to session and commit to database
+            db.session.add(waybill_print_job)
+            db.session.commit()
+            
+            # Convert to dict while session is still active
+            job_data = waybill_print_job.to_dict()
+            
+            # Log the successful creation
+            log_message = f"Created print job - ID: {waybill_print_job.id}, Invoice Number: {invoice_number}, PDF URL: {waybill_url}"
+            app.logger.info(log_message)
+            print(log_message)  # Also log to console for immediate feedback
+            
+            # Return success response with complete model data
+            return {
+                "message": "Print job created successfully",
+                "data": job_data
+            }
         except Exception as e:
             # Log the error
             error_message = f"Failed to create print job for invoice {invoice_number}: {str(e)}"
