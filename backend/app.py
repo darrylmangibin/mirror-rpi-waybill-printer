@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_migrate import Migrate
 from utils import setup_logger
-from routes import api_bp
+from routes import api_bp, health_bp
 from models import db, init_models
 from dotenv import load_dotenv
 import os
@@ -15,7 +15,10 @@ def create_app():
     Application factory function.
     Creates and configures the Flask application.
     """
-    app = Flask(__name__)
+    # Get the absolute path to the templates directory
+    template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+    
+    app = Flask(__name__, template_folder=template_dir)
     
     # Configure database from environment or use default
     database_uri = os.getenv('DATABASE_URI', 'sqlite:///raspberry_pi.db')
@@ -37,6 +40,7 @@ def create_app():
     init_models(app)
     
     # Register blueprints
+    app.register_blueprint(health_bp)
     app.register_blueprint(api_bp)
     
     return app
