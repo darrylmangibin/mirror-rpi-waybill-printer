@@ -122,11 +122,14 @@ Response: 201 Created (fast ~15ms response)
 
 ### Backend (Raspberry Pi)
 - **Language:** Python 3.9+
-- **Web Framework:** Flask
-- **Database:** SQLite3
+- **Web Framework:** Flask + Flask-SQLAlchemy (optional ORM)
+- **Database:** SQLite3 with WAL mode for concurrent access
+- **Database Libraries:** sqlite3 (built-in) + contextlib for connection management
 - **PDF Handling:** requests + PyMuPDF (optional validation)
 - **Printing:** CUPS + pycups
+- **Background Tasks:** Python threading + queue
 - **Process Manager:** systemd (auto-start on boot)
+- **Logging:** Python logging with rotating file handler
 
 ### Frontend (Dashboard)
 - **Framework:** React + Vite
@@ -151,7 +154,10 @@ waybill-printer/
 │   ├── database.py         # SQLite models & queries
 │   ├── printer.py          # CUPS integration
 │   ├── requirements.txt    # Python dependencies
-│   └── config.py           # Configuration
+│   ├── config.py           # Configuration
+│   ├── waybill.db          # SQLite database file (created at runtime)
+│   └── migrations/         # Database schema migrations
+│       └── init_schema.sql # Initial database schema
 │
 ├── frontend/
 │   ├── src/
@@ -164,7 +170,9 @@ waybill-printer/
 ├── setup/
 │   ├── install.sh          # Install CUPS, Python, dependencies
 │   ├── setup_service.sh    # Create systemd services
-│   └── test_printer.sh     # Test printer connection
+│   ├── test_printer.sh     # Test printer connection
+│   ├── backup_db.sh        # Database backup script
+│   └── cleanup_db.sh       # Database maintenance script
 │
 └── README.md               # Setup & deployment instructions
 ```
@@ -173,18 +181,108 @@ waybill-printer/
 
 ## 📊 Database Schema (SQLite)
 
+### Primary Table: print_jobs
 ```sql
-Table: print_jobs
-- id (INTEGER PRIMARY KEY)
-- invoice_number (TEXT)
-- pdf_url (TEXT)
-- status (TEXT) -- 'pending', 'in_progress', 'completed', 'failed'
-- error_message (TEXT)
-- created_at (TIMESTAMP)
-- started_at (TIMESTAMP)
-- completed_at (TIMESTAMP)
-- retry_count (INTEGER)
+CREATE TABLE print_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_number TEXT NOT NULL,
+    pdf_url TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
+    error_message TEXT,
+    file_path TEXT,  -- Local path to cached PDF
+    file_size INTEGER,  -- PDF file size in bytes
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    retry_count INTEGER DEFAULT 0,
+    priority INTEGER DEFAULT 0,  -- For future job prioritization
+    
+    -- Constraints
+    UNIQUE(invoice_number),  -- Prevent duplicate invoices
+    CHECK(retry_count >= 0),
+    CHECK(file_size >= 0 OR file_size IS NULL)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_print_jobs_status ON print_jobs(status);
+CREATE INDEX idx_print_jobs_created_at ON print_jobs(created_at DESC);
+CREATE INDEX idx_print_jobs_invoice ON print_jobs(invoice_number);
+CREATE INDEX idx_print_jobs_status_created ON print_jobs(status, created_at);
 ```
+
+### Optional: Job History/Audit Table
+```sql
+CREATE TABLE job_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id INTEGER NOT NULL,
+    old_status TEXT,
+    new_status TEXT NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (job_id) REFERENCES print_jobs (id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_job_history_job_id ON job_history(job_id);
+```
+
+### Database Configuration
+```sql
+-- Enable WAL mode for better concurrent access
+PRAGMA journal_mode = WAL;
+
+-- Enable foreign key constraints
+PRAGMA foreign_keys = ON;
+
+-- Set reasonable timeout for busy database
+PRAGMA busy_timeout = 5000;
+
+-- Optimize for small database size
+PRAGMA auto_vacuum = INCREMENTAL;
+```
+
+---
+
+## 🗄️ SQLite Implementation Details
+
+### Why SQLite is Perfect for This Project
+- **Zero Configuration:** No server setup, no admin overhead
+- **ACID Compliance:** Reliable transactions even with power loss
+- **Concurrent Access:** WAL mode allows multiple readers + 1 writer
+- **Minimal Resources:** ~1-2MB memory footprint on Raspberry Pi
+- **File-Based:** Easy backup (just copy the .db file)
+- **Built-in Python:** No additional dependencies required
+
+### Performance Optimizations
+- **WAL Mode:** Enables concurrent reads while writing
+- **Strategic Indexing:** Fast queries on status, created_at, invoice_number
+- **Connection Pooling:** Reuse connections to avoid overhead
+- **Prepared Statements:** Faster execution and SQL injection prevention
+- **Batch Operations:** Group multiple inserts/updates when possible
+
+### Data Integrity Features
+- **Unique Constraints:** Prevent duplicate invoice numbers
+- **Check Constraints:** Validate status values and retry counts
+- **Foreign Keys:** Maintain referential integrity (if using job_history)
+- **Transactions:** Atomic operations for status updates
+
+### Backup & Maintenance Strategy
+```bash
+# Daily backup (via cron)
+sqlite3 /path/to/waybill.db ".backup /backup/waybill_$(date +%Y%m%d).db"
+
+# Cleanup old completed jobs (monthly)
+sqlite3 /path/to/waybill.db "DELETE FROM print_jobs WHERE status='completed' AND created_at < datetime('now', '-30 days');"
+
+# Vacuum database (monthly)
+sqlite3 /path/to/waybill.db "VACUUM;"
+```
+
+### Expected Database Growth
+- **Per Job:** ~200-500 bytes per record
+- **Daily (100 jobs):** ~50KB
+- **Monthly (3000 jobs):** ~1.5MB
+- **Yearly (36,000 jobs):** ~18MB
+- **5 Years:** ~90MB (very manageable)
 
 ---
 
@@ -220,9 +318,13 @@ Table: print_jobs
   - GET /api/events - SSE endpoint for real-time
 
 - [ ] **Setup SQLite database**
-  - Create print_jobs table
-  - Write database helper functions
-  - Test CRUD operations
+  - Create database.py with connection management
+  - Initialize database with schema (print_jobs table + indexes)
+  - Configure WAL mode and pragmas for performance
+  - Write database helper functions (CRUD operations)
+  - Implement duplicate invoice prevention
+  - Add database migration support for future schema changes
+  - Test CRUD operations and concurrent access
 
 - [ ] **Test basic API**
   - Use Postman/curl to test endpoints

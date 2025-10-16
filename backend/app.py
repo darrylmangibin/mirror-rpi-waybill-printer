@@ -20,12 +20,12 @@ def create_print_job():
         return jsonify({"error": "Invalid JSON"}), 400
 
     invoice_number = data.get("invoice_number")
-    pdf_url = data.get("pdf_url")
+    waybill_url = data.get("waybill_url")
 
-    if not invoice_number or not pdf_url:
-        return jsonify({"error": "Missing invoice_number or pdf_url"}), 400
+    if not invoice_number or not waybill_url:
+        return jsonify({"error": "Missing invoice_number or waybill_url"}), 400
 
-    log_message = f"Received print job - Invoice Number: {invoice_number}, PDF URL: {pdf_url}"
+    log_message = f"Received print job - Invoice Number: {invoice_number}, PDF URL: {waybill_url}"
     app.logger.info(log_message)
     print(log_message) # Also log to console for immediate feedback
 
