@@ -27,3 +27,15 @@
 ## References
 
 *   [Flask Quickstart Guide](https://flask.palletsprojects.com/en/stable/quickstart/)
+
+## Troubleshooting
+
+### Import "flask" could not be resolved
+
+If you encounter an "Import \"flask\" could not be resolved" error, it means your IDE is not using the correct Python interpreter. Follow these steps to select the virtual environment:
+
+1.  **Open the Command Palette:** Press `F1`.
+2.  **Select Python Interpreter:** Type "Python: Select Interpreter" and choose the option.
+3.  **Enter interpreter path:** If your virtual environment is not listed, select "Enter interpreter path..." and provide the full path to your virtual environment's Python executable: `path_to_your_project/backend/venv/bin/python`
+
+    After selecting the interpreter, you might need to restart your IDE or close and reopen `app.py` for the changes to take effect.
