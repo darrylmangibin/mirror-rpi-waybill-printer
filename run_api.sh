@@ -16,30 +16,6 @@ echo "  RPI Waybill Printer API - Starting"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
-# Check if setup has been run
-echo "📍 Checking setup requirements..."
-
-if [ ! -d "backend/venv" ]; then
-    echo -e "${RED}❌ Virtual environment not found!${NC}"
-    echo "   Please run: ./setup.sh"
-    exit 1
-fi
-echo "✓ Virtual environment found"
-
-if [ ! -f "backend/requirements.txt" ]; then
-    echo -e "${RED}❌ requirements.txt not found!${NC}"
-    exit 1
-fi
-echo "✓ requirements.txt found"
-
-if [ ! -f "backend/raspberry_pi.db" ]; then
-    echo -e "${YELLOW}⚠ Database not initialized${NC}"
-    echo "   Running setup..."
-    ./setup.sh
-fi
-echo "✓ Database found"
-echo ""
-
 # Change to backend directory
 cd backend
 
