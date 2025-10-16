@@ -10,7 +10,7 @@ def init_models(app):
     This function ensures all models are properly registered with SQLAlchemy.
     """
     # Import models here to register them with SQLAlchemy
-    from models.print_job import PrintJob
+    from domains.print_jobs.models import WaybillPrintJob  # noqa: F401
     
     return db
 

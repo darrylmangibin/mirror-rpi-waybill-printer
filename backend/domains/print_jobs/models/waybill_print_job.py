@@ -2,9 +2,9 @@ from datetime import datetime
 from models import db
 
 
-class PrintJob(db.Model):
+class WaybillPrintJob(db.Model):
     """
-    PrintJob model representing a waybill print job.
+    WaybillPrintJob model representing a waybill print job.
     Tracks print jobs for waybill documents with their processing status.
     """
     __tablename__ = 'waybill_print_jobs'
@@ -22,14 +22,14 @@ class PrintJob(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     def __repr__(self):
-        return f'<PrintJob {self.id} - {self.invoice_number}>'
+        return f'<WaybillPrintJob {self.id} - {self.invoice_number}>'
     
     def to_dict(self):
         """
-        Convert PrintJob instance to dictionary for JSON serialization.
+        Convert WaybillPrintJob instance to dictionary for JSON serialization.
         
         Returns:
-            dict: PrintJob data as dictionary
+            dict: WaybillPrintJob data as dictionary
         """
         return {
             'id': self.id,

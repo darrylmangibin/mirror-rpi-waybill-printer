@@ -5,7 +5,6 @@ Verification script to ensure Flask-SQLAlchemy and migrations are properly confi
 import sys
 from app import app
 from models import db
-from models.print_job import PrintJob
 
 try:
     with app.app_context():

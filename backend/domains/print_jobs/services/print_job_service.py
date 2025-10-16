@@ -1,4 +1,5 @@
-from handlers import handle_print_job
+from models import db
+from domains.print_jobs.models import WaybillPrintJob
 
 
 class PrintJobService:
@@ -51,7 +52,7 @@ class PrintJobService:
     
     def create_print_job(self, app, invoice_number, waybill_url):
         """
-        Create a print job.
+        Create a print job and save it to the database.
         
         Args:
             app: Flask app instance
@@ -59,6 +60,44 @@ class PrintJobService:
             waybill_url: URL to waybill document
             
         Returns:
-            dict: Result from handler
+            dict: Created print job details
+            
+        Raises:
+            Exception: If database insertion fails
         """
-        return handle_print_job(app, invoice_number, waybill_url)
+        try:
+            # Create a new WaybillPrintJob instance
+            waybill_print_job = WaybillPrintJob(
+                invoice_number=invoice_number,
+                waybill_url=waybill_url,
+                status='pending'  # New jobs start with pending status
+            )
+            
+            # Add to session and commit to database
+            db.session.add(waybill_print_job)
+            db.session.commit()
+            
+            # Log the successful creation
+            log_message = f"Created print job - ID: {waybill_print_job.id}, Invoice Number: {invoice_number}, PDF URL: {waybill_url}"
+            app.logger.info(log_message)
+            print(log_message)  # Also log to console for immediate feedback
+            
+            # Return success response with job details
+            return {
+                "message": "Print job created successfully",
+                "job_id": waybill_print_job.id,
+                "invoice_number": invoice_number,
+                "status": waybill_print_job.status,
+                "created_at": waybill_print_job.created_at.isoformat() if waybill_print_job.created_at else None
+            }
+        except Exception as e:
+            # Log the error
+            error_message = f"Failed to create print job for invoice {invoice_number}: {str(e)}"
+            app.logger.error(error_message)
+            print(f"Error: {error_message}")
+            
+            # Rollback the transaction
+            db.session.rollback()
+            
+            # Re-raise the exception to be handled by the action
+            raise Exception(error_message)

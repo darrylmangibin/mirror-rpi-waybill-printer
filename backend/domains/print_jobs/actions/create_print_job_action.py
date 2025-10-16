@@ -34,10 +34,15 @@ class CreatePrintJobAction:
         validated_data = validation['data']
         
         # Execute business logic
-        result = self.service.create_print_job(
-            app,
-            validated_data['invoice_number'],
-            validated_data['waybill_url']
-        )
-        
-        return result, 201
+        try:
+            result = self.service.create_print_job(
+                app,
+                validated_data['invoice_number'],
+                validated_data['waybill_url']
+            )
+            return result, 201
+        except Exception as e:
+            # Return error response if database operation fails
+            return {
+                "error": str(e)
+            }, 500
