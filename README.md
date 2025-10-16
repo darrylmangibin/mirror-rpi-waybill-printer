@@ -1,61 +1,129 @@
-# Installation Steps
+# RPI Waybill Printer
 
-1. Create a virtual environment:
+A Flask-based REST API for managing waybill print jobs with SQLAlchemy ORM and automated database migrations.
 
-   ```bash
-   cd backend
-   python3 -m venv venv
-   ```
+## Quick Start (2 Steps)
 
-2. Activate the virtual environment:
+### Step 1: Setup (One-time)
+```bash
+./setup.sh
+```
 
-   ```bash
-   source venv/bin/activate
-   ```
+This will:
+- Create a Python virtual environment
+- Install all dependencies from `requirements.txt`
+- Initialize the database with Flask-Migrate
+- Verify everything is configured correctly
 
-3. Install Flask:
-
-   ```bash
-   pip install Flask
-
-   # Optional: For automatic reloading during development
-   pip install watchdog
-   # Optional: For managing environment variables
-   pip install python-dotenv
-   ```
-
-## Running the API
-
-To run the Flask API, execute the `run_api.sh` script:
-
+### Step 2: Run the API
 ```bash
 ./run_api.sh
 ```
 
-The API will be accessible on port `5000`.
+The API will be running at: `http://127.0.0.1:5000`
 
-### Accessing the API from Windows (using Postman/Browser)
+## Accessing the API
 
-If you are running the Flask API in WSL and trying to access it from a Windows client (like Postman or a web browser), use the following URL:
+### From Windows (WSL)
+Use `http://127.0.0.1:5000` in Postman or your browser.
 
+### Example API Endpoint
 ```bash
-http://127.0.0.1:5000/api/waybills/prints
+POST http://127.0.0.1:5000/api/waybills/prints
+Content-Type: application/json
+
+{
+  "invoice_number": "INV-12345",
+  "waybill_url": "https://example.com/waybill.pdf"
+}
 ```
 
-**Note:** WSL automatically forwards ports from the WSL environment to your Windows host's `localhost`. Therefore, you can use `127.0.0.1` (or `localhost`) on your Windows machine to reach the Flask application running on `0.0.0.0:5000` inside WSL.
+## Technologies
 
-## References
+- **Framework**: Flask
+- **ORM**: SQLAlchemy with Flask-SQLAlchemy
+- **Database**: SQLite with automated migrations
+- **Migrations**: Flask-Migrate (Alembic-based)
 
-* [Flask Quickstart Guide](https://flask.palletsprojects.com/en/stable/quickstart/)
+## Project Structure
+
+```
+rpi-waybill-printer/
+├── setup.sh              # One-time setup script
+├── run_api.sh            # Run the API server
+├── README.md             # This file
+├── .gitignore            # Git exclusions
+└── backend/
+    ├── app.py            # Flask application
+    ├── requirements.txt   # Python dependencies
+    ├── models/           # SQLAlchemy models
+    │   ├── __init__.py
+    │   └── print_job.py
+    ├── migrations/       # Database migrations
+    ├── routes/           # API routes
+    ├── domains/          # Domain logic
+    └── venv/             # Virtual environment (created by setup.sh)
+```
+
+## Database Migrations
+
+When you modify the PrintJob model, create a new migration:
+
+```bash
+cd backend
+source venv/bin/activate
+flask db migrate -m "description of change"
+flask db upgrade
+```
+
+View current migration version:
+```bash
+flask db current
+```
 
 ## Troubleshooting
 
-### Import "flask" could not be resolved
+### "Virtual environment not found"
+Run `./setup.sh` first
 
-If you encounter an "Import "flask" could not be resolved" error, it means your IDE is not using the correct Python interpreter. Follow these steps to select the virtual environment:
+### "Database not initialized"
+The `run_api.sh` script will automatically initialize it
 
-1. **Open the Command Palette:** Press `F1`.
-2. **Select Python Interpreter:** Type "Python: Select Interpreter" and choose the option.
-3. **Enter interpreter path:** If your virtual environment is not listed, select "Enter interpreter path..." and provide the full path to your virtual environment's Python executable: `path_to_your_project/backend/venv/bin/python`
+### Python interpreter not recognized in IDE
+1. Press `F1` → "Python: Select Interpreter"
+2. Choose the venv: `path_to_project/backend/venv/bin/python`
+3. Restart your IDE
 
-    After selecting the interpreter, you might need to restart your IDE or close and reopen `app.py` for the changes to take effect.
+### Dependencies import errors
+Make sure you're in the virtual environment:
+```bash
+cd backend
+source venv/bin/activate
+```
+
+## Development
+
+### Install additional dependencies
+```bash
+cd backend
+source venv/bin/activate
+pip install <package_name>
+pip freeze > requirements.txt
+```
+
+### Verify database setup
+```bash
+cd backend
+source venv/bin/activate
+python3 verify_setup.py
+```
+
+## References
+
+- [Flask Documentation](https://flask.palletsprojects.com/)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [Flask-Migrate Documentation](https://flask-migrate.readthedocs.io/)
+
+## License
+
+Proprietary - RPI Waybill Printer Project

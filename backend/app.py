@@ -1,7 +1,8 @@
 from flask import Flask
+from flask_migrate import Migrate
 from utils import setup_logger
 from routes import api_bp
-from database import init_app as init_db
+from models import db, init_models
 
 
 def create_app():
@@ -11,11 +12,19 @@ def create_app():
     """
     app = Flask(__name__)
     
+    # Configure database
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///raspberry_pi.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
     # Configure logging
     setup_logger(app)
     
-    # Initialize database
-    init_db(app)
+    # Initialize database and migrations
+    db.init_app(app)
+    Migrate(app, db)
+    
+    # Initialize models
+    init_models(app)
     
     # Register blueprints
     app.register_blueprint(api_bp)
