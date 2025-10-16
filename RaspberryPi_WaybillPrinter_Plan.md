@@ -1,9 +1,11 @@
 # 🧠 Raspberry Pi Waybill Printer - Project Plan
 
 ## 🎯 Project Goal
+
 Enable **multiple mobile devices** to print **PDF waybills/invoices** with **minimal latency** through a **local Raspberry Pi print server** with a **real-time dashboard** to monitor print jobs.
 
 ### Key Requirements
+
 - Mobile phones connect to Pi via **local IP address** (e.g., `192.168.1.100`)
 - Mobile sends: `invoice_number` + `pdf_url`
 - Pi downloads PDF and queues print jobs
@@ -17,7 +19,8 @@ Enable **multiple mobile devices** to print **PDF waybills/invoices** with **min
 ## ⚙️ System Architecture
 
 **High-Level Flow:**
-```
+
+```sql
 [Mobile Phones on WiFi]
      ↓ 
      POST http://192.168.1.100:5000/api/jobs
@@ -55,7 +58,8 @@ Enable **multiple mobile devices** to print **PDF waybills/invoices** with **min
 ## 🪶 Job Workflow
 
 ### 1. Mobile Creates Job
-```
+
+```json
 POST /api/jobs
 {
   "invoice_number": "INV-2025-00123",
@@ -66,11 +70,13 @@ Response: 201 Created (fast ~15ms response)
 ```
 
 ### 2. Job Stored Locally
+
 - Saved to SQLite with status: `pending`
 - Job ID generated
 - Mobile receives immediate confirmation
 
 ### 3. Background Worker Processes
+
 - Polls SQLite for `pending` jobs
 - Updates status to `in_progress`
 - Downloads PDF from URL
@@ -79,6 +85,7 @@ Response: 201 Created (fast ~15ms response)
 - Updates status to `completed` or `failed`
 
 ### 4. Dashboard Updates
+
 - Shows real-time counts
 - Lists all jobs with filters
 - Auto-refreshes via SSE or polling
@@ -88,7 +95,8 @@ Response: 201 Created (fast ~15ms response)
 ## 🎨 Dashboard Features
 
 ### Status Counts (Top Cards)
-```
+
+```text
 ┌─────────────┬─────────────┬─────────────┬─────────────┐
 │  Pending    │ In Progress │  Completed  │   Failed    │
 │     12      │      2      │     458     │      3      │
@@ -96,6 +104,7 @@ Response: 201 Created (fast ~15ms response)
 ```
 
 ### Job List (Table)
+
 | Invoice # | PDF URL | Status | Created | Duration |
 |-----------|---------|--------|---------|----------|
 | INV-00123 | https://... | Completed | 2:30 PM | 3s |
@@ -121,6 +130,7 @@ Response: 201 Created (fast ~15ms response)
 ## 🚀 Technology Stack (Final)
 
 ### Backend (Raspberry Pi)
+
 - **Language:** Python 3.9+
 - **Web Framework:** Flask + Flask-SQLAlchemy (optional ORM)
 - **Database:** SQLite3 with WAL mode for concurrent access
@@ -132,12 +142,14 @@ Response: 201 Created (fast ~15ms response)
 - **Logging:** Python logging with rotating file handler
 
 ### Frontend (Dashboard)
+
 - **Framework:** React + Vite
 - **Styling:** Tailwind CSS
 - **Build:** Static files (no Node.js on Pi)
 - **Updates:** SSE or polling every 3s
 
 ### Development Environment
+
 - **WSL:** Develop and build everything
 - **Deploy:** Copy files to Raspberry Pi
 - **Test:** Use mock printer or CUPS on WSL
@@ -146,7 +158,7 @@ Response: 201 Created (fast ~15ms response)
 
 ## 📁 Project Structure
 
-```
+```text
 waybill-printer/
 ├── backend/
 │   ├── app.py              # Flask API (POST /api/jobs, GET /api/stats)
@@ -182,6 +194,7 @@ waybill-printer/
 ## 📊 Database Schema (SQLite)
 
 ### Primary Table: print_jobs
+
 ```sql
 CREATE TABLE print_jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -211,6 +224,7 @@ CREATE INDEX idx_print_jobs_status_created ON print_jobs(status, created_at);
 ```
 
 ### Optional: Job History/Audit Table
+
 ```sql
 CREATE TABLE job_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -226,6 +240,7 @@ CREATE INDEX idx_job_history_job_id ON job_history(job_id);
 ```
 
 ### Database Configuration
+
 ```sql
 -- Enable WAL mode for better concurrent access
 PRAGMA journal_mode = WAL;
@@ -245,6 +260,7 @@ PRAGMA auto_vacuum = INCREMENTAL;
 ## 🗄️ SQLite Implementation Details
 
 ### Why SQLite is Perfect for This Project
+
 - **Zero Configuration:** No server setup, no admin overhead
 - **ACID Compliance:** Reliable transactions even with power loss
 - **Concurrent Access:** WAL mode allows multiple readers + 1 writer
@@ -253,6 +269,7 @@ PRAGMA auto_vacuum = INCREMENTAL;
 - **Built-in Python:** No additional dependencies required
 
 ### Performance Optimizations
+
 - **WAL Mode:** Enables concurrent reads while writing
 - **Strategic Indexing:** Fast queries on status, created_at, invoice_number
 - **Connection Pooling:** Reuse connections to avoid overhead
@@ -260,12 +277,14 @@ PRAGMA auto_vacuum = INCREMENTAL;
 - **Batch Operations:** Group multiple inserts/updates when possible
 
 ### Data Integrity Features
+
 - **Unique Constraints:** Prevent duplicate invoice numbers
 - **Check Constraints:** Validate status values and retry counts
 - **Foreign Keys:** Maintain referential integrity (if using job_history)
 - **Transactions:** Atomic operations for status updates
 
 ### Backup & Maintenance Strategy
+
 ```bash
 # Daily backup (via cron)
 sqlite3 /path/to/waybill.db ".backup /backup/waybill_$(date +%Y%m%d).db"
@@ -278,6 +297,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
 ```
 
 ### Expected Database Growth
+
 - **Per Job:** ~200-500 bytes per record
 - **Daily (100 jobs):** ~50KB
 - **Monthly (3000 jobs):** ~1.5MB
@@ -300,6 +320,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
 ## 🗺️ Development Roadmap
 
 ### Phase 1: Setup & Environment (Week 1)
+
 - [ ] **Setup WSL development environment**
   - Install Python 3.9+, Node.js, CUPS
   - Setup virtual environment
@@ -311,6 +332,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
   - Create basic README
 
 ### Phase 2: Backend Core (Week 2)
+
 - [ ] **Build Flask API**
   - POST /api/jobs - Create print job
   - GET /api/jobs - List all jobs
@@ -331,6 +353,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
   - Verify job creation and retrieval
 
 ### Phase 3: Print Worker (Week 2-3)
+
 - [ ] **Background worker implementation**
   - Poll SQLite for pending jobs
   - Download PDFs from URLs
@@ -348,6 +371,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
   - Cleanup old PDF files
 
 ### Phase 4: Frontend Dashboard (Week 3-4)
+
 - [ ] **Setup React project**
   - Initialize Vite + React
   - Install Tailwind CSS
@@ -369,6 +393,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
   - Test static build locally
 
 ### Phase 5: Integration & Testing (Week 4)
+
 - [ ] **End-to-end testing**
   - Mobile → API → Worker → Printer flow
   - Test multiple concurrent jobs
@@ -380,6 +405,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
   - Optimize database queries
 
 ### Phase 6: Deployment to Raspberry Pi (Week 5)
+
 - [ ] **Prepare Raspberry Pi**
   - Install Raspberry Pi OS
   - Configure WiFi and static IP
@@ -403,6 +429,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
   - Document any issues
 
 ### Phase 7: Production & Monitoring (Ongoing)
+
 - [ ] **Monitoring setup**
   - Check systemd logs
   - Monitor disk space (PDF cache)
@@ -423,6 +450,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
 ## 📦 Deliverables
 
 ### Minimum Viable Product (MVP)
+
 ✅ Mobile can send print jobs via local IP  
 ✅ Pi downloads PDFs and prints them  
 ✅ Dashboard shows job status and counts  
@@ -430,6 +458,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
 ✅ System runs on boot automatically  
 
 ### Success Metrics
+
 - Response time: < 20ms for job creation
 - Print time: < 10s from job creation to print start
 - Uptime: 99%+ reliability
@@ -440,6 +469,7 @@ sqlite3 /path/to/waybill.db "VACUUM;"
 ## 🛠️ Quick Start Commands
 
 ### Development (WSL)
+
 ```bash
 # Backend
 cd backend
@@ -455,6 +485,7 @@ npm run dev
 ```
 
 ### Deployment (Raspberry Pi)
+
 ```bash
 # Run setup script
 cd setup
@@ -471,8 +502,8 @@ sudo systemctl enable waybill-worker
 
 ## 📚 Resources & References
 
-- **CUPS Documentation:** https://www.cups.org/doc/
-- **Flask Documentation:** https://flask.palletsprojects.com/
-- **React + Vite:** https://vitejs.dev/guide/
-- **Raspberry Pi Setup:** https://www.raspberrypi.org/documentation/
-- **systemd Services:** https://www.freedesktop.org/software/systemd/man/systemd.service.html
+- **CUPS Documentation:** <https://www.cups.org/doc/>
+- **Flask Documentation:** <https://flask.palletsprojects.com/>
+- **React + Vite:** <https://vitejs.dev/guide/>
+- **Raspberry Pi Setup:** <https://www.raspberrypi.org/documentation/>
+- **systemd Services:** <https://www.freedesktop.org/software/systemd/man/systemd.service.html>
