@@ -1,7 +1,8 @@
 from domains.print_jobs.services import PrintJobService
+from utils import ResponseTrait
 
 
-class CreatePrintJobAction:
+class CreatePrintJobAction(ResponseTrait):
     """
     Invokable action for creating print jobs.
     Orchestrates the service layer and coordinates the business logic.
@@ -26,9 +27,10 @@ class CreatePrintJobAction:
         validation = self.service.validate_create_request(request_data)
         
         if not validation['valid']:
-            return {
-                "error": ", ".join(validation['errors'])
-            }, 400
+            return self.validation_error(
+                errors=validation['errors'],
+                message="Validation failed"
+            )
         
         # Extract validated data
         validated_data = validation['data']
@@ -40,9 +42,12 @@ class CreatePrintJobAction:
                 validated_data['invoice_number'],
                 validated_data['waybill_url']
             )
-            return result, 201
+            return self.created(
+                data=result['data'],
+                message=result['message']
+            )
         except Exception as e:
             # Return error response if database operation fails
-            return {
-                "error": str(e)
-            }, 500
+            return self.server_error(
+                message=str(e)
+            )

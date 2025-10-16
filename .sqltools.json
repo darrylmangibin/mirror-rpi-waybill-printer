@@ -1,0 +1,10 @@
+{
+  "connections": [
+    {
+      "name": "Raspberry Pi Waybill DB",
+      "driver": "SQLite",
+      "database": "backend/instance/raspberry_pi.db"
+    }
+  ]
+}
+

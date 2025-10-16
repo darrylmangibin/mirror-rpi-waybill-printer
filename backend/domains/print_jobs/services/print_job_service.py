@@ -82,13 +82,10 @@ class PrintJobService:
             app.logger.info(log_message)
             print(log_message)  # Also log to console for immediate feedback
             
-            # Return success response with job details
+            # Return success response with complete model data
             return {
                 "message": "Print job created successfully",
-                "job_id": waybill_print_job.id,
-                "invoice_number": invoice_number,
-                "status": waybill_print_job.status,
-                "created_at": waybill_print_job.created_at.isoformat() if waybill_print_job.created_at else None
+                "data": waybill_print_job.to_dict()
             }
         except Exception as e:
             # Log the error
