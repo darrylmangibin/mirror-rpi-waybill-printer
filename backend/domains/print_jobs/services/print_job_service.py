@@ -96,8 +96,11 @@ class PrintJobService:
             app.logger.error(error_message)
             print(f"Error: {error_message}")
             
-            # Rollback the transaction
-            db.session.rollback()
+            # Safely rollback the transaction if it's active
+            try:
+                db.session.rollback()
+            except Exception as rollback_error:
+                print(f"Rollback error (can be ignored): {rollback_error}")
             
             # Re-raise the exception to be handled by the action
             raise Exception(error_message)
