@@ -3,6 +3,11 @@ from flask_migrate import Migrate
 from utils import setup_logger
 from routes import api_bp
 from models import db, init_models
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def create_app():
@@ -12,9 +17,14 @@ def create_app():
     """
     app = Flask(__name__)
     
-    # Configure database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///raspberry_pi.db'
+    # Configure database from environment or use default
+    database_uri = os.getenv('DATABASE_URI', 'sqlite:///raspberry_pi.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Configure Flask environment
+    app.config['ENV'] = os.getenv('FLASK_ENV', 'development')
+    app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     # Configure logging
     setup_logger(app)
@@ -36,4 +46,7 @@ app = create_app()
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    host = os.getenv('SERVER_HOST', '0.0.0.0')
+    port = int(os.getenv('SERVER_PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host=host, port=port, debug=debug)

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from domains.print_jobs import CreatePrintJobAction
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -20,5 +20,5 @@ def create_print_job():
         400: Invalid JSON or missing required fields
     """
     action = CreatePrintJobAction()
-    result, status_code = action(request.get_json(), request.app)
+    result, status_code = action(request.get_json(), current_app)
     return jsonify(result), status_code
