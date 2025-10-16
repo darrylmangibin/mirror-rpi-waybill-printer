@@ -1,0 +1,122 @@
+---
+alwaysApply: true
+---
+
+# Markdown Formatting Rules
+
+## Core Rules
+
+### Rule 1 - Headings
+
+- Add blank line BEFORE each heading
+- Add blank line AFTER each heading
+- Exception: First heading in file doesn't need blank line before
+
+### Rule 2 - Code Fences
+
+- Add blank line BEFORE code fence
+- Add blank line AFTER code fence
+- ALWAYS specify language identifier
+
+### Rule 3 - Lists
+
+- Add blank line BEFORE list
+- Add blank line AFTER list
+- Indentation must be consistent
+
+### Rule 4 - Blank Lines
+
+- Maximum 1 blank line between sections
+- No trailing blank lines at end of file
+- No blank lines at start of file
+
+## Language Identifiers
+
+Always use appropriate language for code blocks:
+
+- `bash` - Shell/bash scripts
+- `python` - Python code
+- `json` - JSON data
+- `sql` - SQL queries
+- `text` - Plain text, file trees
+- `yaml` - YAML configuration
+- `javascript` - JavaScript code
+- `html` - HTML markup
+- `css` - CSS stylesheets
+- `markdown` - Markdown code
+
+## Examples
+
+### Wrong example
+
+Missing blank lines:
+
+```text
+# Title
+## Heading
+Content
+```
+
+### Correct example
+
+Proper blank lines:
+
+```text
+# Title
+
+## Heading
+
+Content
+```
+
+### No language example
+
+```text
+code here
+```
+
+### With language example
+
+```bash
+code here
+```
+
+## Before Committing
+
+1. Check linting: View → Show Problems (Cmd+Shift+M)
+2. Run: `read_lints ["/path/to/file.md"]`
+3. Fix all issues before commit
+
+## Common Issues
+
+- **MD022** - Add blank line before/after heading
+- **MD031** - Add blank line before/after code fence
+- **MD040** - Add language to code fence
+- **MD032** - Add blank line before/after list
+
+## Template
+
+When creating new markdown files, follow this structure:
+
+**Header with description:**
+
+1. Use `# Title` at the top
+2. Add blank line after title
+3. Add brief description
+
+**Body sections:**
+
+1. Each section uses `## Section Name`
+2. Add blank line before and after section
+3. Add blank line before code blocks
+4. Specify language on code blocks
+
+**Example structure:**
+
+- Title
+- Description
+- Section 1
+- Code example with language
+- Section 2  
+- List with items
+- Conclusion

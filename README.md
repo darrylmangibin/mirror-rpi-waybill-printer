@@ -5,17 +5,20 @@ A Flask-based REST API for managing waybill print jobs with SQLAlchemy ORM and a
 ## Quick Start (2 Steps)
 
 ### Step 1: Setup (One-time)
+
 ```bash
 ./setup.sh
 ```
 
 This will:
+
 - Create a Python virtual environment
 - Install all dependencies from `requirements.txt`
 - Initialize the database with Flask-Migrate
 - Verify everything is configured correctly
 
 ### Step 2: Run the API
+
 ```bash
 ./run_api.sh
 ```
@@ -25,10 +28,12 @@ The API will be running at: `http://127.0.0.1:5000`
 ## Accessing the API
 
 ### From Windows (WSL)
+
 Use `http://127.0.0.1:5000` in Postman or your browser.
 
 ### Example API Endpoint
-```bash
+
+```json
 POST http://127.0.0.1:5000/api/waybills/prints
 Content-Type: application/json
 
@@ -47,7 +52,7 @@ Content-Type: application/json
 
 ## Project Structure
 
-```
+```text
 rpi-waybill-printer/
 ├── setup.sh              # One-time setup script
 ├── run_api.sh            # Run the API server
@@ -77,6 +82,7 @@ flask db upgrade
 ```
 
 View current migration version:
+
 ```bash
 flask db current
 ```
@@ -84,18 +90,23 @@ flask db current
 ## Troubleshooting
 
 ### "Virtual environment not found"
+
 Run `./setup.sh` first
 
 ### "Database not initialized"
+
 The `run_api.sh` script will automatically initialize it
 
 ### Python interpreter not recognized in IDE
+
 1. Press `F1` → "Python: Select Interpreter"
 2. Choose the venv: `path_to_project/backend/venv/bin/python`
 3. Restart your IDE
 
 ### Dependencies import errors
+
 Make sure you're in the virtual environment:
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -104,6 +115,7 @@ source venv/bin/activate
 ## Development
 
 ### Install additional dependencies
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -112,6 +124,7 @@ pip freeze > requirements.txt
 ```
 
 ### Verify database setup
+
 ```bash
 cd backend
 source venv/bin/activate
