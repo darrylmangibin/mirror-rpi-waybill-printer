@@ -49,7 +49,95 @@ Once deployed on your Raspberry Pi, the home page displays a **QR code** that en
 
 Use `http://127.0.0.1:5000` in Postman or your browser.
 
-### Example API Endpoint
+## Connecting to Raspberry Pi via SSH
+
+To access your Raspberry Pi remotely, use SSH with password authentication:
+
+```bash
+ssh roei@raspberrypi.local
+```
+
+When prompted, enter your Raspberry Pi password.
+
+### If Hostname Doesn't Resolve
+
+If `raspberrypi.local` doesn't work, find your Pi's IP address and use:
+
+```bash
+ssh roei@192.168.1.100
+```
+
+Replace `192.168.1.100` with your actual Pi IP address.
+
+### Find Your Pi's IP Address
+
+On the Raspberry Pi itself, run:
+
+```bash
+hostname -I
+```
+
+This will display your Pi's IP address on the network.
+
+## Connecting to Raspberry Pi over Same Network
+
+Connect directly to the project directory on your Raspberry Pi:
+
+```bash
+ssh roei@raspberrypi.local "cd Desktop/rpi-waybill-printer"
+```
+
+Then run:
+
+```bash
+./setup.sh
+./run_api.sh
+```
+
+## Deploying to Raspberry Pi
+
+### Step 1: Copy Project to Raspberry Pi
+
+From your development machine, copy the project:
+
+```bash
+scp -r ~/inspire-projects/rpi-waybill-printer roei@raspberrypi.local:~/Desktop/
+```
+
+### Step 2: Connect via SSH and Navigate
+
+Connect to the Raspberry Pi and navigate to the project:
+
+```bash
+ssh roei@raspberrypi.local "cd Desktop/rpi-waybill-printer"
+```
+
+### Step 3: Run Setup
+
+Install dependencies:
+
+```bash
+./setup.sh
+```
+
+### Step 4: Start the API
+
+Run the Waybill Printer API:
+
+```bash
+./run_api.sh
+```
+
+The API will be running at: `http://raspberrypi.local:5000/`
+
+### Step 5: Access from Mobile
+
+1. On a mobile device connected to the same WiFi
+2. Visit: `http://raspberrypi.local:5000/`
+3. Scan the QR code to get the full endpoint
+4. Start submitting waybill print jobs!
+
+## Example API Endpoint
 
 ```json
 POST http://127.0.0.1:5000/api/waybills/prints
