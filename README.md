@@ -234,6 +234,21 @@ pip install <package_name>
 pip freeze > requirements.txt
 ```
 
+### Update dependencies (when new packages are added)
+
+When new dependencies are added to `requirements.txt` (similar to `composer update`):
+
+```bash
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+This will:
+- Install any new packages added to `requirements.txt`
+- Update existing packages to match pinned versions
+- Keep your virtual environment synchronized
+
 ### Verify database setup
 
 ```bash

@@ -1,4 +1,5 @@
 from domains.print_jobs.services import PrintJobService
+from domains.print_jobs.enums import PrintJobStatus
 from utils import ResponseTrait
 
 

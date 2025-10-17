@@ -20,3 +20,6 @@ venv/
 
 # Log files
 *.log
+
+# Storage
+storage/waybills/

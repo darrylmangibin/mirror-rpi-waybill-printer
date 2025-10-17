@@ -1,5 +1,8 @@
+from datetime import datetime
 from models import db
 from domains.print_jobs.models import WaybillPrintJob
+from domains.print_jobs.enums import PrintJobStatus
+from domains.print_jobs.services.file_download_service import FileDownloadService
 
 
 class PrintJobService:
@@ -7,6 +10,9 @@ class PrintJobService:
     Service layer for print job operations.
     Handles validation and business logic coordination.
     """
+    
+    def __init__(self):
+        self.download_service = FileDownloadService()
     
     def validate_create_request(self, data):
         """
@@ -52,7 +58,7 @@ class PrintJobService:
     
     def create_print_job(self, app, invoice_number, waybill_url):
         """
-        Create a print job and save it to the database.
+        Create a print job and download the waybill file.
         
         Args:
             app: Flask app instance
@@ -70,26 +76,20 @@ class PrintJobService:
             waybill_print_job = WaybillPrintJob(
                 invoice_number=invoice_number,
                 waybill_url=waybill_url,
-                status='pending'  # New jobs start with pending status
+                status=PrintJobStatus.PENDING.value
             )
             
             # Add to session and commit to database
             db.session.add(waybill_print_job)
             db.session.commit()
             
-            # Convert to dict while session is still active
-            job_data = waybill_print_job.to_dict()
-            
-            # Log the successful creation
             log_message = f"Created print job - ID: {waybill_print_job.id}, Invoice Number: {invoice_number}, PDF URL: {waybill_url}"
             app.logger.info(log_message)
-            print(log_message)  # Also log to console for immediate feedback
+            print(log_message)
             
-            # Return success response with complete model data
-            return {
-                "message": "Print job created successfully",
-                "data": job_data
-            }
+            # Start download process - update status to in_progress
+            return self._download_and_update_job(app, waybill_print_job, waybill_url)
+        
         except Exception as e:
             # Log the error
             error_message = f"Failed to create print job for invoice {invoice_number}: {str(e)}"
@@ -104,3 +104,80 @@ class PrintJobService:
             
             # Re-raise the exception to be handled by the action
             raise Exception(error_message)
+    
+    def _download_and_update_job(self, app, waybill_print_job, waybill_url):
+        """
+        Download waybill file and update job status.
+        
+        Args:
+            app: Flask app instance
+            waybill_print_job: WaybillPrintJob instance
+            waybill_url: URL to download from
+            
+        Returns:
+            dict: Updated job details with status and file information
+        """
+        try:
+            # Mark job as in_progress and set download start time
+            waybill_print_job.status = PrintJobStatus.IN_PROGRESS.value
+            waybill_print_job.download_started_at = datetime.utcnow()
+            db.session.commit()
+            
+            log_message = f"Started download for job ID: {waybill_print_job.id}"
+            app.logger.info(log_message)
+            print(log_message)
+            
+            # Download the file
+            download_result = self.download_service.download_file(
+                waybill_print_job.invoice_number,
+                waybill_url
+            )
+            
+            if download_result['success']:
+                # Update job with file information
+                waybill_print_job.file_path = download_result['file_path']
+                waybill_print_job.file_size = download_result['file_size']
+                waybill_print_job.status = PrintJobStatus.COMPLETED.value
+                db.session.commit()
+                
+                success_message = f"File downloaded successfully - ID: {waybill_print_job.id}, Size: {download_result['file_size']} bytes"
+                app.logger.info(success_message)
+                print(success_message)
+            else:
+                # Mark job as failed with error message
+                waybill_print_job.status = PrintJobStatus.FAILED.value
+                waybill_print_job.error_message = download_result['error']
+                db.session.commit()
+                
+                error_message = f"Download failed - ID: {waybill_print_job.id}, Error: {download_result['error']}"
+                app.logger.error(error_message)
+                print(error_message)
+            
+            # Convert to dict while session is still active
+            job_data = waybill_print_job.to_dict()
+            
+            # Return response
+            return {
+                "message": "Print job created and processed successfully",
+                "data": job_data
+            }
+        
+        except Exception as e:
+            # If something goes wrong during download, mark as failed
+            try:
+                waybill_print_job.status = PrintJobStatus.FAILED.value
+                waybill_print_job.error_message = f"Processing error: {str(e)}"
+                db.session.commit()
+                job_data = waybill_print_job.to_dict()
+            except Exception as commit_error:
+                app.logger.error(f"Failed to update job status: {str(commit_error)}")
+                job_data = waybill_print_job.to_dict()
+            
+            error_msg = f"Error processing print job: {str(e)}"
+            app.logger.error(error_msg)
+            print(error_msg)
+            
+            return {
+                "message": error_msg,
+                "data": job_data
+            }
