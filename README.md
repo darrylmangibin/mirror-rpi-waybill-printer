@@ -245,6 +245,7 @@ pip install -r requirements.txt
 ```
 
 This will:
+
 - Install any new packages added to `requirements.txt`
 - Update existing packages to match pinned versions
 - Keep your virtual environment synchronized

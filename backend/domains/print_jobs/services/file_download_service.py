@@ -11,7 +11,7 @@ class FileDownloadService:
     Generates unique filenames and manages storage directory.
     """
     
-    # Storage directory path
+    # Static storage directory path - PROJECT_ROOT/storage/waybills
     STORAGE_DIR = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
         'storage',
