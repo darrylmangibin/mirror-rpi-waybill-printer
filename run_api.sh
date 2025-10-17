@@ -29,13 +29,20 @@ export FLASK_ENV=development
 echo "═══════════════════════════════════════════════════════════════"
 echo -e "${GREEN}✅ All checks passed. Starting API...${NC}"
 echo ""
+
+# Get the hostname and local IP for display
+HOSTNAME=$(hostname)
+LOCAL_IP=$(hostname -I | awk '{print $1}')
+
 echo "API running at: http://0.0.0.0:5000"
 echo ""
 echo "📱 Home Page (with QR code):"
 echo "   Local Development: http://127.0.0.1:5000/"
+echo "   Network Access: http://${HOSTNAME}.local:5000/ or http://${LOCAL_IP}:5000/"
 echo ""
 echo "📤 API Endpoint (encoded in QR):"
-echo "   http://127.0.0.1:5000/api/waybills/prints"
+echo "   http://${HOSTNAME}.local:5000/api/waybills/prints"
+echo "   (or http://${LOCAL_IP}:5000/api/waybills/prints)"
 echo ""
 echo "Press Ctrl+C to stop"
 echo "═══════════════════════════════════════════════════════════════"
