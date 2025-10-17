@@ -10,10 +10,16 @@ class WaybillPrintJob(db.Model):
     """
     __tablename__ = 'waybill_print_jobs'
     
+    # Constraints
+    __table_args__ = (
+        db.UniqueConstraint('tenant_id', 'invoice_number', 'waybill_url', name='uq_waybill_print_jobs_tenant_invoice_url'),
+    )
+    
     # Primary Key
     id = db.Column(db.Integer, primary_key=True)
     
     # Required Fields
+    tenant_id = db.Column(db.String(255), nullable=False, index=True)
     invoice_number = db.Column(db.String(255), nullable=False, index=True)
     waybill_url = db.Column(db.String(500), nullable=False)
     
@@ -58,4 +64,5 @@ class WaybillPrintJob(db.Model):
             'updated_at': format_datetime(self.updated_at),
             'download_started_at': format_datetime(self.download_started_at),
             'download_completed_at': format_datetime(self.download_completed_at),
+            'tenant_id': self.tenant_id,
         }

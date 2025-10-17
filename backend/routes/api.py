@@ -11,6 +11,7 @@ def create_print_job():
     
     Expected JSON payload:
     {
+        "tenant_id": "string",
         "invoice_number": "string",
         "waybill_url": "string"
     }
@@ -18,6 +19,7 @@ def create_print_job():
     Returns:
         201: Print job received successfully
         400: Invalid JSON or missing required fields
+        409: Duplicate job (same tenant, invoice, and URL)
     """
     action = CreatePrintJobAction()
     return action(request.get_json(), current_app)

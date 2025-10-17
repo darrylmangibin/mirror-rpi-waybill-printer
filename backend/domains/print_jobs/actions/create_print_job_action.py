@@ -40,6 +40,7 @@ class CreatePrintJobAction(ResponseTrait):
         try:
             result = self.service.create_print_job(
                 app,
+                validated_data['tenant_id'],
                 validated_data['invoice_number'],
                 validated_data['waybill_url']
             )

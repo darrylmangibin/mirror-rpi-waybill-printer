@@ -37,9 +37,12 @@ class PrintJobService:
             return {'valid': False, 'errors': errors, 'data': None}
         
         # Validate required fields
+        tenant_id = data.get("tenant_id")
         invoice_number = data.get("invoice_number")
         waybill_url = data.get("waybill_url")
         
+        if not tenant_id:
+            errors.append("Missing tenant_id")
         if not invoice_number:
             errors.append("Missing invoice_number")
         if not waybill_url:
@@ -52,17 +55,20 @@ class PrintJobService:
             'valid': True,
             'errors': [],
             'data': {
+                'tenant_id': tenant_id,
                 'invoice_number': invoice_number,
                 'waybill_url': waybill_url
             }
         }
     
-    def create_print_job(self, app, invoice_number, waybill_url):
+    def create_print_job(self, app, tenant_id, invoice_number, waybill_url):
         """
         Create a print job and download the waybill file.
+        Prevents duplicate jobs for the same tenant, invoice, and URL combination.
         
         Args:
             app: Flask app instance
+            tenant_id: Tenant identifier
             invoice_number: Invoice identifier
             waybill_url: URL to waybill document
             
@@ -73,8 +79,28 @@ class PrintJobService:
             Exception: If database insertion fails
         """
         try:
+            # Check if a job with the same tenant_id, invoice_number, and waybill_url already exists
+            existing_job = WaybillPrintJob.query.filter_by(
+                tenant_id=tenant_id,
+                invoice_number=invoice_number,
+                waybill_url=waybill_url
+            ).first()
+            
+            if existing_job:
+                log_message = f"Duplicate print job request - ID: {existing_job.id}, Tenant: {tenant_id}, Invoice: {invoice_number}"
+                app.logger.warning(log_message)
+                print(log_message)
+                
+                # Return existing job instead of creating a new one
+                return {
+                    "message": "Print job already exists for this tenant, invoice, and URL",
+                    "data": existing_job.to_dict(),
+                    "is_duplicate": True
+                }
+            
             # Create a new WaybillPrintJob instance
             waybill_print_job = WaybillPrintJob(
+                tenant_id=tenant_id,
                 invoice_number=invoice_number,
                 waybill_url=waybill_url,
                 status=PrintJobStatus.PENDING.value
@@ -84,7 +110,7 @@ class PrintJobService:
             db.session.add(waybill_print_job)
             db.session.commit()
             
-            log_message = f"Created print job - ID: {waybill_print_job.id}, Invoice Number: {invoice_number}, PDF URL: {waybill_url}"
+            log_message = f"Created print job - ID: {waybill_print_job.id}, Tenant: {tenant_id}, Invoice: {invoice_number}, PDF URL: {waybill_url}"
             app.logger.info(log_message)
             print(log_message)
             

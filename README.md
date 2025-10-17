@@ -144,6 +144,7 @@ POST http://127.0.0.1:5000/api/waybills/prints
 Content-Type: application/json
 
 {
+  "tenant_id": "company_name_or_id",
   "invoice_number": "INV-12345",
   "waybill_url": "https://example.com/waybill.pdf"
 }
@@ -267,9 +268,22 @@ Migration files follow the pattern: `REVISION_ID_description.py`
 
 Current migration chain in this project:
 
-1. `e9d032604bab` - Create print_jobs table
-2. `add_file_tracking_fields` - Add file_path, file_size, download_started_at, error_message
-3. `add_download_completed_at` - Add download_completed_at field for auditing
+1. `e9d032604bab` - Create waybill_print_jobs table (all fields consolidated)
+   - Tenant identification (tenant_id)
+   - Core fields (invoice_number, waybill_url)
+   - Status tracking
+   - File tracking (file_path, file_size, download_started_at, download_completed_at)
+   - Error handling (error_message)
+   - Constraints: UNIQUE(tenant_id, invoice_number, waybill_url)
+
+### For Detailed Migration Guide
+
+See `/backend/migrations/README.md` for:
+
+- How Alembic tracks migrations (revision IDs, revision chains, tracking database)
+- How to create new migrations
+- Best practices and common workflows
+- Development migration strategies
 
 ### Automatic Migrations
 
