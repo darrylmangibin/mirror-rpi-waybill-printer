@@ -56,10 +56,66 @@ class FileDownloadService:
         except Exception:
             return 'bin'
     
+    def _validate_url_exists(self, url, timeout=10):
+        """
+        Validate that URL exists and is accessible using HEAD request.
+        
+        Args:
+            url: URL to validate
+            timeout: Request timeout in seconds
+            
+        Returns:
+            dict: {
+                'exists': bool,
+                'error': str (error message if not exists)
+            }
+        """
+        try:
+            # Try HEAD request first (faster, doesn't download file)
+            response = requests.head(url, timeout=timeout, allow_redirects=True)
+            
+            if response.status_code == 404:
+                return {
+                    'exists': False,
+                    'error': 'File not found (404): URL does not exist'
+                }
+            elif response.status_code == 403:
+                return {
+                    'exists': False,
+                    'error': 'Access denied (403): File is not accessible'
+                }
+            elif response.status_code >= 400:
+                return {
+                    'exists': False,
+                    'error': f'HTTP error {response.status_code}: Unable to access file'
+                }
+            
+            # HEAD request successful
+            return {
+                'exists': True,
+                'error': None
+            }
+        
+        except requests.exceptions.Timeout:
+            return {
+                'exists': False,
+                'error': 'Connection timeout: URL is not responding'
+            }
+        except requests.exceptions.ConnectionError:
+            return {
+                'exists': False,
+                'error': 'Connection error: Unable to reach the server'
+            }
+        except Exception as e:
+            return {
+                'exists': False,
+                'error': f'URL validation failed: {str(e)}'
+            }
+    
     def _generate_unique_filename(self, invoice_number, extension):
         """
         Generate unique filename with invoice number and timestamp.
-        Format: {invoice_number}_{ISO8601_datetime}.{extension}
+        Format: {invoice_number}_{YYYYMMDDHHmmssFFFFFF}.{extension}
         
         Args:
             invoice_number: Invoice identifier
@@ -68,12 +124,12 @@ class FileDownloadService:
         Returns:
             str: Unique filename
         """
-        timestamp = datetime.utcnow().isoformat().replace(':', '-').replace('.', '_')
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
         # Clean invoice number for safe filename
         safe_invoice = invoice_number.replace('/', '_').replace('\\', '_')
         return f"{safe_invoice}_{timestamp}.{extension}"
     
-    def download_file(self, invoice_number, waybill_url, timeout=30):
+    def download_file(self, invoice_number, waybill_url, timeout=30, validate_first=True):
         """
         Download waybill file from URL and store locally.
         
@@ -81,6 +137,7 @@ class FileDownloadService:
             invoice_number: Invoice identifier for filename
             waybill_url: URL to download from
             timeout: Request timeout in seconds
+            validate_first: If True, validate URL exists before downloading
             
         Returns:
             dict: {
@@ -97,6 +154,15 @@ class FileDownloadService:
                     'success': False,
                     'error': 'Invalid waybill_url'
                 }
+            
+            # Validate URL exists (optional check for early error detection)
+            if validate_first:
+                validation = self._validate_url_exists(waybill_url, timeout=10)
+                if not validation['exists']:
+                    return {
+                        'success': False,
+                        'error': validation['error']
+                    }
             
             # Download file
             response = requests.get(waybill_url, timeout=timeout, stream=True)

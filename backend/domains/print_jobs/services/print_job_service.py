@@ -137,7 +137,8 @@ class PrintJobService:
                 # Update job with file information
                 waybill_print_job.file_path = download_result['file_path']
                 waybill_print_job.file_size = download_result['file_size']
-                waybill_print_job.status = PrintJobStatus.COMPLETED.value
+                waybill_print_job.download_completed_at = datetime.utcnow()
+                # Keep status as in_progress - the actual print job processing will change it later
                 db.session.commit()
                 
                 success_message = f"File downloaded successfully - ID: {waybill_print_job.id}, Size: {download_result['file_size']} bytes"

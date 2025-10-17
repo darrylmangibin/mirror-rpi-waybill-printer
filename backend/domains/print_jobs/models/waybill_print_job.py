@@ -25,6 +25,7 @@ class WaybillPrintJob(db.Model):
     file_path = db.Column(db.String(500), nullable=True)
     file_size = db.Column(db.Integer, nullable=True)
     download_started_at = db.Column(db.DateTime, nullable=True)
+    download_completed_at = db.Column(db.DateTime, nullable=True)
     error_message = db.Column(db.Text, nullable=True)
     
     def __repr__(self):
@@ -48,4 +49,5 @@ class WaybillPrintJob(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'download_started_at': self.download_started_at.isoformat() if self.download_started_at else None,
+            'download_completed_at': self.download_completed_at.isoformat() if self.download_completed_at else None,
         }
