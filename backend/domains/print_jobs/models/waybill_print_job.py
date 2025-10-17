@@ -35,6 +35,9 @@ class WaybillPrintJob(db.Model):
     download_completed_at = db.Column(db.DateTime, nullable=True)
     error_message = db.Column(db.Text, nullable=True)
     
+    # Dynamic Data
+    meta_data = db.Column(db.JSON, nullable=True, default=dict)
+    
     def __repr__(self):
         return f'<WaybillPrintJob {self.id} - {self.invoice_number}>'
     
@@ -65,4 +68,5 @@ class WaybillPrintJob(db.Model):
             'download_started_at': format_datetime(self.download_started_at),
             'download_completed_at': format_datetime(self.download_completed_at),
             'tenant_id': self.tenant_id,
+            'metadata': self.meta_data or {},
         }

@@ -113,6 +113,40 @@ e9d032604bab_create_waybill_print_jobs_table.py (Initial)
 
 ---
 
+## 📝 Migration File Naming Convention
+
+To keep migrations visually sorted chronologically (like Laravel), we use this naming format:
+
+```text
+YYYY_MM_DD_HHMMSS_description.py
+```
+
+### Examples
+
+```text
+2025_10_16_120000_create_waybill_print_jobs_table.py
+2025_10_17_122600_add_meta_data_json_field.py
+2025_10_17_153015_remove_old_column.py ← Same day, different time
+2025_10_18_090000_refactor_table.py
+```
+
+### Why This Format?
+
+✅ **Chronological sorting** - Files automatically sort by date/time in filesystem  
+✅ **Easy to read** - Developers can see creation order at a glance  
+✅ **Handles same-day migrations** - Time component prevents collisions  
+✅ **Alembic compatible** - Filename doesn't matter to Alembic (tracks by revision ID inside file)  
+✅ **Like Laravel migrations** - Exact same pattern as Laravel
+
+### Important
+
+- **Filename is for visual organization only**
+- **Alembic tracks by revision ID** (the variable inside the file, e.g., `revision = '3b5e08d27c22'`)
+- You can rename migration files anytime - Alembic won't care!
+- The `down_revision` chain is what matters to Alembic
+
+---
+
 ## ⚡ Common Commands
 
 ### View Migration Status
