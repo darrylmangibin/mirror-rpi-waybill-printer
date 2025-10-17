@@ -25,6 +25,24 @@ This will:
 
 The API will be running at: `http://127.0.0.1:5000`
 
+## Mobile Access via QR Code
+
+Once deployed on your Raspberry Pi, the home page displays a **QR code** that encodes the full API endpoint URL.
+
+### How It Works
+
+1. **Home page loads** and displays the QR code
+2. **QR code encodes**: `http://{current-origin}/api/waybills/prints`
+3. **Mobile device scans the QR code** on the Raspberry Pi home page
+4. **Mobile app receives the endpoint** and can immediately submit waybill print jobs
+
+### Home Page Features
+
+- **QR Code**: Shows the endpoint to scan
+- **Endpoint URL**: Displays below QR code for reference
+- **Clean Interface**: Simple, intuitive design with Tailwind CSS
+- **Mobile-Responsive**: Works on all screen sizes
+
 ## Accessing the API
 
 ### From Windows (WSL)
@@ -49,6 +67,7 @@ Content-Type: application/json
 - **ORM**: SQLAlchemy with Flask-SQLAlchemy
 - **Database**: SQLite with automated migrations
 - **Migrations**: Flask-Migrate (Alembic-based)
+- **QR Code**: qrcode.js library (CDN-based, frontend generation)
 
 ## Project Structure
 
@@ -58,6 +77,8 @@ rpi-waybill-printer/
 ├── run_api.sh            # Run the API server
 ├── README.md             # This file
 ├── .gitignore            # Git exclusions
+├── setup/
+│   └── HOSTNAME_SETUP.md # mDNS hostname configuration guide
 └── backend/
     ├── app.py            # Flask application
     ├── requirements.txt   # Python dependencies
@@ -66,6 +87,8 @@ rpi-waybill-printer/
     │   └── print_job.py
     ├── migrations/       # Database migrations
     ├── routes/           # API routes
+    ├── templates/        # HTML templates
+    │   └── index.html    # Home page with QR code
     ├── domains/          # Domain logic
     └── venv/             # Virtual environment (created by setup.sh)
 ```

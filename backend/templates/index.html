@@ -3,241 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raspberry Pi Waybill Printer API</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
-            width: 100%;
-            padding: 40px;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-
-        h1 {
-            color: #333;
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            background: #10b981;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-            text-transform: uppercase;
-        }
-
-        .info-section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            color: #333;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-        }
-
-        .info-item:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            color: #666;
-            font-weight: 500;
-        }
-
-        .info-value {
-            color: #333;
-            font-weight: 600;
-        }
-
-        .endpoints {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .endpoint {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            margin-bottom: 10px;
-            background: white;
-            border-radius: 6px;
-            border-left: 4px solid #667eea;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-        }
-
-        .endpoint:last-child {
-            margin-bottom: 0;
-        }
-
-        .method {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            margin-right: 10px;
-            font-size: 11px;
-            min-width: 45px;
-            text-align: center;
-        }
-
-        .method.post {
-            background: #f59e0b;
-        }
-
-        .method.get {
-            background: #10b981;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            font-size: 12px;
-            color: #999;
-        }
-
-        .footer a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        .version {
-            color: #667eea;
-            font-weight: 600;
-        }
-    </style>
+    <title>Waybill Printer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">🖨️</div>
-            <h1>Raspberry Pi Waybill Printer</h1>
-            <p class="subtitle">API Service for Print Job Management</p>
-            <div class="status-badge">✓ Running</div>
-        </div>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Main Card -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header Section -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8 text-center">
+                <div class="text-6xl mb-3">🖨️</div>
+                <h1 class="text-3xl font-bold text-white mb-1">Waybill Printer</h1>
+                <p class="text-blue-100 text-sm font-medium">Ready to print waybills</p>
+            </div>
 
-        <div class="info-section">
-            <div class="section-title">API Information</div>
-            <div class="info-item">
-                <span class="info-label">Status</span>
-                <span class="info-value">🟢 Healthy</span>
+            <!-- QR Code Section -->
+            <div class="p-6 bg-gray-50">
+                <div class="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6 flex items-center justify-center min-h-72">
+                    <img src="/api/qrcode" alt="QR Code" class="w-56 h-56 object-contain">
+                </div>
+                
+                <!-- Endpoint Display -->
+                <div class="mt-4 text-center">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Endpoint</p>
+                    <p id="apiUrl" class="font-mono text-sm text-gray-700 break-all">Loading...</p>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="info-label">Version</span>
-                <span class="info-value"><span class="version">1.0.0</span></span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Environment</span>
-                <span class="info-value">Production Ready</span>
-            </div>
-        </div>
 
-        <div class="info-section">
-            <div class="section-title">Available Endpoints</div>
-            <div class="endpoints">
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span>/health</span>
+            <!-- Instructions Section -->
+            <div class="px-6 pt-6">
+                <div class="mb-4">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Step 1: Scan with Mobile</p>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        📱 Point your phone camera at the QR code above and tap the notification that appears.
+                    </p>
                 </div>
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span>/</span>
-                </div>
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span>/api/waybills/prints</span>
+
+                <div class="mb-6">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Step 2: Submit Waybills</p>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        📋 Enter invoice details and PDF URL to submit print jobs.
+                    </p>
                 </div>
             </div>
-        </div>
 
-        <div class="info-section">
-            <div class="section-title">Create Print Job</div>
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto;">
-                <div style="color: #666; margin-bottom: 8px;">POST /api/waybills/prints</div>
-                <div style="color: #333;">
-{<br>
-&nbsp;&nbsp;"invoice_number": "string",<br>
-&nbsp;&nbsp;"waybill_url": "string"<br>
-}
-                </div>
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <p class="text-xs text-gray-500 text-center">
+                    Raspberry Pi Waybill Printer v1.0.0
+                </p>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Made with ❤️ for Inspire E-commerce</p>
-            <p style="margin-top: 8px;">Raspberry Pi Waybill Printer v1.0.0</p>
+        <!-- Info Box -->
+        <div class="mt-6 bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-600">
+            <p class="flex items-start gap-2 text-gray-700 text-sm">
+                <span class="text-lg">💡</span>
+                <span>The QR code works instantly. No configuration needed. Use on any WiFi network.</span>
+            </p>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiUrl = `${window.location.origin}/api/waybills/prints`;
+            const urlLink = document.getElementById('apiUrl');
+            urlLink.href = apiUrl;
+            urlLink.textContent = apiUrl;
+            console.log('✅ API endpoint:', apiUrl);
+        });
+    </script>
 </body>
 </html>

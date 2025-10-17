@@ -1,4 +1,7 @@
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, render_template, send_file, request
+from io import BytesIO
+import qrcode
+import socket
 
 health_bp = Blueprint('health', __name__)
 
@@ -20,3 +23,49 @@ def health_check():
         "status": "healthy",
         "message": "API is running and ready to accept requests"
     }), 200
+
+
+@health_bp.route("/api/hostname", methods=["GET"])
+def get_hostname():
+    """
+    Returns the system hostname for QR code URL construction.
+    """
+    hostname = socket.gethostname()
+    return jsonify({
+        "hostname": hostname,
+        "fqdn": f"{hostname}.local"
+    }), 200
+
+
+@health_bp.route("/api/qrcode", methods=["GET"])
+def generate_qrcode():
+    """
+    Generates and returns a QR code image for the print endpoint.
+    The QR code encodes the full API endpoint URL based on the current origin.
+    """
+    try:
+        # Get the base URL from the request origin
+        # This works for both localhost (development) and hostname.local (production)
+        api_endpoint = f"{request.base_url.rstrip('/')}/api/waybills/prints"
+        
+        # Create QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=6,
+            border=2,
+        )
+        qr.add_data(api_endpoint)
+        qr.make(fit=True)
+        
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Save to BytesIO object
+        img_io = BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+        
+        return send_file(img_io, mimetype='image/png')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
