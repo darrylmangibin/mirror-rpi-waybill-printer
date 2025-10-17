@@ -183,20 +183,100 @@ rpi-waybill-printer/
 
 ## Database Migrations
 
-When you modify the PrintJob model, create a new migration:
+This project uses **Flask-Migrate** (based on Alembic) for database schema management, similar to Laravel's Artisan migrations.
+
+### Quick Migration Commands
+
+First, activate the virtual environment:
 
 ```bash
 cd backend
 source venv/bin/activate
+```
+
+#### Run all pending migrations (like `php artisan migrate`)
+
+```bash
+flask db upgrade
+```
+
+This applies all migrations that haven't been executed yet to the database.
+
+#### Rollback the last migration (like `php artisan migrate:rollback`)
+
+```bash
+flask db downgrade
+```
+
+This reverts the most recent migration.
+
+#### Create a new migration
+
+When you modify SQLAlchemy models, create a migration:
+
+```bash
 flask db migrate -m "description of change"
 flask db upgrade
 ```
 
-View current migration version:
+For example:
+
+```bash
+flask db migrate -m "Add download_completed_at field"
+flask db upgrade
+```
+
+#### View current migration version
 
 ```bash
 flask db current
 ```
+
+Shows the current migration revision applied to the database.
+
+#### View migration history
+
+```bash
+flask db history
+```
+
+Lists all migrations in chronological order.
+
+### Complete Migration Reference
+
+| Task | Laravel Artisan | Flask-Migrate |
+|------|-----------------|---------------|
+| Run pending migrations | `php artisan migrate` | `flask db upgrade` |
+| Rollback last migration | `php artisan migrate:rollback` | `flask db downgrade` |
+| Create migration | `php artisan make:migration Name` | `flask db migrate -m "Name"` |
+| View current version | N/A | `flask db current` |
+| View migration history | `php artisan migrate:status` | `flask db history` |
+| Show SQL (no execute) | N/A | `flask db upgrade --sql` |
+
+### Migration Files Location
+
+All migrations are stored in:
+
+```text
+backend/migrations/versions/
+```
+
+Migration files follow the pattern: `REVISION_ID_description.py`
+
+### Current Migrations
+
+Current migration chain in this project:
+
+1. `e9d032604bab` - Create print_jobs table
+2. `add_file_tracking_fields` - Add file_path, file_size, download_started_at, error_message
+3. `add_download_completed_at` - Add download_completed_at field for auditing
+
+### Automatic Migrations
+
+Migrations are automatically applied in these cases:
+
+- During `./setup.sh` initial setup (line 54: `flask db upgrade`)
+- During normal app startup via Flask-SQLAlchemy initialization
 
 ## Troubleshooting
 

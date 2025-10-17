@@ -3,6 +3,7 @@ from models import db
 from domains.print_jobs.models import WaybillPrintJob
 from domains.print_jobs.enums import PrintJobStatus
 from domains.print_jobs.services.file_download_service import FileDownloadService
+from utils import utcnow_without_microseconds
 
 
 class PrintJobService:
@@ -120,7 +121,7 @@ class PrintJobService:
         try:
             # Mark job as in_progress and set download start time
             waybill_print_job.status = PrintJobStatus.IN_PROGRESS.value
-            waybill_print_job.download_started_at = datetime.utcnow()
+            waybill_print_job.download_started_at = utcnow_without_microseconds()
             db.session.commit()
             
             log_message = f"Started download for job ID: {waybill_print_job.id}"
@@ -137,7 +138,7 @@ class PrintJobService:
                 # Update job with file information
                 waybill_print_job.file_path = download_result['file_path']
                 waybill_print_job.file_size = download_result['file_size']
-                waybill_print_job.download_completed_at = datetime.utcnow()
+                waybill_print_job.download_completed_at = utcnow_without_microseconds()
                 # Keep status as in_progress - the actual print job processing will change it later
                 db.session.commit()
                 

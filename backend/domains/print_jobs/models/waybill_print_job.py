@@ -1,5 +1,6 @@
 from datetime import datetime
 from models import db
+from utils import utcnow_without_microseconds
 
 
 class WaybillPrintJob(db.Model):
@@ -18,8 +19,8 @@ class WaybillPrintJob(db.Model):
     
     # Status and Timestamps
     status = db.Column(db.String(50), default='pending', nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow_without_microseconds, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow_without_microseconds, onupdate=utcnow_without_microseconds, nullable=False)
     
     # File Tracking Fields
     file_path = db.Column(db.String(500), nullable=True)
@@ -34,10 +35,17 @@ class WaybillPrintJob(db.Model):
     def to_dict(self):
         """
         Convert WaybillPrintJob instance to dictionary for JSON serialization.
+        Timestamps are formatted in MySQL format (YYYY-MM-DD HH:MM:SS) without microseconds.
         
         Returns:
             dict: WaybillPrintJob data as dictionary
         """
+        def format_datetime(dt):
+            """Format datetime to MySQL format: YYYY-MM-DD HH:MM:SS"""
+            if dt is None:
+                return None
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        
         return {
             'id': self.id,
             'invoice_number': self.invoice_number,
@@ -46,8 +54,8 @@ class WaybillPrintJob(db.Model):
             'file_path': self.file_path,
             'file_size': self.file_size,
             'error_message': self.error_message,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'download_started_at': self.download_started_at.isoformat() if self.download_started_at else None,
-            'download_completed_at': self.download_completed_at.isoformat() if self.download_completed_at else None,
+            'created_at': format_datetime(self.created_at),
+            'updated_at': format_datetime(self.updated_at),
+            'download_started_at': format_datetime(self.download_started_at),
+            'download_completed_at': format_datetime(self.download_completed_at),
         }
