@@ -264,7 +264,12 @@ class WaybillPrintJobTriggerService:
             app.logger.info(f"[PRINT] Attempting lp command (Linux CUPS)")
             print(f"[PRINT] Attempting lp command (Linux CUPS)")
             try:
-                cmd = ['lp', '-d', printer_name, file_path]
+                # Detect image format and set appropriate options
+                file_extension = os.path.splitext(file_path)[1].lower()
+                if file_extension in ['.png', '.jpg', '.jpeg']:
+                    cmd = ['lp', '-d', printer_name, '-o', 'media=A4', '-o', 'fit-to-page', file_path]
+                else:
+                    cmd = ['lp', '-d', printer_name, file_path]
                 app.logger.info(f"[PRINT] Running command: {' '.join(cmd)}")
                 print(f"[PRINT] Running command: {' '.join(cmd)}")
                 
