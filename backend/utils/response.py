@@ -143,6 +143,31 @@ class ResponseTrait:
         return ResponseTrait.error(message, status_code=403)
     
     @staticmethod
+    def conflict(data=None, message="Resource already exists"):
+        """
+        Return a 409 Conflict response.
+        
+        Args:
+            data: Existing resource data (optional)
+            message: Error message
+            
+        Returns:
+            tuple: (jsonify response, 409)
+            
+        Example:
+            return self.conflict(existing_job.to_dict(), "Duplicate print job exists")
+        """
+        response = {
+            "message": message,
+            "status": "conflict"
+        }
+        
+        if data:
+            response["data"] = data
+        
+        return jsonify(response), 409
+    
+    @staticmethod
     def server_error(message="Internal server error"):
         """
         Return a 500 Internal Server Error response.

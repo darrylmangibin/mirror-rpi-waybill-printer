@@ -36,6 +36,19 @@ class CreatePrintJobAction(ResponseTrait):
         # Extract validated data
         validated_data = validation['data']
         
+        # Check for duplicate print job (like Laravel validation)
+        duplicate_check = self.service.check_duplicate_job(
+            validated_data['tenant_id'],
+            validated_data['invoice_number'],
+            validated_data['waybill_url']
+        )
+        
+        if duplicate_check['exists']:
+            return self.conflict(
+                data=duplicate_check['job'],
+                message="Duplicate print job already exists for this tenant, invoice, and URL"
+            )
+        
         # Execute business logic
         try:
             result = self.service.create_print_job(

@@ -61,10 +61,49 @@ class PrintJobService:
             }
         }
     
+    def check_duplicate_job(self, tenant_id, invoice_number, waybill_url):
+        """
+        Check if a print job already exists for the given combination.
+        Similar to Laravel's validation check.
+        
+        Args:
+            tenant_id: Tenant identifier
+            invoice_number: Invoice identifier
+            waybill_url: URL to waybill document
+            
+        Returns:
+            dict: {
+                'exists': bool,
+                'job': dict with job details if exists, None otherwise
+            }
+        """
+        try:
+            existing_job = WaybillPrintJob.query.filter_by(
+                tenant_id=tenant_id,
+                invoice_number=invoice_number,
+                waybill_url=waybill_url
+            ).first()
+            
+            if existing_job:
+                return {
+                    'exists': True,
+                    'job': existing_job.to_dict()
+                }
+            
+            return {
+                'exists': False,
+                'job': None
+            }
+        except Exception as e:
+            # If there's an error checking, treat as if not exists
+            return {
+                'exists': False,
+                'job': None
+            }
+    
     def create_print_job(self, app, tenant_id, invoice_number, waybill_url):
         """
         Create a print job and download the waybill file.
-        Prevents duplicate jobs for the same tenant, invoice, and URL combination.
         
         Args:
             app: Flask app instance
@@ -79,25 +118,6 @@ class PrintJobService:
             Exception: If database insertion fails
         """
         try:
-            # Check if a job with the same tenant_id, invoice_number, and waybill_url already exists
-            existing_job = WaybillPrintJob.query.filter_by(
-                tenant_id=tenant_id,
-                invoice_number=invoice_number,
-                waybill_url=waybill_url
-            ).first()
-            
-            if existing_job:
-                log_message = f"Duplicate print job request - ID: {existing_job.id}, Tenant: {tenant_id}, Invoice: {invoice_number}"
-                app.logger.warning(log_message)
-                print(log_message)
-                
-                # Return existing job instead of creating a new one
-                return {
-                    "message": "Print job already exists for this tenant, invoice, and URL",
-                    "data": existing_job.to_dict(),
-                    "is_duplicate": True
-                }
-            
             # Create a new WaybillPrintJob instance
             waybill_print_job = WaybillPrintJob(
                 tenant_id=tenant_id,
