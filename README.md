@@ -2,91 +2,116 @@
 
 A Flask-based REST API for managing waybill print jobs on Raspberry Pi with SQLAlchemy ORM and automated database migrations.
 
-## Installation
+## 🚀 Quick Start
 
-### On Raspberry Pi 5
-
-1. Clone the repository
-2. Open file manager
-3. Right-click `install.sh` → **Execute**
-
-Done! The installer runs automatically.
-
-### On WSL / Development Machine (Your Own PC)
-
-Run this command in your terminal:
+### On Raspberry Pi
 
 ```bash
-./install.sh
+cd ~/Desktop/rpi-waybill-printer
+bash install.sh
 ```
 
-That's it!
+Done! The installation script automatically sets up:
 
-## How to Run
+- Python virtual environment
+- CUPS printer system
+- SQLite database
+- Nginx reverse proxy (clean URLs, no port number)
+- Systemd service (auto-start on boot)
 
-To start the API server, run:
+### On Development Machine (WSL/Linux)
+
+```bash
+cd ~/Desktop/rpi-waybill-printer
+bash install.sh
+```
+
+Then start the API:
 
 ```bash
 ./run_api.sh
 ```
 
-## Printer Setup (For Epson L120 Users)
+Access at: `http://127.0.0.1:5000`
 
-### What is CUPS?
+---
 
-**CUPS** (Common Unix Printing System) is a system that manages printers on Linux.
+## 🌐 Access Your API
 
-Think of it like: **Windows Printer Settings** → but for Linux/WSL
+### From Development Machine
 
-It lets your code talk to the printer by name instead of dealing with USB cables directly.
+```text
+http://raspberrypi.local/api/waybills/prints
+```
 
-### When Do I Need CUPS?
+### Home Page (Shows Server Info)
 
-- ✅ **If you have an Epson L120 printer** → Install CUPS
-- ❌ **If you're just testing (mock mode)** → Skip this
-- ❌ **If you have XPrinter (for Raspberry Pi later)** → Different setup
+```text
+http://raspberrypi.local
+```
 
-### Installing CUPS on WSL / Development Machine
+### Direct IP (Fallback)
 
-**Step 1:** Install CUPS
+```text
+http://192.168.100.38/api/waybills/prints
+```
+
+**No port number needed!** Nginx handles the routing transparently.
+
+---
+
+## 📖 Full Installation Guide
+
+For detailed setup instructions, troubleshooting, and management commands:
+
+👉 **See [`INSTALLATION.md`](./INSTALLATION.md)**
+
+---
+
+## 🛠️ Managing the Service
 
 ```bash
-sudo apt-get install cups
+# Check status
+sudo systemctl status rpi-waybill-printer.service
+
+# View live logs
+sudo journalctl -u rpi-waybill-printer.service -f
+
+# Restart service
+sudo systemctl restart rpi-waybill-printer.service
+
+# Stop service
+sudo systemctl stop rpi-waybill-printer.service
 ```
 
-This downloads and installs CUPS on your system.
+---
 
-**Step 2:** Start the printer system
+## 📚 Printer Setup (Optional)
 
-```bash
-sudo service cups start
-```
+### For Epson L120 Printer
 
-**Step 3:** Access printer settings
+**Step 1:** After installation, access CUPS:
 
-Open your browser and go to:
-
-```
+```text
 http://localhost:631
 ```
 
-Then:
+**Step 2:** Add your printer:
+
 - Click **"Administration"**
 - Click **"Add Printer"**
-- Select your **Epson L120**
-- Follow the setup wizard
+- Select **Epson L120**
+- Follow wizard
 
-**Step 4:** Find your printer name
+**Step 3:** Get printer name
 
 ```bash
 lpstat -p -d
 ```
 
-You'll see your printer name (e.g., `Epson-L120`)
+**Step 4:** Update configuration
 
-**Step 5:** Update configuration
-
-Edit `backend/.env` and set:
+Edit `backend/.env`:
 
 ```env
 PRINTER_MODE=cups
@@ -94,26 +119,94 @@ PRINTER_NAME=Epson-L120
 PRINT_ENABLED=true
 ```
 
-Replace `Epson-L120` with the exact name from Step 4.
-
-**Step 6:** Restart the application
+**Step 5:** Restart service
 
 ```bash
-./run_api.sh
+sudo systemctl restart rpi-waybill-printer.service
 ```
 
-Now your printer is ready to use! 🖨️
+---
 
-## Updating Dependencies
+## 🔄 Updating Dependencies
 
-If new Python libraries are added to the project:
-
-**On Raspberry Pi 5:** Right-click `install.sh` → **Execute**
-
-**On Your PC:** Run in terminal:
+If new Python libraries are added:
 
 ```bash
-./install.sh
+bash install.sh
 ```
 
-The installer will update all dependencies automatically. No need to manually reinstall anything!
+The installer automatically updates all dependencies and restarts the service.
+
+---
+
+## 📁 Project Structure
+
+```text
+rpi-waybill-printer/
+├── backend/                 # Flask API
+│   ├── venv/               # Virtual environment
+│   ├── domains/            # Domain-specific code
+│   ├── app.py              # Main Flask app
+│   ├── requirements.txt    # Python dependencies
+│   └── storage/            # Downloaded waybill files
+├── install.sh              # Installation script
+├── run_api.sh              # Development server runner
+├── README.md               # This file
+├── INSTALLATION.md         # Detailed installation guide
+└── RaspberryPi_WaybillPrinter_Plan.md  # Project architecture
+```
+
+---
+
+## 🎯 Key Features
+
+✅ Auto-start on boot (systemd service)
+✅ Auto-restart on crash
+✅ Clean URLs without port numbers (Nginx)
+✅ Server info displayed on home page
+✅ QR code for mobile device scanning
+✅ Waybill file type validation (PDF, PNG, JPEG, JPG only)
+✅ Unique filename generation with timestamp
+✅ Real-time job status tracking
+
+---
+
+## 🔗 API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Home page with server info & QR code |
+| `/health` | GET | Health check |
+| `/api/hostname` | GET | Get system hostname |
+| `/api/server-info` | GET | Get full server information |
+| `/api/waybills/prints` | POST | Create print job |
+
+---
+
+## 📋 System Requirements
+
+- **Raspberry Pi** 4 or 5
+- **OS:** Raspberry Pi OS (Debian-based)
+- **Python:** 3.8+
+- **Network:** WiFi or Ethernet
+- **Optional:** Printer (for actual printing)
+
+---
+
+## 📚 Additional Resources
+
+- See **`INSTALLATION.md`** for:
+  - Detailed troubleshooting
+  - Testing procedures
+  - Management commands
+  - Security notes
+
+- **Project Architecture:** `RaspberryPi_WaybillPrinter_Plan.md`
+
+---
+
+## ✨ Ready to Print
+
+Your Raspberry Pi Waybill Printer is ready! 🖨️
+
+Access it at: **`http://raspberrypi.local`**

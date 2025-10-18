@@ -2,6 +2,7 @@
 
 # Setup script for RPI Waybill Printer Backend
 # This script performs a one-time setup of the project
+# Works on both Raspberry Pi and development machines
 
 set -e  # Exit on error
 
@@ -86,11 +87,118 @@ echo ""
 
 cd ..
 
+# Step 7: Setup Nginx Reverse Proxy (on Raspberry Pi only)
+echo "📍 Step 7: Setting up Nginx reverse proxy..."
+IS_RPI=false
+if [ "$(hostname)" = "raspberrypi" ] || [ "$(hostname)" = "rpi-printer" ]; then
+    IS_RPI=true
+    echo "  → Installing Nginx..."
+    sudo apt-get update > /dev/null 2>&1
+    sudo apt-get install -y nginx > /dev/null 2>&1
+    
+    # Create Nginx config
+    echo "  → Configuring Nginx..."
+    sudo tee /etc/nginx/sites-available/rpi-waybill > /dev/null << 'NGINX_EOF'
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name raspberrypi.local;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+NGINX_EOF
+    
+    # Remove default site and enable the new site
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo ln -sf /etc/nginx/sites-available/rpi-waybill /etc/nginx/sites-enabled/rpi-waybill
+    
+    # Test and reload Nginx
+    sudo nginx -t > /dev/null 2>&1
+    sudo systemctl enable nginx > /dev/null 2>&1
+    sudo systemctl restart nginx > /dev/null 2>&1
+    
+    echo "  ✓ Nginx configured and started"
+else
+    echo "  ⓘ Nginx setup skipped (not on Raspberry Pi)"
+fi
+echo ""
+
+# Step 8: Setup Systemd Service (on Raspberry Pi only)
+echo "📍 Step 8: Setting up systemd service..."
+if [ "$IS_RPI" = true ]; then
+    echo "  → Creating systemd service file..."
+    
+    CURRENT_USER=$(whoami)
+    PROJECT_PATH=$(pwd)
+    VENV_PATH="$PROJECT_PATH/backend/venv/bin/python3"
+    
+    sudo tee /etc/systemd/system/rpi-waybill-printer.service > /dev/null << SERVICE_EOF
+[Unit]
+Description=RPI Waybill Printer Flask API
+After=network.target
+
+[Service]
+Type=simple
+User=$CURRENT_USER
+WorkingDirectory=$PROJECT_PATH/backend
+ExecStart=$VENV_PATH app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+    
+    # Reload systemd
+    sudo systemctl daemon-reload
+    sudo systemctl enable rpi-waybill-printer.service > /dev/null 2>&1
+    
+    echo "  ✓ Systemd service created and enabled"
+    echo "  → Starting Flask API service..."
+    sudo systemctl start rpi-waybill-printer.service
+    sleep 2
+    
+    if sudo systemctl is-active --quiet rpi-waybill-printer.service; then
+        echo "  ✓ Flask API is running"
+    else
+        echo "  ⚠ Flask API failed to start. Check logs with: sudo journalctl -u rpi-waybill-printer.service -f"
+    fi
+else
+    echo "  ⓘ Systemd service setup skipped (not on Raspberry Pi)"
+fi
+echo ""
+
 echo "═══════════════════════════════════════════════════════════════"
 echo "✅ Setup completed successfully!"
 echo ""
-echo "Next steps:"
-echo "  1. Run: ./run_api.sh"
-echo "  2. Access API at: http://127.0.0.1:5000/api/waybills/prints"
+if [ "$IS_RPI" = true ]; then
+    HOSTNAME=$(hostname)
+    echo "🎉 Raspberry Pi Setup Complete!"
+    echo ""
+    echo "Access your API at:"
+    echo "  ✓ Browser: http://$HOSTNAME.local"
+    echo "  ✓ API Endpoint: http://$HOSTNAME.local/api/waybills/prints"
+    echo ""
+    echo "Management Commands:"
+    echo "  • View logs: sudo journalctl -u rpi-waybill-printer.service -f"
+    echo "  • Restart service: sudo systemctl restart rpi-waybill-printer.service"
+    echo "  • Check status: sudo systemctl status rpi-waybill-printer.service"
+    echo ""
+    echo "The service will auto-start on reboot."
+else
+    echo "💻 Development Machine Setup Complete!"
+    echo ""
+    echo "Start the API with:"
+    echo "  ./run_api.sh"
+    echo ""
+    echo "Access at: http://127.0.0.1:5000"
+fi
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
