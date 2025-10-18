@@ -65,10 +65,10 @@ class WaybillPrintJobTriggerService:
                         
                         # Check if names match (fuzzy match - one contained in other)
                         if normalized_printer in normalized_search or normalized_search in normalized_printer:
-                            app.logger.info(f"[CUPS] ✓ FOUND MATCH: '{friendly_name}' -> '{printer_name}'")
+                            app.logger.info(f"[CUPS] [OK] FOUND MATCH: '{friendly_name}' -> '{printer_name}'")
                             return printer_name
             
-            app.logger.warning(f"[CUPS] ✗ No match found for '{friendly_name}', using as-is")
+            app.logger.warning(f"[CUPS] [FAIL] No match found for '{friendly_name}', using as-is")
             return friendly_name
         
         except Exception as e:
@@ -172,12 +172,12 @@ class WaybillPrintJobTriggerService:
             
             if print_success:
                 # Print command succeeded - just log, don't update database
-                app.logger.info(f"[SERVICE] ✓ Print job sent to queue - NO DATABASE CHANGES")
-                print(f"[SERVICE] ✓ Print job sent to queue - NO DATABASE CHANGES")
+                app.logger.info(f"[SERVICE] [OK] Print job sent to queue - NO DATABASE CHANGES")
+                print(f"[SERVICE] [OK] Print job sent to queue - NO DATABASE CHANGES")
             else:
                 # Print command failed - update status to FAILED
-                app.logger.error(f"[SERVICE] ✗ Print command failed - marking as FAILED")
-                print(f"[SERVICE] ✗ Print command failed - marking as FAILED")
+                app.logger.error(f"[SERVICE] [FAIL] Print command failed - marking as FAILED")
+                print(f"[SERVICE] [FAIL] Print command failed - marking as FAILED")
                 print_job.status = PrintJobStatus.FAILED.value
                 print_job.error_message = 'Print command failed'
                 db.session.commit()
@@ -251,8 +251,8 @@ class WaybillPrintJobTriggerService:
                 print(f"[PRINT] wslprint stderr: {result.stderr}")
                 
                 if result.returncode == 0:
-                    app.logger.info(f"[PRINT] ✓ SUCCESS: wslprint succeeded")
-                    print(f"[PRINT] ✓ SUCCESS: wslprint succeeded")
+                    app.logger.info(f"[PRINT] [OK] SUCCESS: wslprint succeeded")
+                    print(f"[PRINT] [OK] SUCCESS: wslprint succeeded")
                     return True
                 else:
                     app.logger.warning(f"[PRINT] wslprint failed with code {result.returncode}")
@@ -283,8 +283,8 @@ class WaybillPrintJobTriggerService:
                 print(f"[PRINT] lp stderr: {result.stderr}")
                 
                 if result.returncode == 0:
-                    app.logger.info(f"[PRINT] ✓ SUCCESS: lp succeeded")
-                    print(f"[PRINT] ✓ SUCCESS: lp succeeded")
+                    app.logger.info(f"[PRINT] [OK] SUCCESS: lp succeeded")
+                    print(f"[PRINT] [OK] SUCCESS: lp succeeded")
                     return True
                 else:
                     app.logger.warning(f"[PRINT] lp failed with code {result.returncode}")

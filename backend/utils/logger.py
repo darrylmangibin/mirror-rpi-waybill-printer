@@ -17,7 +17,8 @@ class LazyFileHandler(logging.FileHandler):
         
         self.log_file_name = os.path.join(logs_dir, datetime.now().strftime("%m_%d_%Y") + ".log")
         # Use delay=True to prevent file creation until first log entry
-        super().__init__(self.log_file_name, mode='a', delay=True)
+        # Use UTF-8 encoding to support Unicode characters
+        super().__init__(self.log_file_name, mode='a', delay=True, encoding='utf-8')
         self.setLevel(logging.NOTSET)
     
     def emit(self, record):
