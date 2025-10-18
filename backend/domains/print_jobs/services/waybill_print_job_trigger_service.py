@@ -266,8 +266,10 @@ class WaybillPrintJobTriggerService:
             try:
                 # Detect image format and set appropriate options
                 file_extension = os.path.splitext(file_path)[1].lower()
-                if file_extension in ['.png', '.jpg', '.jpeg']:
+                if file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.pdf']:
+                    # For image files, use media and scaling options for proper CUPS processing
                     cmd = ['lp', '-d', printer_name, '-o', 'media=A4', '-o', 'fit-to-page', file_path]
+                    app.logger.info(f"[PRINT] Using image format options (media=A4, fit-to-page)")
                 else:
                     cmd = ['lp', '-d', printer_name, file_path]
                 app.logger.info(f"[PRINT] Running command: {' '.join(cmd)}")

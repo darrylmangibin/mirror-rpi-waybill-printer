@@ -29,6 +29,34 @@ class FileDownloadService:
         except Exception as e:
             raise Exception(f"Failed to create storage directory: {str(e)}")
     
+    def _get_extension_from_content_type(self, content_type):
+        """
+        Extract file extension from Content-Type header.
+        
+        Args:
+            content_type: The Content-Type header value
+            
+        Returns:
+            str: File extension (e.g., 'pdf', 'png') or empty string if not recognized
+        """
+        if not content_type:
+            return ''
+        
+        # Extract just the mime type (before semicolon if present)
+        mime_type = content_type.split(';')[0].strip().lower()
+        
+        content_type_map = {
+            'application/pdf': 'pdf',
+            'image/png': 'png',
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/gif': 'gif',
+            'image/webp': 'webp',
+            'image/tiff': 'tiff',
+        }
+        
+        return content_type_map.get(mime_type, '')
+    
     def _get_file_extension(self, url):
         """
         Extract file extension from URL.
@@ -168,8 +196,17 @@ class FileDownloadService:
             response = requests.get(waybill_url, timeout=timeout, stream=True)
             response.raise_for_status()
             
-            # Get file extension
-            extension = self._get_file_extension(waybill_url)
+            # Detect file extension: Try Content-Type header first, then URL fallback
+            content_type = response.headers.get('Content-Type', '').lower()
+            extension = self._get_extension_from_content_type(content_type)
+            
+            # If Content-Type didn't give us a recognized extension, try URL
+            if not extension:
+                extension = self._get_file_extension(waybill_url)
+            
+            # Default to bin if still no extension
+            if not extension:
+                extension = 'bin'
             
             # Generate unique filename
             filename = self._generate_unique_filename(invoice_number, extension)
