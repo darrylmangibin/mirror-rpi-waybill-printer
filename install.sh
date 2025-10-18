@@ -19,6 +19,30 @@ fi
 echo "✓ Python 3 found: $(python3 --version)"
 echo ""
 
+# Step 1.5: Check and install CUPS (for printer support)
+echo "📍 Step 1.5: Setting up CUPS (printer system)..."
+if command -v cups-config &> /dev/null; then
+    echo "✓ CUPS already installed"
+else
+    echo "  → Installing CUPS..."
+    sudo apt-get update > /dev/null 2>&1
+    sudo apt-get install -y cups > /dev/null 2>&1
+    echo "  ✓ CUPS installed"
+fi
+
+# Enable CUPS auto-start
+echo "  → Enabling CUPS auto-start..."
+sudo systemctl enable cups > /dev/null 2>&1
+sudo service cups start > /dev/null 2>&1
+echo "  ✓ CUPS enabled and started"
+
+# Configure CUPS for local access without password
+echo "  → Configuring CUPS (no password required)..."
+sudo cupsctl --share-printers --user-cancel-any --remote-admin > /dev/null 2>&1
+sudo service cups restart > /dev/null 2>&1
+echo "  ✓ CUPS configured for password-free local access"
+echo ""
+
 # Step 2: Create virtual environment if it doesn't exist
 echo "📍 Step 2: Setting up virtual environment..."
 if [ -d "backend/venv" ]; then
