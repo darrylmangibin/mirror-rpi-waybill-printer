@@ -27,9 +27,9 @@ class JobScheduler:
         
         try:
             cls._scheduler = BackgroundScheduler(daemon=True)  # Changed back to daemon=True
-            print("✅ Job Scheduler initialized successfully")
+            print("[OK] Job Scheduler initialized successfully")
         except Exception as e:
-            print(f"❌ Failed to initialize scheduler: {str(e)}")
+            print(f"[ERROR] Failed to initialize scheduler: {str(e)}")
             raise
     
     @classmethod
@@ -46,7 +46,7 @@ class JobScheduler:
             'cron': cron_instance,
             'interval': interval_seconds
         }
-        print(f"✅ Registered job: {job_id} (interval: {interval_seconds}s)")
+        print(f"[OK] Registered job: {job_id} (interval: {interval_seconds}s)")
     
     @classmethod
     def start(cls, app):
@@ -66,7 +66,7 @@ class JobScheduler:
         
         if len(cls._jobs) == 0:
             app.logger.warning("No jobs registered!")
-            print("⚠️ No jobs registered!")
+            print("[WARNING] No jobs registered!")
             return
         
         try:
@@ -83,8 +83,8 @@ class JobScheduler:
                             if not result.get('success', False):
                                 app.logger.warning(f"Job {job_name} warning: {result.get('errors', [])}")
                         except Exception as e:
-                            app.logger.error(f"❌ Job {job_name} error: {str(e)}")
-                            print(f"❌ Job {job_name} error: {str(e)}", file=sys.stderr)
+                            app.logger.error(f"[ERROR] Job {job_name} error: {str(e)}")
+                            print(f"[ERROR] Job {job_name} error: {str(e)}", file=sys.stderr)
                             import traceback
                             traceback.print_exc()
                     return wrapper
@@ -102,13 +102,13 @@ class JobScheduler:
             # Start the scheduler
             if not cls._scheduler.running:
                 cls._scheduler.start()
-                print("✅ Scheduler Running...")
-                app.logger.info("✅ Scheduler Running...")
+                print("[OK] Scheduler Running...")
+                app.logger.info("[OK] Scheduler Running...")
             else:
-                app.logger.info("ℹ️ Scheduler already running")
+                app.logger.info("[INFO] Scheduler already running")
         
         except Exception as e:
-            error_msg = f"❌ Failed to start job scheduler: {str(e)}"
+            error_msg = f"[ERROR] Failed to start job scheduler: {str(e)}"
             app.logger.error(error_msg)
             print(error_msg, file=sys.stderr)
             raise
