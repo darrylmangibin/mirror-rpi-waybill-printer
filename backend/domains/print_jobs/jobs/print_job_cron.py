@@ -1,10 +1,6 @@
-import time
-
-
 class PrintJobCron:
     """
     Print job cron - handles printing of waybills.
-    TEMPORARILY DISABLED FOR DEBUGGING
     """
     
     def __init__(self):
@@ -21,9 +17,11 @@ class PrintJobCron:
             dict: Execution status
         """
         self.execution_count += 1
+        log_message = f"Print Job Cron #{self.execution_count}"
+        app.logger.info(log_message)
         
-        # TEMPORARILY: Just return success, no logic
         return {
             'success': True,
             'execution': self.execution_count,
+            'message': log_message
         }

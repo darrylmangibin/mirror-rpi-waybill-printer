@@ -5,7 +5,6 @@ from routes import api_bp, health_bp
 from models import db, init_models
 from jobs.scheduler import JobScheduler
 from domains.print_jobs.jobs.print_job_cron import PrintJobCron
-from domains.print_jobs.jobs.print_log_cron import PrintLogCron
 from dotenv import load_dotenv
 import os
 
@@ -51,14 +50,7 @@ def create_app():
         JobScheduler.register_job(
             cron_instance=PrintJobCron(),
             job_id='print_job_cron',
-            interval_seconds=5  # Run every 5 seconds
-        )
-        
-        # Test Job (remove after testing)
-        JobScheduler.register_job(
-            cron_instance=PrintLogCron(),
-            job_id='print_log_cron',
-            interval_seconds=1  # Run every second
+            interval_seconds=1
         )
     
     # Start scheduler (only if not already running)
