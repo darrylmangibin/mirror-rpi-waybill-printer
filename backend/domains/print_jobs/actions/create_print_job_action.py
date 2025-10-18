@@ -1,5 +1,6 @@
 from domains.print_jobs.services import PrintJobService
 from domains.print_jobs.enums import PrintJobStatus
+from config.config import Config
 from utils import ResponseTrait
 
 
@@ -37,23 +38,29 @@ class CreatePrintJobAction(ResponseTrait):
         validated_data = validation['data']
         
         # Check for duplicate print job (like Laravel validation)
-        duplicate_check = self.service.check_duplicate_job(
-            validated_data['tenant_id'],
-            validated_data['invoice_number'],
-            validated_data['waybill_url']
-        )
+        # Only validate if ALLOW_DUPLICATE_JOB is false
+        allow_duplicates = Config.is_enabled('app.allow_duplicate_job')
         
-        if duplicate_check['exists']:
-            # Log the duplicate attempt
-            existing_job = duplicate_check['job']
-            log_message = f"Duplicate print job request - ID: {existing_job['id']}, Tenant: {validated_data['tenant_id']}, Invoice: {validated_data['invoice_number']}"
-            app.logger.warning(log_message)
-            print(log_message)
-            
-            return self.conflict(
-                data=duplicate_check['job'],
-                message="Duplicate print job already exists for this tenant, invoice, and URL"
+        if not allow_duplicates:
+            duplicate_check = self.service.check_duplicate_job(
+                validated_data['tenant_id'],
+                validated_data['invoice_number'],
+                validated_data['waybill_url']
             )
+            
+            if duplicate_check['exists']:
+                # Log the duplicate attempt
+                existing_job = duplicate_check['job']
+                log_message = f"Duplicate print job request - ID: {existing_job['id']}, Tenant: {validated_data['tenant_id']}, Invoice: {validated_data['invoice_number']}"
+                app.logger.warning(log_message)
+                print(log_message)
+                
+                return self.conflict(
+                    data=duplicate_check['job'],
+                    message="Duplicate print job already exists for this tenant, invoice, and URL"
+                )
+        else:
+            app.logger.info(f"Duplicate job allowed - Invoice: {validated_data['invoice_number']}")
         
         # Execute business logic
         try:
