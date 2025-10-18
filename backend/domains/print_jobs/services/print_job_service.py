@@ -3,6 +3,8 @@ from models import db
 from domains.print_jobs.models import WaybillPrintJob
 from domains.print_jobs.enums import PrintJobStatus
 from domains.print_jobs.services.file_download_service import FileDownloadService
+from domains.print_jobs.services.printer_service import PrinterServiceFactory
+from config.printer_config import PrinterConfig
 from utils import utcnow_without_microseconds
 
 
@@ -14,6 +16,7 @@ class PrintJobService:
     
     def __init__(self):
         self.download_service = FileDownloadService()
+        self.printer_service = None  # Will be initialized when needed
     
     def validate_create_request(self, data):
         """
@@ -152,6 +155,79 @@ class PrintJobService:
             # Re-raise the exception to be handled by the action
             raise Exception(error_message)
     
+    def _trigger_printing(self, app, waybill_print_job):
+        """
+        Trigger printing for a waybill print job.
+        Called after file download succeeds.
+        
+        Args:
+            app: Flask app instance
+            waybill_print_job: WaybillPrintJob instance with file already downloaded
+        """
+        try:
+            # Mark print as started
+            waybill_print_job.print_started_at = utcnow_without_microseconds()
+            db.session.commit()
+            
+            log_message = f"Starting print process for job ID: {waybill_print_job.id}"
+            app.logger.info(log_message)
+            print(log_message)
+            
+            # Get printer service
+            printer_service = self._get_printer_service(app)
+            
+            # Trigger print job
+            print_result = printer_service.print_file(waybill_print_job.file_path)
+            
+            # Update job with print result
+            waybill_print_job.print_completed_at = utcnow_without_microseconds()
+            
+            if print_result['success']:
+                waybill_print_job.status = PrintJobStatus.COMPLETED.value
+                waybill_print_job.print_status = 'completed'
+                success_message = f"Print job completed - ID: {waybill_print_job.id}, Message: {print_result['message']}"
+                app.logger.info(success_message)
+                print(success_message)
+            else:
+                waybill_print_job.status = PrintJobStatus.FAILED.value
+                waybill_print_job.print_status = 'failed'
+                waybill_print_job.error_message = print_result['error']
+                error_message = f"Print job failed - ID: {waybill_print_job.id}, Error: {print_result['error']}"
+                app.logger.error(error_message)
+                print(error_message)
+            
+            db.session.commit()
+        
+        except Exception as e:
+            # If printing fails, mark job as failed
+            try:
+                waybill_print_job.status = PrintJobStatus.FAILED.value
+                waybill_print_job.print_status = 'error'
+                waybill_print_job.print_completed_at = utcnow_without_microseconds()
+                waybill_print_job.error_message = f"Print error: {str(e)}"
+                db.session.commit()
+            except Exception as commit_error:
+                app.logger.error(f"Failed to update print job status: {str(commit_error)}")
+            
+            error_msg = f"Error during print job processing: {str(e)}"
+            app.logger.error(error_msg)
+            print(error_msg)
+    
+    def _get_printer_service(self, app):
+        """
+        Get printer service instance.
+        Initializes on first call.
+        
+        Args:
+            app: Flask app instance
+            
+        Returns:
+            PrinterService instance
+        """
+        if self.printer_service is None:
+            self.printer_service = PrinterServiceFactory.create(app)
+        return self.printer_service
+    
     def _download_and_update_job(self, app, waybill_print_job, waybill_url):
         """
         Download waybill file and update job status.
@@ -191,6 +267,16 @@ class PrintJobService:
                 success_message = f"File downloaded successfully - ID: {waybill_print_job.id}, Size: {download_result['file_size']} bytes"
                 app.logger.info(success_message)
                 print(success_message)
+                
+                # Trigger printing if enabled
+                if PrinterConfig.is_enabled():
+                    self._trigger_printing(app, waybill_print_job)
+                else:
+                    # If printing is disabled, mark job as completed
+                    waybill_print_job.status = PrintJobStatus.COMPLETED.value
+                    waybill_print_job.print_status = 'skipped'
+                    db.session.commit()
+                    app.logger.info(f"Printing disabled - Job {waybill_print_job.id} marked as completed")
             else:
                 # Mark job as failed with error message
                 waybill_print_job.status = PrintJobStatus.FAILED.value

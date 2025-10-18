@@ -35,6 +35,11 @@ class WaybillPrintJob(db.Model):
     download_completed_at = db.Column(db.DateTime, nullable=True)
     error_message = db.Column(db.Text, nullable=True)
     
+    # Printer Tracking Fields
+    print_started_at = db.Column(db.DateTime, nullable=True)
+    print_completed_at = db.Column(db.DateTime, nullable=True)
+    print_status = db.Column(db.String(100), nullable=True)
+    
     # Dynamic Data
     meta_data = db.Column(db.JSON, nullable=True, default=dict)
     
@@ -67,6 +72,9 @@ class WaybillPrintJob(db.Model):
             'updated_at': format_datetime(self.updated_at),
             'download_started_at': format_datetime(self.download_started_at),
             'download_completed_at': format_datetime(self.download_completed_at),
+            'print_started_at': format_datetime(self.print_started_at),
+            'print_completed_at': format_datetime(self.print_completed_at),
+            'print_status': self.print_status,
             'tenant_id': self.tenant_id,
             'metadata': self.meta_data or {},
         }
