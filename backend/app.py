@@ -7,6 +7,7 @@ from jobs.scheduler import JobScheduler
 from domains.print_jobs.jobs.print_job_cron import PrintJobCron
 from dotenv import load_dotenv
 import os
+import atexit
 
 # Load environment variables from .env file
 load_dotenv()
@@ -50,7 +51,7 @@ def create_app():
         JobScheduler.register_job(
             cron_instance=PrintJobCron(),
             job_id='print_job_cron',
-            interval_seconds=1
+            interval_seconds=2
         )
     
     # Start scheduler (only if not already running)
@@ -61,11 +62,12 @@ def create_app():
     app.register_blueprint(health_bp)
     app.register_blueprint(api_bp)
     
-    # Register shutdown handler
-    @app.teardown_appcontext
-    def shutdown_scheduler(exception=None):
+    # Register shutdown handler (only on actual app shutdown, not per request)
+    def shutdown_scheduler():
         """Gracefully stop the scheduler on app shutdown."""
         JobScheduler.stop()
+    
+    atexit.register(shutdown_scheduler)
     
     return app
 
