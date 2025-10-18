@@ -268,15 +268,6 @@ class PrintJobService:
                 app.logger.info(success_message)
                 print(success_message)
                 
-                # Trigger printing if enabled
-                if PrinterConfig.is_enabled():
-                    self._trigger_printing(app, waybill_print_job)
-                else:
-                    # If printing is disabled, mark job as completed
-                    waybill_print_job.status = PrintJobStatus.COMPLETED.value
-                    waybill_print_job.print_status = 'skipped'
-                    db.session.commit()
-                    app.logger.info(f"Printing disabled - Job {waybill_print_job.id} marked as completed")
             else:
                 # Mark job as failed with error message
                 waybill_print_job.status = PrintJobStatus.FAILED.value

@@ -48,5 +48,5 @@ echo "Press Ctrl+C to stop"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
-# Run the Flask application
-flask run --host 0.0.0.0
+# Run the Flask application (--no-reload disables auto-reloader to prevent duplicate scheduler jobs)
+flask run --host 0.0.0.0 --no-reload

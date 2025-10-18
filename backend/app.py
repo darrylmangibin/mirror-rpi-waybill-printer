@@ -3,7 +3,9 @@ from flask_migrate import Migrate
 from utils import setup_logger
 from routes import api_bp, health_bp
 from models import db, init_models
-from jobs.scheduler import PrintJobScheduler
+from jobs.scheduler import JobScheduler
+from domains.print_jobs.jobs.print_job_cron import PrintJobCron
+from domains.print_jobs.jobs.print_log_cron import PrintLogCron
 from dotenv import load_dotenv
 import os
 
@@ -40,21 +42,38 @@ def create_app():
     # Initialize models
     init_models(app)
     
-    # Initialize print job scheduler
-    PrintJobScheduler.initialize()
+    # Initialize job scheduler (only once)
+    JobScheduler.initialize()
+    
+    # Register jobs only if not already registered
+    if 'print_job_cron' not in JobScheduler._jobs:
+        # Print Jobs Domain
+        JobScheduler.register_job(
+            cron_instance=PrintJobCron(),
+            job_id='print_job_cron',
+            interval_seconds=5  # Run every 5 seconds
+        )
+        
+        # Test Job (remove after testing)
+        JobScheduler.register_job(
+            cron_instance=PrintLogCron(),
+            job_id='print_log_cron',
+            interval_seconds=1  # Run every second
+        )
+    
+    # Start scheduler (only if not already running)
+    if not JobScheduler._scheduler.running:
+        JobScheduler.start(app)
     
     # Register blueprints
     app.register_blueprint(health_bp)
     app.register_blueprint(api_bp)
     
-    # Start the print job scheduler after app is fully configured
-    PrintJobScheduler.start(app)
-    
     # Register shutdown handler
     @app.teardown_appcontext
     def shutdown_scheduler(exception=None):
         """Gracefully stop the scheduler on app shutdown."""
-        PrintJobScheduler.stop()
+        JobScheduler.stop()
     
     return app
 
