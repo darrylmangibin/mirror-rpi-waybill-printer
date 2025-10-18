@@ -1,5 +1,5 @@
 from flask import Blueprint, request, current_app
-from domains.print_jobs import CreatePrintJobAction
+from domains.print_jobs import CreatePrintJobAction, WaybillPrintJobPrintAction
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -24,3 +24,22 @@ def create_print_job():
     """
     action = CreatePrintJobAction()
     return action(request.get_json(), current_app)
+
+
+@api_bp.route("/waybills/prints/<int:waybill_print_job_id>/print", methods=["POST"])
+def trigger_waybill_print(waybill_print_job_id):
+    """
+    Trigger printing for a specific waybill print job.
+    This endpoint allows manual triggering of print jobs that have already been downloaded.
+    
+    Parameters:
+        waybill_print_job_id (int): The ID of the waybill print job to print
+    
+    Returns:
+        200: Print job has been sent to printer successfully
+        404: Print job not found
+        422: Cannot print (file not downloaded or invalid state)
+        500: Internal server error
+    """
+    action = WaybillPrintJobPrintAction()
+    return action(waybill_print_job_id, current_app)

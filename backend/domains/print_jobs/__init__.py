@@ -1,3 +1,3 @@
-from .actions import CreatePrintJobAction
+from .actions import CreatePrintJobAction, WaybillPrintJobPrintAction
 
-__all__ = ['CreatePrintJobAction']
+__all__ = ['CreatePrintJobAction', 'WaybillPrintJobPrintAction']
