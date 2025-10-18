@@ -77,12 +77,13 @@ class Config:
         return value
     
     @staticmethod
-    def is_enabled(key):
+    def is_enabled(key, default=False):
         """
         Check if a boolean configuration is enabled
         
         Args:
             key: Configuration key
+            default: Default value if not found (defaults to False)
         
         Returns:
             True if enabled, False otherwise
@@ -90,5 +91,7 @@ class Config:
         Example:
             if Config.is_enabled('app.allow_duplicate_job'):
                 # Allow duplicates
+            if Config.is_enabled('app.cron_enabled', True):
+                # Cron is enabled by default
         """
-        return Config.get(key, False) is True
+        return Config.get(key, default) is True

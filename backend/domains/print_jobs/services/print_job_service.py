@@ -261,10 +261,10 @@ class PrintJobService:
                 waybill_print_job.file_path = download_result['file_path']
                 waybill_print_job.file_size = download_result['file_size']
                 waybill_print_job.download_completed_at = utcnow_without_microseconds()
-                # Keep status as in_progress - the actual print job processing will change it later
+                # Keep status as in_progress - the cron job will handle printing
                 db.session.commit()
                 
-                success_message = f"File downloaded successfully - ID: {waybill_print_job.id}, Size: {download_result['file_size']} bytes"
+                success_message = f"File downloaded successfully - ID: {waybill_print_job.id}, Size: {download_result['file_size']} bytes. Waiting for cron job to trigger printing."
                 app.logger.info(success_message)
                 print(success_message)
                 

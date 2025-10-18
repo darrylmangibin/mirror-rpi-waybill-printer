@@ -3,6 +3,7 @@ from flask_migrate import Migrate
 from utils import setup_logger
 from routes import api_bp, health_bp
 from models import db, init_models
+from jobs.scheduler import PrintJobScheduler
 from dotenv import load_dotenv
 import os
 
@@ -39,9 +40,21 @@ def create_app():
     # Initialize models
     init_models(app)
     
+    # Initialize print job scheduler
+    PrintJobScheduler.initialize()
+    
     # Register blueprints
     app.register_blueprint(health_bp)
     app.register_blueprint(api_bp)
+    
+    # Start the print job scheduler after app is fully configured
+    PrintJobScheduler.start(app)
+    
+    # Register shutdown handler
+    @app.teardown_appcontext
+    def shutdown_scheduler(exception=None):
+        """Gracefully stop the scheduler on app shutdown."""
+        PrintJobScheduler.stop()
     
     return app
 
