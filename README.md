@@ -22,6 +22,14 @@ Run this command in your terminal:
 
 That's it!
 
+## How to Run
+
+To start the API server, run:
+
+```bash
+./run_api.sh
+```
+
 ## Updating Dependencies
 
 If new Python libraries are added to the project:
