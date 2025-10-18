@@ -37,6 +37,34 @@ def get_hostname():
     }), 200
 
 
+@health_bp.route("/api/server-info", methods=["GET"])
+def get_server_info():
+    """
+    Returns comprehensive server information including hostname, IP address, and access URLs.
+    """
+    try:
+        hostname = socket.gethostname()
+        fqdn = f"{hostname}.local"
+        
+        # Get IP address from request
+        request_host = request.host.split(':')[0]  # Remove port if present
+        port = request.host.split(':')[1] if ':' in request.host else '5000'
+        
+        return jsonify({
+            "hostname": hostname,
+            "fqdn": fqdn,
+            "ip_address": request_host,
+            "port": port,
+            "urls": {
+                "hostname_local": f"http://{fqdn}:{port}",
+                "ip_address": f"http://{request_host}:{port}",
+                "api_endpoint": f"http://{fqdn}:{port}/api/waybills/prints"
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @health_bp.route("/api/qrcode", methods=["GET"])
 def generate_qrcode():
     """

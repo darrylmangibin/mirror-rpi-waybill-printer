@@ -30,6 +30,29 @@
                 </div>
             </div>
 
+            <!-- Server Info Section -->
+            <div class="px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-100 border-t border-gray-200">
+                <p class="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-3">Server Information</p>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-600">Hostname:</span>
+                        <span id="hostInfo" class="font-mono text-gray-800 font-medium">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-600">IP Address:</span>
+                        <span id="ipInfo" class="font-mono text-gray-800 font-medium">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-600">Port:</span>
+                        <span id="portInfo" class="font-mono text-gray-800 font-medium">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-600">Access URL:</span>
+                        <span id="accessUrl" class="font-mono text-blue-600 font-medium hover:underline cursor-pointer break-all">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Instructions Section -->
             <div class="px-6 pt-6">
                 <div class="mb-4">
@@ -71,6 +94,30 @@
             urlLink.href = apiUrl;
             urlLink.textContent = apiUrl;
             console.log('✅ API endpoint:', apiUrl);
+            
+            // Fetch and display server information
+            fetch('/api/server-info')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('hostInfo').textContent = data.fqdn || 'N/A';
+                    document.getElementById('ipInfo').textContent = data.ip_address || 'N/A';
+                    document.getElementById('portInfo').textContent = data.port || 'N/A';
+                    
+                    const accessUrl = document.getElementById('accessUrl');
+                    const urlToDisplay = data.urls?.hostname_local || 'N/A';
+                    accessUrl.textContent = urlToDisplay;
+                    accessUrl.onclick = function() {
+                        window.open(urlToDisplay, '_blank');
+                    };
+                    
+                    console.log('✅ Server info loaded:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Failed to load server info:', error);
+                    document.getElementById('hostInfo').textContent = 'Error loading';
+                    document.getElementById('ipInfo').textContent = 'Error loading';
+                    document.getElementById('portInfo').textContent = 'Error loading';
+                });
         });
     </script>
 </body>

@@ -201,6 +201,7 @@ class FileDownloadService:
             
             # Detect file extension: Try URL first (takes priority), then Content-Type header fallback
             extension = self._get_file_extension(waybill_url)
+            extension_source = "URL"
             
             # If URL didn't give us a recognized extension, try Content-Type header
             if not extension or extension == 'bin':
@@ -208,10 +209,15 @@ class FileDownloadService:
                 content_type_ext = self._get_extension_from_content_type(content_type)
                 if content_type_ext:
                     extension = content_type_ext
+                    extension_source = "Content-Type header"
             
             # Default to bin if still no extension
             if not extension:
                 extension = 'bin'
+                extension_source = "default"
+            
+            print(f"[DEBUG] Extension Detection - Invoice: {invoice_number}, URL: {waybill_url}")
+            print(f"[DEBUG] Detected extension: {extension} (source: {extension_source})")
             
             # Validate extension is in allowed list
             if extension.lower() not in self.ALLOWED_EXTENSIONS:
