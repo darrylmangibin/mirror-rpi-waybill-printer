@@ -171,17 +171,15 @@ class WaybillPrintJobTriggerService:
             print(f"[SERVICE] Print execution result: success={print_success}")
             
             if print_success:
-                # Print command succeeded - just log, don't update anything
-                app.logger.info(f"[SERVICE] ✓ Print job sent successfully to queue - NO STATUS UPDATE")
-                print(f"[SERVICE] ✓ Print job sent successfully to queue - NO STATUS UPDATE")
+                # Print command succeeded - just log, don't update database
+                app.logger.info(f"[SERVICE] ✓ Print job sent to queue - NO DATABASE CHANGES")
+                print(f"[SERVICE] ✓ Print job sent to queue - NO DATABASE CHANGES")
             else:
                 # Print command failed - update status to FAILED
                 app.logger.error(f"[SERVICE] ✗ Print command failed - marking as FAILED")
                 print(f"[SERVICE] ✗ Print command failed - marking as FAILED")
                 print_job.status = PrintJobStatus.FAILED.value
-                print_job.print_status = 'failed'
                 print_job.error_message = 'Print command failed'
-                print_job.print_completed_at = utcnow_without_microseconds()
                 db.session.commit()
             
             return {
