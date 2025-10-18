@@ -44,6 +44,7 @@ class BasePrinterService(ABC):
 class CupsPrinterService(BasePrinterService):
     """
     CUPS-based printer service for standard printers (Epson L120, etc.)
+    Works on: Linux, Ubuntu, Raspberry Pi, WSL (with CUPS installed)
     Uses subprocess to call the 'lp' command.
     """
     
@@ -120,9 +121,105 @@ class CupsPrinterService(BasePrinterService):
             }
 
 
+class WslPrinterService(BasePrinterService):
+    """
+    WSL-specific printer service for Windows printers accessed from WSL.
+    Works on: Windows Subsystem for Linux (WSL 1 & 2)
+    Uses 'wslprint' command or 'lp' command redirecting to Windows printers.
+    """
+    
+    def print_file(self, file_path, printer_name=None):
+        """
+        Print file using Windows printers from WSL.
+        
+        Args:
+            file_path: Path to PDF file to print
+            printer_name: Windows printer name (uses PRINTER_NAME from env if not provided)
+            
+        Returns:
+            dict: Print result status
+        """
+        try:
+            # Validate file exists
+            if not os.path.exists(file_path):
+                return {
+                    'success': False,
+                    'message': 'Print failed',
+                    'error': f'File not found: {file_path}'
+                }
+            
+            # Use provided printer name or environment default
+            config = PrinterConfig.load()
+            printer = printer_name or config['printer_name'] or 'default'
+            
+            # Check if wslprint is available (WSL 1 & 2 approach)
+            try:
+                # First try: Use wslprint (native WSL printer support)
+                cmd = ['wslprint', '-p', printer, file_path]
+                self._log(f"WSL: Printing file {file_path} to Windows printer '{printer}'")
+                
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if result.returncode == 0:
+                    message = f"Print job submitted to Windows printer '{printer}'"
+                    self._log(message)
+                    return {
+                        'success': True,
+                        'message': message,
+                        'error': None
+                    }
+            except FileNotFoundError:
+                # Fallback: Try using lp command (if CUPS is installed on WSL)
+                self._log(f"wslprint not found, trying CUPS fallback for printer '{printer}'")
+                cmd = ['lp', '-d', printer, file_path]
+                
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                
+                if result.returncode == 0:
+                    message = f"Print job submitted via CUPS to '{printer}'"
+                    self._log(message)
+                    return {
+                        'success': True,
+                        'message': message,
+                        'error': None
+                    }
+            
+            # If we get here, both methods failed
+            error_msg = result.stderr or result.stdout or "Unable to access Windows printer"
+            return {
+                'success': False,
+                'message': 'WSL print command failed',
+                'error': f"Neither wslprint nor CUPS available. Error: {error_msg}"
+            }
+        
+        except subprocess.TimeoutExpired:
+            return {
+                'success': False,
+                'message': 'Print timeout',
+                'error': 'Print job timed out after 30 seconds'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': 'WSL print error',
+                'error': str(e)
+            }
+
+
 class EscposPrinterService(BasePrinterService):
     """
     ESC/POS printer service for thermal printers (XPrinter, etc.)
+    Works on: Raspberry Pi, Linux, Ubuntu
     Uses python-escpos library for direct USB communication.
     """
     
@@ -202,6 +299,7 @@ class EscposPrinterService(BasePrinterService):
 class MockPrinterService(BasePrinterService):
     """
     Mock printer service for testing and development.
+    Works on: All platforms (Windows, WSL, Linux, Mac, Raspberry Pi)
     Simulates printing without actual hardware.
     """
     
@@ -269,3 +367,8 @@ class PrinterServiceFactory:
             return MockPrinterService(app)
         else:
             raise ValueError(f"Unknown printer mode: {mode}")
+    
+    @staticmethod
+    def create_wsl(app=None):
+        """Create WSL-specific printer service"""
+        return WslPrinterService(app)
