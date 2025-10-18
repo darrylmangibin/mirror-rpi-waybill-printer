@@ -46,13 +46,13 @@ def create_app():
     JobScheduler.initialize()
     
     # Register jobs only if not already registered
-    if 'print_job_cron' not in JobScheduler._jobs:
-        # Print Jobs Domain
-        JobScheduler.register_job(
-            cron_instance=PrintJobCron(),
-            job_id='print_job_cron',
-            interval_seconds=10
-        )
+    # if 'print_job_cron' not in JobScheduler._jobs:
+    #     # Print Jobs Domain
+    #     JobScheduler.register_job(
+    #         cron_instance=PrintJobCron(),
+    #         job_id='print_job_cron',
+    #         interval_seconds=10
+    #     )
     
     # Start scheduler (only if not already running)
     if not JobScheduler._scheduler.running:
