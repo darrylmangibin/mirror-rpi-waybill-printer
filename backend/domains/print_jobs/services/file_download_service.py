@@ -18,6 +18,9 @@ class FileDownloadService:
         'waybills'
     )
     
+    # Allowed file extensions for waybill documents
+    ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpeg', 'jpg'}
+    
     def __init__(self):
         """Initialize the download service and ensure storage directory exists."""
         self._ensure_storage_directory()
@@ -196,17 +199,27 @@ class FileDownloadService:
             response = requests.get(waybill_url, timeout=timeout, stream=True)
             response.raise_for_status()
             
-            # Detect file extension: Try Content-Type header first, then URL fallback
-            content_type = response.headers.get('Content-Type', '').lower()
-            extension = self._get_extension_from_content_type(content_type)
+            # Detect file extension: Try URL first (takes priority), then Content-Type header fallback
+            extension = self._get_file_extension(waybill_url)
             
-            # If Content-Type didn't give us a recognized extension, try URL
-            if not extension:
-                extension = self._get_file_extension(waybill_url)
+            # If URL didn't give us a recognized extension, try Content-Type header
+            if not extension or extension == 'bin':
+                content_type = response.headers.get('Content-Type', '').lower()
+                content_type_ext = self._get_extension_from_content_type(content_type)
+                if content_type_ext:
+                    extension = content_type_ext
             
             # Default to bin if still no extension
             if not extension:
                 extension = 'bin'
+            
+            # Validate extension is in allowed list
+            if extension.lower() not in self.ALLOWED_EXTENSIONS:
+                return {
+                    'success': False,
+                    'error': f'File type not allowed. Only pdf, png, jpeg, jpg are supported. Got: {extension}',
+                    'detected_extension': extension
+                }
             
             # Generate unique filename
             filename = self._generate_unique_filename(invoice_number, extension)
