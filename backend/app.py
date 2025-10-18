@@ -51,7 +51,7 @@ def create_app():
         JobScheduler.register_job(
             cron_instance=PrintJobCron(),
             job_id='print_job_cron',
-            interval_seconds=2
+            interval_seconds=10
         )
     
     # Start scheduler (only if not already running)
