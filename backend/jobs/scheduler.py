@@ -26,7 +26,7 @@ class JobScheduler:
             return  # Already initialized
         
         try:
-            cls._scheduler = BackgroundScheduler(daemon=False)
+            cls._scheduler = BackgroundScheduler(daemon=True)  # Changed back to daemon=True
             print("✅ Job Scheduler initialized successfully")
         except Exception as e:
             print(f"❌ Failed to initialize scheduler: {str(e)}")
