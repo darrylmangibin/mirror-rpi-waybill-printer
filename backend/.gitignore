@@ -18,8 +18,9 @@ venv/
 # Environment variables
 .env
 
-# Log files
-*.log
+# Log files (only ignore actual .log files in root, not in storage/logs)
+/*.log
 
-# Storage
-storage/waybills/
+# Storage - ignore only content, keep directories
+storage/waybills/*.png
+storage/logs/*.log
