@@ -44,6 +44,12 @@ class CreatePrintJobAction(ResponseTrait):
         )
         
         if duplicate_check['exists']:
+            # Log the duplicate attempt
+            existing_job = duplicate_check['job']
+            log_message = f"Duplicate print job request - ID: {existing_job['id']}, Tenant: {validated_data['tenant_id']}, Invoice: {validated_data['invoice_number']}"
+            app.logger.warning(log_message)
+            print(log_message)
+            
             return self.conflict(
                 data=duplicate_check['job'],
                 message="Duplicate print job already exists for this tenant, invoice, and URL"

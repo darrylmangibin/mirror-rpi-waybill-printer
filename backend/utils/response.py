@@ -159,7 +159,7 @@ class ResponseTrait:
         """
         response = {
             "message": message,
-            "status": "conflict"
+            "status": "error"
         }
         
         if data:
