@@ -10,11 +10,6 @@ class WaybillPrintJob(db.Model):
     """
     __tablename__ = 'waybill_print_jobs'
     
-    # Constraints
-    __table_args__ = (
-        db.UniqueConstraint('tenant_id', 'invoice_number', 'waybill_url', name='uq_waybill_print_jobs_tenant_invoice_url'),
-    )
-    
     # Primary Key
     id = db.Column(db.Integer, primary_key=True)
     
