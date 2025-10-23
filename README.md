@@ -43,10 +43,22 @@ After the first setup, activate the virtual environment and run:
 ```bash
 cd /path-to-project/rpi-waybill-printer
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-python run.py
+python3 run.py
 ```
 
-The API will be available at `http://localhost:5000`
+or make it executable first
+
+```bash
+chmod +x /path-to-project/rpi-waybill-printer/run.sh
+```
+
+and then
+
+```bash
+./run.sh
+```
+
+The API will be available at `http://localhost:5000` or `http://127.0.0.1:5000`
 
 ### Frontend Setup
 
