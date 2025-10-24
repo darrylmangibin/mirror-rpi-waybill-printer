@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_sieve import Sieve
 from app.database import db
 
 def create_app():
@@ -21,6 +22,9 @@ def create_app():
     
     # Enable CORS - allows frontend on different port to call this API
     CORS(app)
+    
+    # Initialize Flask-Sieve for request validation
+    Sieve(app)
     
     # Register blueprints
     from app.services.waybills.routes.api import waybills_bp
