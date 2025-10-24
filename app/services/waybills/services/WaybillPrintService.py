@@ -56,6 +56,18 @@ class WaybillPrintService:
             logger.error(f"Error creating WaybillPrint: {str(e)}", exc_info=True)
             raise
     
+    @staticmethod
+    def destroy(waybill_print: WaybillPrint) -> bool:
+        """Delete a WaybillPrint record."""
+        try:
+            db.session.delete(waybill_print)
+            db.session.commit()
+            logger.info(f"WaybillPrint deleted successfully - ID: {waybill_print.id}")
+            return True
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error deleting WaybillPrint: {str(e)}", exc_info=True)
+            raise
     # ============================================================================
     # SCALABILITY: Other CRUD operations (for future implementation)
     # ============================================================================

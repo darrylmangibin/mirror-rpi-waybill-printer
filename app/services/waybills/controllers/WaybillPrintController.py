@@ -1,5 +1,6 @@
 from app.utils.loggers import get_logger
 from app.services.waybills.services.WaybillPrintService import WaybillPrintService
+from app.services.waybills.models.WaybillPrint import WaybillPrint
 
 logger = get_logger(__name__)
 
@@ -38,6 +39,37 @@ class WaybillPrintController:
             
         except Exception as e:
             logger.error(f"Error storing waybill: {str(e)}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def destroy(self, waybill_print: WaybillPrint) -> dict:
+        """
+        Delete a waybill print.
+        
+        Args:
+            waybill_print: WaybillPrint model instance to delete
+            
+        Returns:
+            dict: Response with status and message
+        """
+        try:
+            waybill_id = waybill_print.id
+            logger.info(f"Deleting waybill print - ID: {waybill_id}")
+            
+            # Call service method to delete waybill
+            WaybillPrintService.destroy(waybill_print)
+            
+            logger.info(f"Successfully deleted waybill {waybill_id}")
+            
+            return {
+                "status": "success",
+                "message": "Waybill print deleted successfully"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error deleting waybill: {str(e)}", exc_info=True)
             return {
                 "status": "error",
                 "message": str(e)
