@@ -12,8 +12,8 @@ class WaybillPrint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     # Timestamps (automatically managed - uses server local time)
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now().replace(microsecond=0))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now().replace(microsecond=0), onupdate=lambda: datetime.now().replace(microsecond=0))
     
     # Fields
     invoice_number = db.Column(db.String, nullable=True)
