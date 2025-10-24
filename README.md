@@ -6,60 +6,60 @@ A local printing solution using Flask backend and React frontend for Raspberry P
 
 ```text
 rpi-waybill-printer/
-├── app/
-│   └── __init__.py         # Flask app with basic hello world
-├── frontend/               # React dashboard (coming soon)
-│   └── README.md
-├── requirements.txt        # Python dependencies
-├── run.py                  # Entry point
-└── README.md
+├── app/           # Backend API (Flask)
+├── frontend/      # Frontend app (React)
+├── requirements.txt  # Python dependencies
+├── run.py            # Flask entrypoint
+├── run.sh            # Script to start backend server
+├── install.sh        # One-time install/setup script
+├── dev.sh            # Script for dev server/workflow
+├── artisan.sh        # Helper script for DB and dev commands
+└── README.md         # Project docs
 ```
 
 ## Getting Started
 
-### Backend Setup
+### Installation
 
-#### One-Time Setup
-
-Run these commands **only the first time** you set up the project:
+Run the one-time installation script to set up both backend and frontend:
 
 ```bash
-cd /path-to-project/rpi-waybill-printer
-
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+./install.sh
 ```
 
-#### Every Time You Work
+**What `install.sh` does:**
 
-After the first setup, activate the virtual environment and run:
+- **Backend Setup:**
+  - Creates Python virtual environment (`venv/`)
+  - Installs Flask and all Python dependencies from `requirements.txt`
+  - Initializes database migrations
+  - Creates necessary directories (`app/instance/`)
+
+- **Frontend Setup:**
+  - Checks for Node.js/npm availability
+  - Installs all React dependencies from `frontend/package.json`
+  - Sets up the complete development environment
+
+- **Verification:**
+  - Provides clear status updates with colored output
+  - Shows next steps for running the application
+
+**Prerequisites:**
+- Python 3.x
+- Node.js and npm (will prompt for installation if missing)
+
+### Running the Application
+
+After installation, you can start the services:
 
 ```bash
-cd /path-to-project/rpi-waybill-printer
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-python3 run.py
-```
-
-or make it executable first
-
-```bash
-chmod +x /path-to-project/rpi-waybill-printer/run.sh
-```
-
-and then
-
-```bash
+# Start backend only (Flask API on port 5000)
 ./run.sh
+
+# Start both backend + frontend (development mode)
+./dev.sh
 ```
 
-The API will be available at `http://localhost:5000` or `http://127.0.0.1:5000`
-
-### Frontend Setup
-
-See `frontend/README.md` for React setup instructions.
+The `dev.sh` script runs:
+- Backend: http://localhost:5000
+- Frontend: http://localhost:5173
