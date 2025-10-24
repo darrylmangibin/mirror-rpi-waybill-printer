@@ -1,4 +1,8 @@
+import { useApi } from './useApi';
+
 function App() {
+  const { data, loading, error } = useApi('/api/hello');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden relative">
       {/* Animated Background Elements */}
@@ -41,6 +45,18 @@ function App() {
           <p className="text-xl md:text-2xl text-slate-300 font-light">
             Professional Shipping Label Management
           </p>
+
+          {/* API Status Display */}
+          <div className="mt-8 p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl">
+            {loading && <p className="text-blue-300">🔄 Connecting to backend...</p>}
+            {error && <p className="text-red-400">❌ Error: {error}</p>}
+            {data && (
+              <div className="text-green-300">
+                <p>✅ {data.message}</p>
+                <p className="text-sm text-slate-400 mt-1">Status: {data.status}</p>
+              </div>
+            )}
+          </div>
 
           {/* Animated accent line */}
           <div className="flex items-center justify-center gap-2 mt-8">
