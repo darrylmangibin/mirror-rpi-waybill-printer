@@ -12,7 +12,7 @@ def create_app():
     app = Flask(__name__, instance_path=instance_path)
     
     # Database configuration (now uses instance folder inside app/)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waybills.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fusion_printer.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialize extensions
