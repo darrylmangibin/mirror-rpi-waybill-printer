@@ -1,12 +1,17 @@
+import os
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from app.database import db
 
 def create_app():
-    app = Flask(__name__)
+    # Set custom instance path to keep database inside app directory
+    instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
+    os.makedirs(instance_path, exist_ok=True)
     
-    # Database configuration
+    app = Flask(__name__, instance_path=instance_path)
+    
+    # Database configuration (now uses instance folder inside app/)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///waybills.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
@@ -22,8 +27,7 @@ def create_app():
     app.register_blueprint(waybills_bp)
     
     # Register CLI commands (like Laravel Artisan)
-    from app.commands import db, routes
-    app.cli.add_command(db)
+    from app.commands import routes
     app.cli.add_command(routes)
     
     # API endpoint for testing

@@ -17,6 +17,9 @@ pip3 install -r requirements.txt
 echo "Initializing database migrations..."
 export FLASK_APP=run:app
 
+# Create app/instance directory for database
+mkdir -p app/instance
+
 # Only run flask db init if migrations directory doesn't exist
 if [ ! -d "app/migrations" ]; then
     flask db init
