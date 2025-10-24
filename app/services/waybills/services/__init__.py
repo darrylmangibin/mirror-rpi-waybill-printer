@@ -1,3 +1,3 @@
-from app.services.waybills.services.WaybillPrintService import test_foo
+from app.services.waybills.services.WaybillPrintService import WaybillPrintService
 
-__all__ = ['test_foo']
+__all__ = ['WaybillPrintService']

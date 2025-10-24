@@ -1,5 +1,5 @@
 from app.utils.loggers import get_logger
-from app.services.waybills.services.WaybillPrintService import test_foo
+from app.services.waybills.services.WaybillPrintService import WaybillPrintService
 
 logger = get_logger(__name__)
 
@@ -25,17 +25,15 @@ class WaybillPrintController:
             
             logger.info(f"Storing waybill print - Invoice: {invoice_number}")
             
-            # Call service method
-            result = test_foo()  # Replace with actual service logic later
+            # Call service method to create and save waybill
+            waybill_print = WaybillPrintService.create(data)
             
             logger.info(f"Successfully stored waybill {invoice_number}")
             
             return {
                 "status": "success",
                 "message": "Waybill print request stored",
-                "invoice_number": invoice_number,
-                "waybill_url": waybill_url,
-                "service_result": result
+                "data": waybill_print.to_dict()
             }
             
         except Exception as e:
