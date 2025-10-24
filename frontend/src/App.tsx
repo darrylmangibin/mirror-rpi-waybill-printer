@@ -1,4 +1,5 @@
 import { useApi } from './useApi';
+import { config } from './config';
 
 function App() {
   const { data, loading, error } = useApi('/api/hello');
@@ -54,6 +55,7 @@ function App() {
               <div className="text-green-300">
                 <p>✅ {data.message}</p>
                 <p className="text-sm text-slate-400 mt-1">Status: {data.status}</p>
+                <p className="text-sm text-slate-400 mt-1">Backend URL: {config.apiBaseUrl}</p>
               </div>
             )}
           </div>

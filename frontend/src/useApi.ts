@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { config } from './config';
 
 interface ApiResponse {
   message: string;
@@ -21,8 +22,9 @@ export function useApi(endpoint: string) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Call backend API (assumes it runs on localhost:5000)
-        const response = await fetch(`http://localhost:5000${endpoint}`);
+        // Call backend API using configured base URL
+        const url = `${config.apiBaseUrl}${endpoint}`;
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error(`API error: ${response.status}`);
