@@ -1,5 +1,0 @@
-"""
-Database package initialization.
-"""
-
-

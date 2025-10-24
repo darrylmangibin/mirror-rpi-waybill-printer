@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
-from app.db.models import db
+from app.database import db
 
 def create_app():
     app = Flask(__name__)
@@ -17,12 +17,14 @@ def create_app():
     # Enable CORS - allows frontend on different port to call this API
     CORS(app)
     
-    # Ensure models are imported so migrations can detect them
-    from app.db.models import Waybill, PrintHistory  # noqa: F401
-    
     # Register blueprints
     from app.services.waybills.routes.api import waybills_bp
     app.register_blueprint(waybills_bp)
+    
+    # Register CLI commands (like Laravel Artisan)
+    from app.commands import db, routes
+    app.cli.add_command(db)
+    app.cli.add_command(routes)
     
     # API endpoint for testing
     @app.route('/api/hello')
