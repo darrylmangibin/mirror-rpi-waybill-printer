@@ -45,6 +45,9 @@ def create_app():
     
     @app.route('/')
     def hello():
-        return {"message": "Hello World"}
+        from app.services.waybills.services.WaybillPrintService import test_foo
+        
+        result = test_foo()
+        return {"message": "Hello World", "test_result": result}
     
     return app
