@@ -29,9 +29,6 @@ def create_app():
     # Import models
     from app.services.waybills.models.WaybillPrint import WaybillPrint
     
-    # Import models
-    from app.models.Shipment import Shipment
-    
     # Register CLI commands (like Laravel Artisan)
     from app.commands import routes
     from app.commands import db as db_commands
