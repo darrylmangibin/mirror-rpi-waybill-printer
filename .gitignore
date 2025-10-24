@@ -52,4 +52,4 @@ frontend/.vite/
 Thumbs.db
 
 # Logs
-/app/logs/*
+app/logs/*
