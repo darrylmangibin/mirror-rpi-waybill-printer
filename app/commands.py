@@ -163,9 +163,9 @@ class {model_name}(db.Model):
     # Primary Key
     id = db.Column(db.Integer, primary_key=True)
     
-    # Timestamps (automatically managed)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Timestamps (automatically managed - uses server local time)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     # ============================================
     # 🚀 START: EDIT YOUR CUSTOM FIELDS HERE 🚀
@@ -296,9 +296,9 @@ class {model_name}(db.Model):
     # Primary Key
     id = db.Column(db.Integer, primary_key=True)
     
-    # Timestamps (automatically managed)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Timestamps (automatically managed - uses server local time)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     # ============================================
     # 🚀 START: EDIT YOUR CUSTOM FIELDS HERE 🚀
@@ -372,8 +372,6 @@ class {model_name}(db.Model):
                     with open(init_file, 'w') as f:
                         f.write(init_content)
                     click.echo(f"📝 Auto-imported in app/__init__.py")
-                else:
-                    click.echo(f"ℹ️  Import already exists in app/__init__.py")
             except Exception as e:
                 click.echo(f"⚠️  Could not auto-import: {e}")
                 click.echo(f"   Please add manually: {import_statement}")

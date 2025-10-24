@@ -27,7 +27,10 @@ def create_app():
     app.register_blueprint(waybills_bp)
     
     # Import models
-    from app.models.WaybillPrint import WaybillPrint
+    from app.services.waybills.models.WaybillPrint import WaybillPrint
+    
+    # Import models
+    from app.models.Shipment import Shipment
     
     # Register CLI commands (like Laravel Artisan)
     from app.commands import routes
