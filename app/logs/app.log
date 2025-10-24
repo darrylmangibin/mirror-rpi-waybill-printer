@@ -1,0 +1,5 @@
+2025-10-24 15:38:08 - app.services.waybills.services.WaybillPrintService - INFO - test_foo() called
+2025-10-24 16:15:47 - app.services.waybills.services.WaybillPrintService - INFO - test_foo() called
+2025-10-24 16:19:21 - app.services.waybills.controllers.WaybillPrintController - INFO - Storing waybill print - Invoice: 0001
+2025-10-24 16:19:21 - app.services.waybills.services.WaybillPrintService - INFO - test_foo() called
+2025-10-24 16:19:21 - app.services.waybills.controllers.WaybillPrintController - INFO - Successfully stored waybill 0001

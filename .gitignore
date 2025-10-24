@@ -50,3 +50,6 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+/app/logs/*
