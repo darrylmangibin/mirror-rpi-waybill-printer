@@ -7,6 +7,7 @@ from flask.cli import with_appcontext
 from flask import current_app
 import subprocess
 import os
+from flask_migrate import migrate as flask_migrate, upgrade as flask_upgrade, downgrade as flask_downgrade, current as flask_current
 
 
 @click.group()
@@ -21,17 +22,10 @@ def db():
 def migrate(message):
     """Create a new migration (like: flask db:migrate "Add waybill models")."""
     try:
-        result = subprocess.run([
-            'flask', 'db', 'migrate', '-m', message
-        ], capture_output=True, text=True, cwd=current_app.root_path + '/..')
-        
-        if result.returncode == 0:
-            click.echo(f"✅ Migration created: {message}")
-            click.echo(result.stdout)
-        else:
-            click.echo(f"❌ Migration failed: {result.stderr}")
+        flask_migrate(message=message)
+        click.echo(f"✅ Migration created: {message}")
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f"❌ Migration failed: {e}")
 
 
 @db.command()
@@ -39,17 +33,10 @@ def migrate(message):
 def upgrade():
     """Apply migrations to database (like: flask db:upgrade)."""
     try:
-        result = subprocess.run([
-            'flask', 'db', 'upgrade'
-        ], capture_output=True, text=True, cwd=current_app.root_path + '/..')
-        
-        if result.returncode == 0:
-            click.echo("✅ Database upgraded successfully")
-            click.echo(result.stdout)
-        else:
-            click.echo(f"❌ Upgrade failed: {result.stderr}")
+        flask_upgrade()
+        click.echo("✅ Database upgraded successfully")
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f"❌ Upgrade failed: {e}")
 
 
 @db.command()
@@ -57,17 +44,10 @@ def upgrade():
 def rollback():
     """Rollback last migration (like: flask db:rollback)."""
     try:
-        result = subprocess.run([
-            'flask', 'db', 'downgrade'
-        ], capture_output=True, text=True, cwd=current_app.root_path + '/..')
-        
-        if result.returncode == 0:
-            click.echo("✅ Database rolled back successfully")
-            click.echo(result.stdout)
-        else:
-            click.echo(f"❌ Rollback failed: {result.stderr}")
+        flask_downgrade()
+        click.echo("✅ Database rolled back successfully")
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f"❌ Rollback failed: {e}")
 
 
 @db.command()
@@ -75,17 +55,11 @@ def rollback():
 def status():
     """Show migration status (like: flask db:status)."""
     try:
-        result = subprocess.run([
-            'flask', 'db', 'history'
-        ], capture_output=True, text=True, cwd=current_app.root_path + '/..')
-        
-        if result.returncode == 0:
-            click.echo("📋 Migration History:")
-            click.echo(result.stdout)
-        else:
-            click.echo(f"❌ Status check failed: {result.stderr}")
+        current_revision = flask_current()
+        click.echo("📋 Current Migration:")
+        click.echo(current_revision if current_revision else "No migrations applied")
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f"❌ Status check failed: {e}")
 
 
 @db.command()
@@ -95,26 +69,13 @@ def fresh(message):
     """Create and apply migration in one command (like: flask db:fresh "Add models")."""
     try:
         # Create migration
-        result1 = subprocess.run([
-            'flask', 'db', 'migrate', '-m', message
-        ], capture_output=True, text=True, cwd=current_app.root_path + '/..')
-        
-        if result1.returncode != 0:
-            click.echo(f"❌ Migration creation failed: {result1.stderr}")
-            return
-        
+        flask_migrate(message=message)
         click.echo(f"✅ Migration created: {message}")
         
         # Apply migration
-        result2 = subprocess.run([
-            'flask', 'db', 'upgrade'
-        ], capture_output=True, text=True, cwd=current_app.root_path + '/..')
-        
-        if result2.returncode == 0:
-            click.echo("✅ Migration applied successfully")
-            click.echo("🚀 Database is up to date!")
-        else:
-            click.echo(f"❌ Migration apply failed: {result2.stderr}")
+        flask_upgrade()
+        click.echo("✅ Migration applied successfully")
+        click.echo("🚀 Database is up to date!")
             
     except Exception as e:
         click.echo(f"❌ Error: {e}")

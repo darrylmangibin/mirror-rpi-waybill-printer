@@ -28,7 +28,9 @@ def create_app():
     
     # Register CLI commands (like Laravel Artisan)
     from app.commands import routes
+    from app.commands import db as db_commands
     app.cli.add_command(routes)
+    app.cli.add_command(db_commands)
     
     # API endpoint for testing
     @app.route('/api/hello')

@@ -13,7 +13,6 @@ rpi-waybill-printer/
 ├── run.sh            # Script to start backend server
 ├── install.sh        # One-time install/setup script
 ├── dev.sh            # Script for dev server/workflow
-├── artisan.sh        # Helper script for DB and dev commands
 └── README.md         # Project docs
 ```
 
@@ -45,6 +44,7 @@ Run the one-time installation script to set up both backend and frontend:
   - Shows next steps for running the application
 
 **Prerequisites:**
+
 - Python 3.x
 - Node.js and npm (will prompt for installation if missing)
 
@@ -61,5 +61,6 @@ After installation, you can start the services:
 ```
 
 The `dev.sh` script runs:
-- Backend: http://localhost:5000
-- Frontend: http://localhost:5173
+
+- Backend: [http://localhost:5000](http://localhost:5000)
+- Frontend: [http://localhost:5173](http://localhost:5173)
