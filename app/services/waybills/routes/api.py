@@ -23,7 +23,7 @@ def store():
     return jsonify(result), status_code
 
 
-@waybills_bp.route('/prints/<int:waybill_print_id>', methods=['DELETE'])
+@waybills_bp.route('/prints/<int:waybill_print>', methods=['DELETE'])
 @get_model(WaybillPrint)
 def destroy(waybill_print):
     """Delete a waybill print by ID."""
