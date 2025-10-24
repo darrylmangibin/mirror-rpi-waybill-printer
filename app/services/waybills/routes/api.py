@@ -14,7 +14,8 @@ controller = WaybillPrintController()
 @validate(StoreWaybillRequest)
 def store():
     """Store a waybill print request."""
+    # Get validated data from the request
     data = request.get_json()
-    result = controller.store(data.get('invoice_number'), data.get('waybill_url'))
+    result = controller.store(data)
     status_code = 200 if result.get('status') == 'success' else 500
     return jsonify(result), status_code

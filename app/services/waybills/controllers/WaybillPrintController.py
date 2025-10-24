@@ -7,18 +7,22 @@ logger = get_logger(__name__)
 class WaybillPrintController:
     """Controller for handling waybill printing operations."""
     
-    def store(self, invoice_number: str, waybill_url: str) -> dict:
+    def store(self, data: dict) -> dict:
         """
         Store/create a waybill print request.
         
         Args:
-            invoice_number: Invoice number for the waybill
-            waybill_url: URL of the waybill to print
+            data: Validated request data dictionary containing:
+                - invoice_number: Invoice number for the waybill
+                - waybill_url: URL of the waybill to print
             
         Returns:
             dict: Response with status and message
         """
         try:
+            invoice_number = data.get('invoice_number')
+            waybill_url = data.get('waybill_url')
+            
             logger.info(f"Storing waybill print - Invoice: {invoice_number}")
             
             # Call service method
@@ -35,9 +39,8 @@ class WaybillPrintController:
             }
             
         except Exception as e:
-            logger.error(f"Error storing waybill {invoice_number}: {str(e)}", exc_info=True)
+            logger.error(f"Error storing waybill: {str(e)}", exc_info=True)
             return {
                 "status": "error",
-                "message": str(e),
-                "invoice_number": invoice_number
+                "message": str(e)
             }
