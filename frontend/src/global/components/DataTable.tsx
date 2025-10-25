@@ -62,7 +62,6 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    pageSize,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -78,6 +77,11 @@ export function DataTable<TData, TValue>({
       rowSelection,
     },
   })
+
+  // Set page size
+  React.useEffect(() => {
+    table.setPageSize(pageSize)
+  }, [pageSize, table])
 
   // Handle row selection callback
   React.useEffect(() => {
