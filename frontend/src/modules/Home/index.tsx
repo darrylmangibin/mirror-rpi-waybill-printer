@@ -15,7 +15,6 @@ import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import React from 'react';
-import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 
 export type WaybillPrint = {
 	id: number;
@@ -225,6 +224,7 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 		},
 	},
 ];
+
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
 
@@ -250,7 +250,8 @@ const Home = () => {
 							autoSelectAllText={true}
 						/>
 					</div>
-					<PrimaryButton onClick={() => {
+					{/* Commented for now */}
+					{/* <PrimaryButton onClick={() => {
 						console.log('Adding waybill...');
 					}}>
 						<div className='flex items-center gap-2'>
@@ -259,7 +260,7 @@ const Home = () => {
 								Add Print
 							</span>
 						</div>
-					</PrimaryButton>
+					</PrimaryButton> */}
 				</div>
 
 				<DataTable
