@@ -95,10 +95,10 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full space-y-4">
       {/* Controls */}
-      <div className="flex items-center gap-4 px-6 pt-6 pb-4 border-b border-slate-800">
+      <div className="flex items-center gap-4 px-6 pt-6 pb-4 border-b border-gray-200">
         {searchColumn && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <Input
               placeholder={searchPlaceholder}
               value={
@@ -111,7 +111,7 @@ export function DataTable<TData, TValue>({
                   .getColumn(searchColumn)
                   ?.setFilterValue(event.target.value)
               }
-              className="pl-10 max-w-sm bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
+              className="pl-10 max-w-sm bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-blue-500"
             />
           </div>
         )}
@@ -121,12 +121,12 @@ export function DataTable<TData, TValue>({
               variant="outline"
               className={`${
                 searchColumn ? "ml-auto" : "ml-auto"
-              } bg-slate-800 border-slate-700 text-white hover:bg-slate-700`}
+              } bg-white border-gray-300 text-gray-900 hover:bg-gray-100`}
             >
               Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700">
+          <DropdownMenuContent align="end" className="bg-white border-gray-200">
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
@@ -134,7 +134,7 @@ export function DataTable<TData, TValue>({
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="capitalize text-white hover:bg-slate-800"
+                    className="capitalize text-gray-900 hover:bg-gray-100"
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) =>
                       column.toggleVisibility(!!value)
@@ -155,13 +155,13 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-slate-800 bg-slate-800/30 hover:bg-slate-800/30"
+                className="border-gray-200 bg-gray-100 hover:bg-gray-100"
               >
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-slate-300 font-semibold"
+                      className="text-gray-900 font-semibold"
                     >
                       {header.isPlaceholder
                         ? null
@@ -181,7 +181,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-slate-800 hover:bg-slate-800/50 text-slate-200"
+                  className="border-gray-200 hover:bg-gray-50 text-gray-900"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -197,7 +197,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-slate-500"
+                  className="h-24 text-center text-gray-500"
                 >
                   No results found.
                 </TableCell>
@@ -209,7 +209,7 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination & Info */}
       <div className="flex items-center justify-between px-6 pb-6">
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-gray-600">
           {selectedCount} of {totalCount} row(s) selected.
         </div>
         <div className="space-x-2 flex">
@@ -218,7 +218,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 disabled:opacity-50"
+            className="bg-white border-gray-300 text-gray-900 hover:bg-gray-100 disabled:opacity-50"
           >
             Previous
           </Button>
@@ -227,7 +227,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 disabled:opacity-50"
+            className="bg-white border-gray-300 text-gray-900 hover:bg-gray-100 disabled:opacity-50"
           >
             Next
           </Button>

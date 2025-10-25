@@ -3,9 +3,11 @@ import Home from '@/pages/home/page'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
+    <main className="min-h-screen bg-gray-50">
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </main>
   )
 }
 
