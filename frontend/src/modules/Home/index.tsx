@@ -11,53 +11,9 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@/components/global/DataTable';
+import { DataTable } from '@/components/global/components/DataTable';
+import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { useApi } from '../../useApi';
-
-// Responsive Top Navigation Component
-interface TopNavbarProps {
-	loading: boolean;
-	error: boolean;
-	data: any;
-}
-
-const TopNavbar = ({ loading, error, data }: TopNavbarProps) => (
-	<div className='border-b border-gray-200 bg-white sticky top-0 z-40'>
-		<div className='max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3'>
-			{/* Logo and Title */}
-			<div className='flex items-center gap-2 sm:gap-3 min-w-0'>
-				<div className='text-2xl sm:text-3xl flex-shrink-0'>📦</div>
-				<div className='min-w-0'>
-					<h1 className='text-base sm:text-xl font-bold text-gray-900 truncate'>
-						RPI Waybill Printer
-					</h1>
-					<p className='text-xs text-gray-600 hidden sm:block'>
-						Shipping Label Management System
-					</p>
-				</div>
-			</div>
-
-			{/* Status Indicator */}
-			<div className='flex items-center gap-2 flex-shrink-0'>
-				{loading && (
-					<span className='text-xs sm:text-sm text-blue-600 whitespace-nowrap'>
-						🔄 <span className='hidden sm:inline'>Connecting...</span>
-					</span>
-				)}
-				{error && (
-					<span className='text-xs sm:text-sm text-red-600 whitespace-nowrap'>
-						❌ <span className='hidden sm:inline'>Error</span>
-					</span>
-				)}
-				{data && (
-					<span className='text-xs sm:text-sm text-green-600 whitespace-nowrap'>
-						✅ <span className='hidden sm:inline'>Connected</span>
-					</span>
-				)}
-			</div>
-		</div>
-	</div>
-);
 
 export type WaybillPrint = {
 	id: number;
@@ -287,7 +243,7 @@ const Home = () => {
 	return (
 		<>
 			{/* Top Navigation Bar */}
-			<TopNavbar loading={loading} error={error} data={data} />
+			<TopNavbar loading={loading} error={error ?? false} data={data} />
 
 			{/* Main Content */}
 			<div className='max-w-7xl mx-auto px-6 py-8'>
