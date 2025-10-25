@@ -246,6 +246,7 @@ const Home = () => {
 							onSearch={(query) => {
 								alert(`Searching for: ${query}`);
 							}}
+							autoSelectAllText={true}
 						/>
 					</div>
 					<Button
