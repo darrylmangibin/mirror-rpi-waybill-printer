@@ -13,6 +13,7 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
+import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import React from 'react';
 
 export type WaybillPrint = {
@@ -224,6 +225,8 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 	},
 ];
 const Home = () => {
+	const [searchQuery, setSearchQuery] = React.useState('');
+
 	const handleRowsSelected = (rows: WaybillPrint[]) => {
 		console.log('Selected rows:', rows);
 	};
@@ -235,24 +238,22 @@ const Home = () => {
 
 			{/* Main Content */}
 			<div className='max-w-7xl mx-auto px-6 py-8'>
-				{/* Page Header */}
-				<div className='mb-8'>
-					<div className='flex items-center justify-between mb-2'>
-						<div>
-							<h2 className='text-3xl font-bold text-gray-900'>
-								Waybill Prints
-							</h2>
-							<p className='text-gray-600 mt-1'>
-								Manage and track all your waybill printing requests
-							</p>
-						</div>
-						<Button className='bg-blue-600 hover:bg-blue-700 text-white'>
-							+ Add Waybill
-						</Button>
+				<div className='top-toolbar flex items-center justify-between mb-3'>
+					<div>
+						<SearchBoxInput
+							value={searchQuery}
+							onChange={setSearchQuery}
+							onSearch={(query) => {
+								alert(`Searching for: ${query}`);
+							}}
+						/>
 					</div>
+					<Button
+						size='sm'
+						className='bg-blue-600 hover:bg-blue-700 text-white'>
+						+ Add Waybill
+					</Button>
 				</div>
-
-				{/* Data Table */}
 
 				<DataTable
 					columns={waybillColumns}

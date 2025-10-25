@@ -12,7 +12,7 @@ export function Pagination<TData>({ table, className }: PaginationProps<TData>) 
   const totalCount = table.getFilteredRowModel().rows.length
 
   return (
-    <div className={cn("flex items-center justify-between px-2 pb-6 mt-4", className)}>
+    <div className={cn("flex items-center justify-between px-2 pb-6 mt-3", className)}>
       <div className="text-sm text-gray-600">
         {selectedCount} of {totalCount} row(s) selected.
       </div>
