@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/global/components/DataTable"
-import { useApi } from "../useApi"
+import { useApi } from "../../useApi"
 
 export type WaybillPrint = {
   id: number
@@ -243,7 +243,7 @@ function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <main className="min-h-screen bg-slate-950">
       {/* Top Navigation Bar */}
       <div className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -293,7 +293,7 @@ function Home() {
           />
         </div>
       </div>
-    </div>
+    </main>
   )
 }
 
