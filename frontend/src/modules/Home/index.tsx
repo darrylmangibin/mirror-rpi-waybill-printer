@@ -1,4 +1,4 @@
-import { ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +13,7 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
+import React from 'react';
 
 export type WaybillPrint = {
 	id: number;
@@ -128,17 +129,7 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 	},
 	{
 		accessorKey: 'invoice_number',
-		header: ({ column }) => {
-			return (
-				<Button
-					variant='ghost'
-					onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-					className='hover:bg-gray-100'>
-					Invoice
-					<ArrowUpDown className='ml-2 h-4 w-4' />
-				</Button>
-			);
-		},
+		header: 'Invoice',
 		cell: ({ row }) => (
 			<div className='font-medium text-gray-900'>
 				{row.getValue('invoice_number')}
@@ -248,7 +239,9 @@ const Home = () => {
 				<div className='mb-8'>
 					<div className='flex items-center justify-between mb-2'>
 						<div>
-							<h2 className='text-3xl font-bold text-gray-900'>Waybill Prints</h2>
+							<h2 className='text-3xl font-bold text-gray-900'>
+								Waybill Prints
+							</h2>
 							<p className='text-gray-600 mt-1'>
 								Manage and track all your waybill printing requests
 							</p>
@@ -260,16 +253,13 @@ const Home = () => {
 				</div>
 
 				{/* Data Table */}
-				<div className='bg-white border border-gray-200 rounded-lg overflow-hidden'>
-					<DataTable
-						columns={waybillColumns}
-						data={mockWaybills}
-						searchPlaceholder='Search by invoice number...'
-						searchColumn='invoice_number'
-						pageSize={10}
-						onRowsSelected={handleRowsSelected}
-					/>
-				</div>
+
+				<DataTable
+					columns={waybillColumns}
+					data={mockWaybills}
+					pageSize={10}
+					onRowsSelected={handleRowsSelected}
+				/>
 			</div>
 		</>
 	);
