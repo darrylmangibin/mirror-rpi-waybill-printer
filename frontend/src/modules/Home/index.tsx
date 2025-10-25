@@ -13,7 +13,6 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
-import { useApi } from '../../useApi';
 
 export type WaybillPrint = {
 	id: number;
@@ -234,8 +233,6 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 	},
 ];
 const Home = () => {
-	const { data, loading, error } = useApi('/api/hello');
-
 	const handleRowsSelected = (rows: WaybillPrint[]) => {
 		console.log('Selected rows:', rows);
 	};
@@ -243,7 +240,7 @@ const Home = () => {
 	return (
 		<>
 			{/* Top Navigation Bar */}
-			<TopNavbar loading={loading} error={error ?? false} data={data} />
+			<TopNavbar />
 
 			{/* Main Content */}
 			<div className='max-w-7xl mx-auto px-6 py-8'>
