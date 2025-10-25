@@ -12,6 +12,14 @@ waybills_bp = Blueprint('waybills', __name__, url_prefix='/api/waybills')
 controller = WaybillPrintController()
 
 
+@waybills_bp.route('/prints', methods=['GET'])
+def index():
+    """Retrieve all waybill prints."""
+    result = controller.index()
+    status_code = 200 if result.get('status') == 'success' else 500
+    return jsonify(result), status_code
+
+
 @waybills_bp.route('/prints', methods=['POST'])
 @validate(StoreWaybillRequest)
 def store():
