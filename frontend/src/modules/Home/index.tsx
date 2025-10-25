@@ -1,4 +1,4 @@
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, PlusIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,6 +15,7 @@ import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import React from 'react';
+import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 
 export type WaybillPrint = {
 	id: number;
@@ -249,11 +250,16 @@ const Home = () => {
 							autoSelectAllText={true}
 						/>
 					</div>
-					<Button
-						size='sm'
-						className='bg-blue-600 hover:bg-blue-700 text-white'>
-						+ Add Waybill
-					</Button>
+					<PrimaryButton onClick={() => {
+						console.log('Adding waybill...');
+					}}>
+						<div className='flex items-center gap-2'>
+							<PlusIcon className='h-4 w-4' />
+							<span>
+								Add Print
+							</span>
+						</div>
+					</PrimaryButton>
 				</div>
 
 				<DataTable
