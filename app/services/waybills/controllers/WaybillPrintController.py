@@ -23,8 +23,8 @@ class WaybillPrintController:
             - per_page: Items per page (default: 15)
             - search: Search by invoice number (partial match)
             - status: Filter by status (can be comma-separated: pending,failed or multiple: ?status=pending&status=failed)
-            - created_at_from: Filter by created_at start date (YYYY-MM-DD format, default: Jan 1st of current year)
-            - created_at_to: Filter by created_at end date (YYYY-MM-DD format, default: today)
+            - from: Filter by created_at start date (YYYY-MM-DD format, default: Jan 1st of current year)
+            - to: Filter by created_at end date (YYYY-MM-DD format, default: today)
         """
         try:
             logger.info("Fetching waybill prints with pagination, search, and filters")
@@ -55,7 +55,7 @@ class WaybillPrintController:
                     logger.info(f"Applied status filter for: {statuses}")
             
             # Date range filter - created_at
-            created_at_from = request.args.get('created_at_from', '').strip()
+            created_at_from = request.args.get('from', '').strip()
             if created_at_from:
                 try:
                     from_date = datetime.strptime(created_at_from, '%Y-%m-%d')
@@ -70,7 +70,7 @@ class WaybillPrintController:
                 query = query.filter(WaybillPrint.created_at >= year_start)
                 logger.info(f"Applied default created_at_from filter: {year_start.strftime('%Y-%m-%d')}")
             
-            created_at_to = request.args.get('created_at_to', '').strip()
+            created_at_to = request.args.get('to', '').strip()
             if created_at_to:
                 try:
                     to_date = datetime.strptime(created_at_to, '%Y-%m-%d') + timedelta(days=1)
