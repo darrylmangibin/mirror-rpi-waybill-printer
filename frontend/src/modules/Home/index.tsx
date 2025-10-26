@@ -4,7 +4,7 @@ import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { waybillColumns } from '@/modules/Home/components/WaybillColumns';
 import { useGetWaybillPrints } from '@/modules/Home/hooks';
-import { NetworkInfoDialog } from '@/modules/Home/components/NetworkInfoDialog';
+import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -52,7 +52,7 @@ const Home = () => {
 						/>
 					</div>
 					{/* Commented for now */}
-					<NetworkInfoDialog />
+					<ScanPrintJobDialog />
 				</div>
 
 				<DataTable

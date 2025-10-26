@@ -85,6 +85,10 @@ class WaybillPrintController:
                 query = query.filter(WaybillPrint.created_at < end_of_today)
                 logger.info(f"Applied default created_at_to filter: {today.strftime('%Y-%m-%d')}")
             
+            # Sort by created_at in descending order (newest first)
+            query = query.order_by(WaybillPrint.created_at.desc())
+            logger.info("Applied sorting: created_at descending (newest first)")
+            
             # Apply pagination
             paginated = query.paginate(page=page, per_page=per_page, error_out=False)
             
