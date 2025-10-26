@@ -1,4 +1,5 @@
 import { MoreHorizontal } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -79,18 +80,26 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 	{
 		accessorKey: 'created_at',
 		header: 'Created',
-		cell: ({ row }) => (
-			<div className='text-sm text-gray-700'>{row.getValue('created_at')}</div>
-		),
+		cell: ({ row }) => {
+			const date = row.getValue('created_at') as string;
+			return (
+				<div className='text-sm text-gray-700'>
+					{date ? format(new Date(date), 'MMM d, yyyy h:mm a') : '-'}
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: 'downloaded_at',
 		header: 'Downloaded',
-		cell: ({ row }) => (
-			<div className='text-sm text-gray-700'>
-				{(row.getValue('downloaded_at') as string) || '-'}
-			</div>
-		),
+		cell: ({ row }) => {
+			const date = row.getValue('downloaded_at') as string | null;
+			return (
+				<div className='text-sm text-gray-700'>
+					{date ? format(new Date(date), 'MMM d, yyyy h:mm a') : '-'}
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: 'local_file_path',
