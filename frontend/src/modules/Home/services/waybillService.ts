@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { WAYBILL_ENDPOINTS } from '@/modules/Home/services/endpoints';
+import { WAYBILL_ENDPOINTS, NETWORK_ENDPOINTS } from '@/modules/Home/services/endpoints';
 
 export interface WaybillPrint {
   id: number;
@@ -28,6 +28,11 @@ export interface PaginatedWaybillsResponse extends WaybillsResponse {
   total_pages?: number;
 }
 
+export interface NetworkInfo {
+  local_ip: string;
+  api_url: string;
+}
+
 const waybillService = {
   /**
    * Fetch all waybill prints with optional pagination
@@ -50,6 +55,23 @@ const waybillService = {
     } catch (error) {
       throw new Error(
         `Failed to fetch waybill prints: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
+   * Fetch network information for print job QR endpoint
+   * @returns Promise with network info containing local IP and API URL
+   */
+  async getPrintJobQREndPoint(): Promise<NetworkInfo> {
+    try {
+      const response = await api.get<NetworkInfo>(NETWORK_ENDPOINTS.GET_PRINT_JOB_QR);
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch print job QR endpoint: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
       );

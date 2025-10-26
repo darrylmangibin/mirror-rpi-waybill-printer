@@ -3,4 +3,5 @@
  */
 export const WAYBILL_QUERY_KEYS = {
   waybills: ['waybills'] as const,
+  printJobQREndPoint: ['printJobQREndPoint'] as const,
 } as const;

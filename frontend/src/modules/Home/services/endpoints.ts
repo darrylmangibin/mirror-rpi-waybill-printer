@@ -11,3 +11,8 @@ export const WAYBILL_ENDPOINTS = {
   // UPDATE_PRINT: (id: number) => `/api/prints/${id}`,
   // DELETE_PRINT: (id: number) => `/api/prints/${id}`,
 } as const;
+
+export const NETWORK_ENDPOINTS = {
+  // Network operations
+  GET_PRINT_JOB_QR: '/api/network/local-ip',
+} as const;

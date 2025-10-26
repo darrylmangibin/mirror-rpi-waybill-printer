@@ -10,41 +10,16 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
-
-interface NetworkInfo {
-	local_ip: string;
-	api_url: string;
-}
+import { useGetPrintJobQREndPoint } from '@/modules/Home/hooks';
 
 export const ScanPrintJobDialog = () => {
-	const [networkInfo, setNetworkInfo] = useState<NetworkInfo | null>(null);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
-
-	const fetchNetworkInfo = async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			const response = await fetch(
-				'http://localhost:5000/api/network/local-ip'
-			);
-			if (!response.ok) {
-				throw new Error('Failed to fetch network info');
-			}
-			const data = await response.json();
-			setNetworkInfo(data);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : 'An error occurred');
-		} finally {
-			setLoading(false);
-		}
-	};
+	const { networkInfo, loading, error, actions } = useGetPrintJobQREndPoint();
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen);
 		if (newOpen && !networkInfo) {
-			fetchNetworkInfo();
+			actions.refetch();
 		}
 	};
 
