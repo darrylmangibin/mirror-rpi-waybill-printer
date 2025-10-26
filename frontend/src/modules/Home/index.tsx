@@ -4,6 +4,7 @@ import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { waybillColumns } from '@/modules/Home/components/WaybillColumns';
 import { useGetWaybillPrints } from '@/modules/Home/hooks';
+import { NetworkInfoDialog } from '@/modules/Home/components/NetworkInfoDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -51,16 +52,7 @@ const Home = () => {
 						/>
 					</div>
 					{/* Commented for now */}
-					{/* <PrimaryButton onClick={() => {
-						console.log('Adding waybill...');
-					}}>
-						<div className='flex items-center gap-2'>
-							<PlusIcon className='h-4 w-4' />
-							<span>
-								Add Print
-							</span>
-						</div>
-					</PrimaryButton> */}
+					<NetworkInfoDialog />
 				</div>
 
 				<DataTable
