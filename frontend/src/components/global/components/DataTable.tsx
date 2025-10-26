@@ -114,6 +114,45 @@ export function DataTable<TData, TValue>({
 		}
 	};
 
+	// Generate page numbers for pagination
+	const getPageNumbers = () => {
+		const pages: (number | string)[] = [];
+		const maxVisible = 5; // Show max 5 page buttons
+		let startPage = 1;
+		let endPage = totalPages;
+
+		if (totalPages > maxVisible) {
+			if (currentPage <= 3) {
+				endPage = maxVisible;
+			} else if (currentPage >= totalPages - 2) {
+				startPage = totalPages - maxVisible + 1;
+			} else {
+				startPage = currentPage - 2;
+				endPage = currentPage + 2;
+			}
+		}
+
+		if (startPage > 1) {
+			pages.push(1);
+			if (startPage > 2) {
+				pages.push('...');
+			}
+		}
+
+		for (let i = startPage; i <= endPage; i++) {
+			pages.push(i);
+		}
+
+		if (endPage < totalPages) {
+			if (endPage < totalPages - 1) {
+				pages.push('...');
+			}
+			pages.push(totalPages);
+		}
+
+		return pages;
+	};
+
 	return (
 		<>
 			<div className='bg-white border border-gray-200 rounded-lg overflow-hidden'>
@@ -176,24 +215,60 @@ export function DataTable<TData, TValue>({
 			</div>
 
 			{showPagination && (
-				<div className='flex items-center justify-between px-2 pb-6 mt-3'>
-					<div className='text-sm text-gray-600'>
-						Page {currentPage} of {totalPages}
+				<div className='flex items-center justify-between mt-4 px-2'>
+					<div className='text-xs text-gray-600'>
+						Page <span className='font-semibold'>{currentPage}</span> of{' '}
+						<span className='font-semibold'>{totalPages}</span>
 					</div>
-					<div className='space-x-2 flex'>
-						<button
-							onClick={handlePreviousPage}
-							disabled={currentPage <= 1}
-							className='px-3 py-1 bg-white border border-gray-300 text-gray-900 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'>
-							Previous
-						</button>
-						<button
-							onClick={handleNextPage}
-							disabled={currentPage >= totalPages}
-							className='px-3 py-1 bg-white border border-gray-300 text-gray-900 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'>
-							Next
-						</button>
-					</div>
+					<nav className='flex'>
+						<ul className='inline-flex items-center gap-1'>
+							{/* Previous Button */}
+							<li>
+								<button
+									onClick={handlePreviousPage}
+									disabled={currentPage <= 1}
+									className='px-2 py-1 text-xs border border-purple-200 bg-purple-50 text-purple-900 rounded hover:bg-purple-100 hover:border-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium'>
+									Prev
+								</button>
+							</li>
+
+							{/* Page Numbers */}
+							{getPageNumbers().map((page, idx) => (
+								<li key={idx}>
+									{page === '...' ? (
+										<span className='px-2 py-1 text-xs text-gray-500'>
+											{page}
+										</span>
+									) : (
+										<button
+											onClick={() => {
+												if (typeof page === 'number' && onPageChange) {
+													onPageChange(page);
+												}
+											}}
+											disabled={typeof page !== 'number'}
+											className={`px-2 py-1 text-xs border rounded transition-colors font-medium ${
+												currentPage === page
+													? 'bg-gradient-to-br from-purple-900 via-purple-700 to-purple-500 hover:from-purple-950 hover:via-purple-750 hover:to-purple-550 border-purple-700 text-white'
+													: 'border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300'
+											} disabled:opacity-50 disabled:cursor-not-allowed`}>
+											{page}
+										</button>
+									)}
+								</li>
+							))}
+
+							{/* Next Button */}
+							<li>
+								<button
+									onClick={handleNextPage}
+									disabled={currentPage >= totalPages}
+									className='px-2 py-1 text-xs border border-purple-200 bg-purple-50 text-purple-900 rounded hover:bg-purple-100 hover:border-purple-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium'>
+									Next
+								</button>
+							</li>
+						</ul>
+					</nav>
 				</div>
 			)}
 		</>
