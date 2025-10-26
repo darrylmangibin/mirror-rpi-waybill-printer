@@ -23,7 +23,7 @@ export const useGetWaybillPrints = () => {
 		isPending,
 		refetch,
 	} = useQuery<PaginatedWaybillsResponse>({
-		queryKey: WAYBILL_QUERY_KEYS.waybills,
+		queryKey: [WAYBILL_QUERY_KEYS.waybills, page],
 		queryFn: () => waybillService.getWaybillPrints(page, perPage),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)

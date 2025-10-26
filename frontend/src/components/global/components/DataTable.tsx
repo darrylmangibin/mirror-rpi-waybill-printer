@@ -25,6 +25,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Pagination } from './paginations/Pagination';
 
 export interface DataTableProps<TData, TValue> {
@@ -37,6 +38,7 @@ export interface DataTableProps<TData, TValue> {
 	currentPage?: number;
 	totalPages?: number;
 	onPageChange?: (page: number) => void;
+	isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -49,6 +51,7 @@ export function DataTable<TData, TValue>({
 	currentPage,
 	totalPages,
 	onPageChange,
+	isLoading,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -129,7 +132,25 @@ export function DataTable<TData, TValue>({
 								))}
 							</TableHeader>
 							<TableBody>
-								{table.getRowModel().rows?.length ? (
+								{isLoading ? (
+									<>
+										<TableRow>
+											<TableCell colSpan={columns.length} className='h-24'>
+												<Skeleton className='h-full w-full' />
+											</TableCell>
+										</TableRow>
+										<TableRow>
+											<TableCell colSpan={columns.length} className='h-24'>
+												<Skeleton className='h-full w-full' />
+											</TableCell>
+										</TableRow>
+										<TableRow>
+											<TableCell colSpan={columns.length} className='h-24'>
+												<Skeleton className='h-full w-full' />
+											</TableCell>
+										</TableRow>
+									</>
+								) : table.getRowModel().rows?.length ? (
 									table.getRowModel().rows.map((row) => (
 										<TableRow
 											key={row.id}
