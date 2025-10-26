@@ -44,6 +44,11 @@ else
     echo -e "${GREEN}✅ Database migrations already exist${NC}"
 fi
 
+# Apply migrations to create database tables
+echo -e "${YELLOW}Creating database tables...${NC}"
+flask db upgrade
+echo -e "${GREEN}✅ Database tables created${NC}"
+
 # Install frontend dependencies
 echo -e "${YELLOW}Installing frontend dependencies...${NC}"
 cd frontend
