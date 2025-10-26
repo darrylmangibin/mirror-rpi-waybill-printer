@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Network } from 'lucide-react';
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
+import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 
 interface NetworkInfo {
 	local_ip: string;
@@ -61,12 +60,11 @@ export const NetworkInfoDialog = () => {
 				</Button>
 			</DialogTrigger>
 			<DialogContent className='sm:max-w-md p-0'>
-				<DialogHeader className='p-4'>
-					<DialogTitle>Network Information</DialogTitle>
-					<DialogDescription>
-						Local network details for API access
-					</DialogDescription>
-				</DialogHeader>
+				<DialogHeaderComponent
+					icon={<Network strokeWidth={2} className='w-5 h-5 text-violet-600' />}
+					title='Network Information'
+					description='Local network details for API access'
+				/>
 
 				<div className='space-y-4 px-4'>
 					{loading && (
