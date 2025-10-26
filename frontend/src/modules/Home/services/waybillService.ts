@@ -55,24 +55,6 @@ const waybillService = {
       );
     }
   },
-
-  /**
-   * Fetch a single waybill print by ID
-   * @param id - Waybill print ID
-   * @returns Promise with waybill print
-   */
-  async getWaybillPrintById(id: number): Promise<WaybillsResponse> {
-    try {
-      const response = await apiClient.get<WaybillsResponse>(WAYBILL_ENDPOINTS.GET_PRINT(id));
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch waybill print ${id}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-    }
-  },
 };
 
 export default waybillService;
