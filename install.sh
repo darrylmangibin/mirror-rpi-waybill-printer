@@ -12,7 +12,7 @@ echo -e "${BLUE}🚀 Installing RPI Waybill Printer (Backend + Frontend)${NC}\n"
 if ! command -v python3 &> /dev/null; then
     echo -e "${YELLOW}Python 3 not found. Installing Python 3...${NC}"
     sudo apt update
-    sudo apt install -y python3 python3-pip python3-venv
+    sudo apt install -y python3 python3-pip
     echo -e "${GREEN}✅ Python 3 installed${NC}"
 fi
 

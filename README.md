@@ -48,6 +48,12 @@ Run the one-time installation script to set up both backend and frontend:
 - Python 3.x
 - Node.js and npm (will prompt for installation if missing)
 
+Before running `install.sh`, make sure to install the Python virtual environment package:
+
+```bash
+sudo apt install python3-venv
+```
+
 ### Running the Application
 
 After installation, you can start the services:
