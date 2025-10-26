@@ -1,5 +1,5 @@
-import apiClient from '@/lib/api';
-import { WAYBILL_ENDPOINTS } from './endpoints';
+import { api } from '@/lib/api';
+import { WAYBILL_ENDPOINTS } from '@/modules/Home/services/endpoints';
 
 export interface WaybillPrint {
   id: number;
@@ -40,7 +40,7 @@ const waybillService = {
     perPage: number = 10
   ): Promise<PaginatedWaybillsResponse> {
     try {
-      const response = await apiClient.get<PaginatedWaybillsResponse>(WAYBILL_ENDPOINTS.LIST_PRINTS, {
+      const response = await api.get<PaginatedWaybillsResponse>(WAYBILL_ENDPOINTS.LIST_PRINTS, {
         params: {
           page,
           per_page: perPage,
