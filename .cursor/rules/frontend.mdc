@@ -7,22 +7,11 @@ alwaysApply: false
 
 ## Barrel Files
 
-Create `index.ts` in folders with multiple exports:
-
-```typescript
-// src/components/index.ts
-export { Button } from './Button';
-export { Card } from './Card';
-```
+Create `index.ts` in folders with multiple exports.
 
 ## Import Aliases
 
-Always use `@/` for internal imports:
-
-```typescript
-import { Button } from '@/components';
-import { TopNavbar } from '@/modules/Home';
-```
+Always use `@/` for internal imports.
 
 ## Component Standards
 
@@ -30,3 +19,10 @@ import { TopNavbar } from '@/modules/Home';
 - Use responsive design (Chromebook-friendly)
 - Light theme only: `bg-white`, `text-gray-900`
 - Descriptive component names
+
+## TypeScript Type Safety
+
+- Never use `any` type
+- Use explicit type annotations
+- Use generics for components
+- Prefer `unknown` or specific types
