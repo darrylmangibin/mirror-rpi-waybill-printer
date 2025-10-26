@@ -4,7 +4,7 @@
 
 export const WAYBILL_ENDPOINTS = {
   // Waybill operations
-  LIST_PRINTS: '/api/prints',
+  LIST_PRINTS: '/api/waybills/prints',
   GET_PRINT: (id: number) => `/api/prints/${id}`,
   
   // Future endpoints for CRUD operations
