@@ -64,13 +64,13 @@ export function Pagination<TData>({ table, className, currentPage: externalCurre
   return (
 		<div
 			className={cn('flex items-center justify-between mt-4 px-2', className)}>
-			<div className='text-xs text-gray-600'>
+			<div className='text-sm text-muted-foreground'>
 				{isLoading ? (
 					<ShimmerSkeleton className='h-5 w-[100px]' />
 				) : (
 					<>
-						<span className='font-semibold'>{selectedCount}</span> of{' '}
-						<span className='font-semibold'>{totalCount}</span> row(s) selected.
+						Page <span className='font-bold'>{currentPage}</span> of{' '}
+						<span className='font-bold'>{pageCount}</span>
 					</>
 				)}
 			</div>

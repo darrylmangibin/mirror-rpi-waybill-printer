@@ -38,8 +38,8 @@ const Home = () => {
 			<TopNavbar />
 
 			{/* Main Content */}
-			<div className="max-w-7xl mx-auto px-6 py-8">
-				<div className="top-toolbar flex items-center justify-between mb-3">
+			<div className='max-w-7xl mx-auto px-6 py-8'>
+				<div className='top-toolbar flex items-center justify-between mb-3'>
 					<div>
 						<SearchBoxInput
 							value={searchQuery}
@@ -71,7 +71,7 @@ const Home = () => {
 					currentPage={pagination.page}
 					totalPages={pagination.totalPages}
 					onPageChange={actions.goToPage}
-					isLoading={true}
+					isLoading={loading}
 				/>
 			</div>
 		</>
