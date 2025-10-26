@@ -51,11 +51,6 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 		enableHiding: false,
 	},
 	{
-		accessorKey: 'id',
-		header: 'ID',
-		cell: ({ row }) => <div>#{row.getValue('id')}</div>,
-	},
-	{
 		accessorKey: 'invoice_number',
 		header: 'Invoice',
 		cell: ({ row }) => (
@@ -121,28 +116,30 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button
-							variant='ghost'
-							className='h-8 w-8 p-0 hover:bg-gray-100'>
-							<span className='sr-only'>Open menu</span>
-							<MoreHorizontal className='h-4 w-4' />
+							variant="ghost"
+							className="h-8 w-8 p-0 hover:bg-gray-100">
+							<span className="sr-only">Open menu</span>
+							<MoreHorizontal className="h-4 w-4" />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
-						align='end'
-						className='bg-white border-gray-200'>
+						align="end"
+						className="bg-white border-gray-200">
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
 						<DropdownMenuItem
-							onClick={() =>
-								navigator.clipboard.writeText(waybill.invoice_number)
-							}
-							className='text-gray-900 hover:bg-gray-100'>
+							onClick={() => {
+								if (waybill.invoice_number) {
+									navigator.clipboard.writeText(waybill.invoice_number);
+								}
+							}}
+							className="text-gray-900 hover:bg-gray-100">
 							Copy invoice number
 						</DropdownMenuItem>
-						<DropdownMenuSeparator className='bg-gray-200' />
-						<DropdownMenuItem className='text-gray-900 hover:bg-gray-100'>
+						<DropdownMenuSeparator className="bg-gray-200" />
+						<DropdownMenuItem className="text-gray-900 hover:bg-gray-100">
 							View details
 						</DropdownMenuItem>
-						<DropdownMenuItem className='text-red-600 hover:bg-red-50'>
+						<DropdownMenuItem className="text-red-600 hover:bg-red-50">
 							Delete waybill
 						</DropdownMenuItem>
 					</DropdownMenuContent>
