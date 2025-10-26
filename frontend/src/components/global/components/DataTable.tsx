@@ -34,6 +34,10 @@ export interface DataTableProps<TData, TValue> {
 	showPagination?: boolean;
 	onRowsSelected?: (rows: TData[]) => void;
 	onTableReady?: (table: ReactTable<TData>) => void;
+	currentPage?: number;
+	totalPages?: number;
+	onPageChange?: (page: number) => void;
+	onPageSizeChange?: (pageSize: number) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +47,10 @@ export function DataTable<TData, TValue>({
 	showPagination = true,
 	onRowsSelected,
 	onTableReady,
+	currentPage = 1,
+	totalPages = 1,
+	onPageChange,
+	onPageSizeChange,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -92,6 +100,20 @@ export function DataTable<TData, TValue>({
 			onTableReady(table);
 		}
 	}, [table, onTableReady]);
+
+	// Handle next page button click
+	const handleNextPage = () => {
+		if (currentPage < totalPages && onPageChange) {
+			onPageChange(currentPage + 1);
+		}
+	};
+
+	// Handle previous page button click
+	const handlePreviousPage = () => {
+		if (currentPage > 1 && onPageChange) {
+			onPageChange(currentPage - 1);
+		}
+	};
 
 	return (
 		<>
@@ -154,7 +176,27 @@ export function DataTable<TData, TValue>({
 				</div>
 			</div>
 
-			{showPagination && <Pagination table={table} />}
+			{showPagination && (
+				<div className='flex items-center justify-between px-2 pb-6 mt-3'>
+					<div className='text-sm text-gray-600'>
+						Page {currentPage} of {totalPages}
+					</div>
+					<div className='space-x-2 flex'>
+						<button
+							onClick={handlePreviousPage}
+							disabled={currentPage <= 1}
+							className='px-3 py-1 bg-white border border-gray-300 text-gray-900 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'>
+							Previous
+						</button>
+						<button
+							onClick={handleNextPage}
+							disabled={currentPage >= totalPages}
+							className='px-3 py-1 bg-white border border-gray-300 text-gray-900 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'>
+							Next
+						</button>
+					</div>
+				</div>
+			)}
 		</>
 	);
 }

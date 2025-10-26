@@ -7,7 +7,7 @@ import { useGetWaybillPrints } from '@/modules/Home/hooks';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
-	const { waybills, loading, error, pagination, actions } = useGetWaybillPrints(1, 10);
+	const { waybills, error, pagination, actions } = useGetWaybillPrints();
 
 	const handleRowsSelected = (rows: typeof waybills) => {
 		console.log('Selected rows:', rows);
@@ -68,6 +68,9 @@ const Home = () => {
 					data={waybills}
 					pageSize={pagination.perPage}
 					onRowsSelected={handleRowsSelected}
+					currentPage={pagination.page}
+					totalPages={pagination.totalPages}
+					onPageChange={actions.goToPage}
 				/>
 			</div>
 		</>
