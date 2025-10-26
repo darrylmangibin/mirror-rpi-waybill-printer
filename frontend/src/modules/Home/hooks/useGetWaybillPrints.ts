@@ -1,96 +1,58 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { waybillService, type WaybillPrint, type PaginatedWaybillsResponse } from '@/modules/Home/services';
 
-interface UseGetWaybillPrintsState {
-  data: WaybillPrint[];
-  loading: boolean;
-  error: string | null;
-  total: number;
-  page: number;
-  perPage: number;
-  totalPages: number;
-}
-
 /**
- * Hook to fetch paginated waybill prints
+ * Hook to fetch paginated waybill prints using TanStack Query
  * @param initialPage - Initial page number (default: 1)
  * @param initialPerPage - Items per page (default: 10)
- * @returns State and methods to manage waybill prints fetching
+ * @returns Query state and pagination methods
  */
 export const useGetWaybillPrints = (initialPage: number = 1, initialPerPage: number = 10) => {
-  const [state, setState] = useState<UseGetWaybillPrintsState>({
-    data: [],
-    loading: false,
-    error: null,
-    total: 0,
-    page: initialPage,
-    perPage: initialPerPage,
-    totalPages: 0,
+  const [page, setPage] = useState(initialPage);
+  const [perPage, setPerPage] = useState(initialPerPage);
+
+  const {
+    data: response,
+    isLoading,
+    error,
+    isFetching,
+    isPending,
+    refetch,
+  } = useQuery<PaginatedWaybillsResponse>({
+    queryKey: ['waybills', page, perPage],
+    queryFn: () => waybillService.getWaybillPrints(page, perPage),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+    retry: 2,
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const fetchWaybillPrints = useCallback(
-    async (page: number, perPage: number) => {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+  const waybills: WaybillPrint[] = response?.data || [];
+  const errorMessage =
+    error instanceof Error ? error.message : error ? String(error) : null;
 
-      try {
-        const response: PaginatedWaybillsResponse = await waybillService.getWaybillPrints(
-          page,
-          perPage
-        );
+  const goToPage = (newPage: number) => {
+    const totalPages = response?.total_pages || 1;
+    const validPage = Math.max(1, Math.min(newPage, totalPages));
+    setPage(validPage);
+  };
 
-        if (response.status === 'success' && response.data) {
-          setState((prev) => ({
-            ...prev,
-            data: response.data || [],
-            total: response.total || 0,
-            page: response.page || page,
-            perPage: response.per_page || perPage,
-            totalPages: response.total_pages || Math.ceil((response.total || 0) / perPage),
-            loading: false,
-          }));
-        } else {
-          throw new Error(response.message || response.error || 'Failed to fetch waybill prints');
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        setState((prev) => ({
-          ...prev,
-          error: errorMessage,
-          loading: false,
-        }));
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    fetchWaybillPrints(state.page, state.perPage);
-  }, []);
-
-  const goToPage = useCallback((newPage: number) => {
-    const validPage = Math.max(1, Math.min(newPage, state.totalPages || 1));
-    setState((prev) => ({ ...prev, page: validPage }));
-    fetchWaybillPrints(validPage, state.perPage);
-  }, [state.totalPages, state.perPage, fetchWaybillPrints]);
-
-  const changePerPage = useCallback((newPerPage: number) => {
-    setState((prev) => ({ ...prev, page: 1, perPage: newPerPage }));
-    fetchWaybillPrints(1, newPerPage);
-  }, [fetchWaybillPrints]);
-
-  const refetch = useCallback(() => {
-    fetchWaybillPrints(state.page, state.perPage);
-  }, [state.page, state.perPage, fetchWaybillPrints]);
+  const changePerPage = (newPerPage: number) => {
+    setPerPage(newPerPage);
+    setPage(1); // Reset to first page when changing per_page
+  };
 
   return {
-    waybills: state.data,
-    loading: state.loading,
-    error: state.error,
+    waybills,
+    loading: isLoading || isPending,
+    fetching: isFetching,
+    error: errorMessage,
     pagination: {
-      page: state.page,
-      perPage: state.perPage,
-      total: state.total,
-      totalPages: state.totalPages,
+      page,
+      perPage,
+      total: response?.total || 0,
+      totalPages: response?.total_pages || 0,
     },
     actions: {
       goToPage,

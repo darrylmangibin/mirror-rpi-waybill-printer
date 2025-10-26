@@ -1,4 +1,5 @@
 import apiClient from '@/lib/api';
+import { WAYBILL_ENDPOINTS } from './endpoints';
 
 export interface WaybillPrint {
   id: number;
@@ -39,7 +40,7 @@ const waybillService = {
     perPage: number = 10
   ): Promise<PaginatedWaybillsResponse> {
     try {
-      const response = await apiClient.get<PaginatedWaybillsResponse>('/api/prints', {
+      const response = await apiClient.get<PaginatedWaybillsResponse>(WAYBILL_ENDPOINTS.LIST_PRINTS, {
         params: {
           page,
           per_page: perPage,
@@ -62,7 +63,7 @@ const waybillService = {
    */
   async getWaybillPrintById(id: number): Promise<WaybillsResponse> {
     try {
-      const response = await apiClient.get<WaybillsResponse>(`/api/prints/${id}`);
+      const response = await apiClient.get<WaybillsResponse>(WAYBILL_ENDPOINTS.GET_PRINT(id));
       return response.data;
     } catch (error) {
       throw new Error(
