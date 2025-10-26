@@ -64,7 +64,7 @@ const Home = () => {
 				</div>
 
 				<DataTable
-					columns={waybillColumns as any}
+					columns={waybillColumns}
 					data={waybills}
 					pageSize={pagination.perPage}
 					onRowsSelected={handleRowsSelected}

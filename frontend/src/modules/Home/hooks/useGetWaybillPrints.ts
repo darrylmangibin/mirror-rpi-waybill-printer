@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { waybillService, type WaybillPrint, type PaginatedWaybillsResponse } from '@/modules/Home/services';
 import { WAYBILL_QUERY_KEYS } from '@/modules/Home/constants';
 
-const PER_PAGE = 15;
+const PER_PAGE = 10;
 const PAGE = 1;
 
 /**
