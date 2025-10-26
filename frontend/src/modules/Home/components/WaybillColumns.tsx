@@ -10,18 +10,9 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { WaybillPrint } from '@/modules/Home/services';
 
-export type WaybillPrint = {
-	id: number;
-	created_at: string;
-	updated_at: string;
-	invoice_number: string;
-	waybill_url: string;
-	status: 'pending' | 'downloaded' | 'failed';
-	local_file_path: string | null;
-	error_message: string | null;
-	downloaded_at: string | null;
-};
+export type { WaybillPrint } from '@/modules/Home/services';
 
 export function getStatusBadge(status: string) {
 	switch (status) {

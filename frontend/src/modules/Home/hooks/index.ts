@@ -1,0 +1,1 @@
+export { useGetWaybillPrints } from './useGetWaybillPrints';
