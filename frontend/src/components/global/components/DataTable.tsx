@@ -50,7 +50,6 @@ export function DataTable<TData, TValue>({
 	currentPage = 1,
 	totalPages = 1,
 	onPageChange,
-	onPageSizeChange,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
