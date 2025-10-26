@@ -175,7 +175,7 @@ export function DataTable<TData, TValue>({
 				</div>
 			</div>
 
-			{showPagination && <Pagination table={table} currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />}
+			{showPagination && <Pagination table={table} currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} isLoading={isLoading} />}
 		</>
 	);
 }

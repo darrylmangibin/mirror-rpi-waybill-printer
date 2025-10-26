@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ShimmerSkeleton } from "@/components/loaders"
 
 export interface PaginationProps<TData> {
   className?: string
@@ -16,9 +17,10 @@ export interface PaginationProps<TData> {
   currentPage?: number
   totalPages?: number
   onPageChange?: (page: number) => void
+  isLoading?: boolean
 }
 
-export function Pagination<TData>({ table, className, currentPage: externalCurrentPage, totalPages: externalTotalPages, onPageChange }: PaginationProps<TData>) {
+export function Pagination<TData>({ table, className, currentPage: externalCurrentPage, totalPages: externalTotalPages, onPageChange, isLoading }: PaginationProps<TData>) {
   const selectedCount = table.getFilteredSelectedRowModel().rows.length
   const totalCount = table.getRowModel().rows.length
   
@@ -60,103 +62,135 @@ export function Pagination<TData>({ table, className, currentPage: externalCurre
   }, [pageCount, currentPage])
 
   return (
-    <div className={cn("flex items-center justify-between mt-4 px-2", className)}>
-      <div className="text-xs text-gray-600">
-        <span className="font-semibold">{selectedCount}</span> of <span className="font-semibold">{totalCount}</span> row(s) selected.
-      </div>
-      <nav className="flex">
-        <ul className="inline-flex items-center gap-1">
-          {/* Previous Button */}
-          <li>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => {
-                      if (onPageChange && externalCurrentPage !== undefined) {
-                        onPageChange(externalCurrentPage - 1)
-                      } else {
-                        table.previousPage()
-                      }
-                    }}
-                    disabled={externalCurrentPage !== undefined ? externalCurrentPage <= 1 : !table.getCanPreviousPage()}
-                    variant="ghost"
-                    size="icon"
-                    className="w-7 h-7 border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 hover:text-purple-950 disabled:opacity-50 rounded-full p-0"
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Previous Page</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </li>
+		<div
+			className={cn('flex items-center justify-between mt-4 px-2', className)}>
+			<div className='text-xs text-gray-600'>
+				{isLoading ? (
+					<ShimmerSkeleton className='h-5 w-[100px]' />
+				) : (
+					<>
+						<span className='font-semibold'>{selectedCount}</span> of{' '}
+						<span className='font-semibold'>{totalCount}</span> row(s) selected.
+					</>
+				)}
+			</div>
+			<nav className='flex'>
+				<ul className='inline-flex items-center gap-1'>
+					{isLoading ? (
+						<li className='flex items-center gap-3'>
+							<ShimmerSkeleton className='h-5 w-[40px]' />
+							<ShimmerSkeleton className='h-5 w-[90px]' />
+							<ShimmerSkeleton className='h-5 w-[40px]' />
+						</li>
+					) : (
+						<>
+							{/* Previous Button */}
+							<li>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												onClick={() => {
+													if (
+														onPageChange &&
+														externalCurrentPage !== undefined
+													) {
+														onPageChange(externalCurrentPage - 1);
+													} else {
+														table.previousPage();
+													}
+												}}
+												disabled={
+													externalCurrentPage !== undefined
+														? externalCurrentPage <= 1
+														: !table.getCanPreviousPage()
+												}
+												variant='ghost'
+												size='icon'
+												className='w-7 h-7 border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 hover:text-purple-950 disabled:opacity-50 rounded-full p-0'>
+												<ChevronsLeft className='h-4 w-4' />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											<p>Previous Page</p>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</li>
 
-          {/* Page Numbers */}
-          {pageNumbers.map((page, idx) => (
-            <li key={idx}>
-              {page === '...' ? (
-                <span className="px-1 py-1 text-xs text-gray-500">
-                  {page}
-                </span>
-              ) : (
-                <Button
-                  onClick={() => {
-                    if (typeof page === 'number') {
-                      if (onPageChange && externalCurrentPage !== undefined) {
-                        onPageChange(page)
-                      } else {
-                        table.setPageIndex(page - 1)
-                      }
-                    }
-                  }}
-                  disabled={typeof page !== 'number'}
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    'w-7 h-7 rounded-full transition-all duration-200 font-medium p-0',
-                    currentPage === page
-                      ? 'bg-linear-to-br from-purple-900 via-purple-700 to-purple-500 hover:from-purple-950 hover:via-purple-750 hover:to-purple-550 border border-purple-700 text-white transform -translate-y-1 shadow-lg'
-                      : 'border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 transform hover:-translate-y-0.5'
-                  )}
-                >
-                  {page}
-                </Button>
-              )}
-            </li>
-          ))}
+							{/* Page Numbers */}
+							{pageNumbers.map((page, idx) => (
+								<li key={idx}>
+									{page === '...' ? (
+										<span className='px-1 py-1 text-xs text-gray-500'>
+											{page}
+										</span>
+									) : (
+										<Button
+											onClick={() => {
+												if (typeof page === 'number') {
+													if (
+														onPageChange &&
+														externalCurrentPage !== undefined
+													) {
+														onPageChange(page);
+													} else {
+														table.setPageIndex(page - 1);
+													}
+												}
+											}}
+											disabled={typeof page !== 'number'}
+											variant='ghost'
+											size='icon'
+											className={cn(
+												'w-7 h-7 rounded-full transition-all duration-200 font-medium p-0',
+												currentPage === page
+													? 'bg-linear-to-br from-purple-900 via-purple-700 to-purple-500 hover:from-purple-950 hover:via-purple-750 hover:to-purple-550 border border-purple-700 text-white transform -translate-y-1 shadow-lg'
+													: 'border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 transform hover:-translate-y-0.5'
+											)}>
+											{page}
+										</Button>
+									)}
+								</li>
+							))}
 
-          {/* Next Button */}
-          <li>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => {
-                      if (onPageChange && externalCurrentPage !== undefined) {
-                        onPageChange(externalCurrentPage + 1)
-                      } else {
-                        table.nextPage()
-                      }
-                    }}
-                    disabled={externalCurrentPage !== undefined ? externalCurrentPage >= pageCount : !table.getCanNextPage()}
-                    variant="ghost"
-                    size="icon"
-                    className="w-7 h-7 border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 hover:text-purple-950 disabled:opacity-50 rounded-full p-0"
-                  >
-                    <ChevronsRight className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Next Page</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  )
+							{/* Next Button */}
+							<li>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												onClick={() => {
+													if (
+														onPageChange &&
+														externalCurrentPage !== undefined
+													) {
+														onPageChange(externalCurrentPage + 1);
+													} else {
+														table.nextPage();
+													}
+												}}
+												disabled={
+													externalCurrentPage !== undefined
+														? externalCurrentPage >= pageCount
+														: !table.getCanNextPage()
+												}
+												variant='ghost'
+												size='icon'
+												className='w-7 h-7 border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 hover:text-purple-950 disabled:opacity-50 rounded-full p-0'>
+												<ChevronsRight className='h-4 w-4' />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											<p>Next Page</p>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</li>
+						</>
+					)}
+				</ul>
+			</nav>
+		</div>
+	);
 }
