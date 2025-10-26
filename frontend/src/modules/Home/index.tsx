@@ -38,8 +38,8 @@ const Home = () => {
 			<TopNavbar />
 
 			{/* Main Content */}
-			<div className='max-w-7xl mx-auto px-6 py-8'>
-				<div className='top-toolbar flex items-center justify-between mb-3'>
+			<div className="max-w-7xl mx-auto px-6 py-8">
+				<div className="top-toolbar flex items-center justify-between mb-3">
 					<div>
 						<SearchBoxInput
 							value={searchQuery}
@@ -63,51 +63,12 @@ const Home = () => {
 					</PrimaryButton> */}
 				</div>
 
-				{loading ? (
-					<div className='flex items-center justify-center py-12'>
-						<div className='text-center'>
-							<div className='inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4'></div>
-							<p className='text-gray-600'>Loading waybills...</p>
-						</div>
-					</div>
-				) : (
-					<>
-						<div className='mb-4 text-sm text-gray-600'>
-							{pagination.total > 0 && (
-								<span>
-									Showing {(pagination.page - 1) * pagination.perPage + 1} to{' '}
-									{Math.min(pagination.page * pagination.perPage, pagination.total)} of{' '}
-									{pagination.total} waybills
-								</span>
-							)}
-						</div>
-						<DataTable
-							columns={waybillColumns as any}
-							data={waybills}
-							pageSize={pagination.perPage}
-							onRowsSelected={handleRowsSelected}
-						/>
-						{pagination.totalPages > 1 && (
-							<div className='flex justify-between items-center mt-6'>
-								<button
-									onClick={() => actions.goToPage(pagination.page - 1)}
-									disabled={pagination.page === 1}
-									className='px-4 py-2 bg-gray-200 text-gray-900 rounded disabled:opacity-50 hover:bg-gray-300'>
-									Previous
-								</button>
-								<span className='text-gray-600'>
-									Page {pagination.page} of {pagination.totalPages}
-								</span>
-								<button
-									onClick={() => actions.goToPage(pagination.page + 1)}
-									disabled={pagination.page === pagination.totalPages}
-									className='px-4 py-2 bg-gray-200 text-gray-900 rounded disabled:opacity-50 hover:bg-gray-300'>
-									Next
-								</button>
-							</div>
-						)}
-					</>
-				)}
+				<DataTable
+					columns={waybillColumns as any}
+					data={waybills}
+					pageSize={pagination.perPage}
+					onRowsSelected={handleRowsSelected}
+				/>
 			</div>
 		</>
 	);
