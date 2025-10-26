@@ -25,7 +25,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ShimmerSkeleton } from '@/components/global/components/loaders';
 import { Pagination } from './paginations/Pagination';
 
 export interface DataTableProps<TData, TValue> {
@@ -134,21 +134,15 @@ export function DataTable<TData, TValue>({
 							<TableBody>
 								{isLoading ? (
 									<>
-										<TableRow>
-											<TableCell colSpan={columns.length} className='h-24'>
-												<Skeleton className='h-full w-full' />
-											</TableCell>
-										</TableRow>
-										<TableRow>
-											<TableCell colSpan={columns.length} className='h-24'>
-												<Skeleton className='h-full w-full' />
-											</TableCell>
-										</TableRow>
-										<TableRow>
-											<TableCell colSpan={columns.length} className='h-24'>
-												<Skeleton className='h-full w-full' />
-											</TableCell>
-										</TableRow>
+										{[...Array(5)].map((_, rowIdx) => (
+											<TableRow key={`skeleton-${rowIdx}`}>
+												{columns.map((_, colIdx) => (
+													<TableCell key={`skeleton-cell-${rowIdx}-${colIdx}`} className='py-2'>
+														<ShimmerSkeleton className='h-6 w-full' />
+													</TableCell>
+												))}
+											</TableRow>
+										))}
 									</>
 								) : table.getRowModel().rows?.length ? (
 									table.getRowModel().rows.map((row) => (

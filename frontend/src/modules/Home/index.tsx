@@ -71,7 +71,7 @@ const Home = () => {
 					currentPage={pagination.page}
 					totalPages={pagination.totalPages}
 					onPageChange={actions.goToPage}
-					isLoading={loading}
+					isLoading={true}
 				/>
 			</div>
 		</>
