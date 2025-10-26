@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sieve import Sieve
 from app.database import db
+from app.utils.network import get_local_ip
 
 def create_app():
     # Set custom instance path to keep database inside app directory
@@ -44,6 +45,14 @@ def create_app():
     def api_hello():
         return {
             "message": "Hello from Flask Backend!",
+            "status": "success"
+        }
+    
+    @app.route('/api/network/local-ip')
+    def get_network_info():
+        return {
+            "local_ip": get_local_ip(),
+            "api_url": f"http://{get_local_ip()}:5000",
             "status": "success"
         }
     
