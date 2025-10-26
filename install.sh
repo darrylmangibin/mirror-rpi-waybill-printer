@@ -8,6 +8,14 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Installing RPI Waybill Printer (Backend + Frontend)${NC}\n"
 
+# Check if Python 3 is installed
+if ! command -v python3 &> /dev/null; then
+    echo -e "${YELLOW}Python 3 not found. Installing Python 3...${NC}"
+    sudo apt update
+    sudo apt install -y python3 python3-pip python3-venv
+    echo -e "${GREEN}✅ Python 3 installed${NC}"
+fi
+
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}Creating Python virtual environment...${NC}"
