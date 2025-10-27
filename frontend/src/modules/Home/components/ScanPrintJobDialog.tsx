@@ -84,7 +84,7 @@ export const ScanPrintJobDialog = () => {
 							</div>
 
 							<div className='text-sm font-mono text-gray-900 break-all max-w-sm text-center mb-8'>
-								{`${networkInfo.api_url}/api/waybills/prints`}
+								{/* {`${networkInfo.api_url}/api/waybills/prints`} */}
 							</div>
 						</div>
 					)}
