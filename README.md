@@ -1,61 +1,122 @@
-# Installation Steps
+# RPI Waybill Printer
 
-1. Create a virtual environment:
+A local printing solution using Flask backend and React frontend for Raspberry Pi 5.
 
-   ```bash
-   cd backend
-   python3 -m venv venv
-   ```
+## Project Structure
 
-2. Activate the virtual environment:
-
-   ```bash
-   source venv/bin/activate
-   ```
-
-3. Install Flask:
-
-   ```bash
-   pip install Flask
-
-   # Optional: For automatic reloading during development
-   pip install watchdog
-   # Optional: For managing environment variables
-   pip install python-dotenv
-   ```
-
-## Running the API
-
-To run the Flask API, execute the `run_api.sh` script:
-
-```bash
-./run_api.sh
+```text
+rpi-waybill-printer/
+├── app/           # Backend API (Flask)
+├── frontend/      # Frontend app (React)
+├── requirements.txt  # Python dependencies
+├── run.py            # Flask entrypoint
+├── run.sh            # Script to start backend server
+├── install.sh        # One-time install/setup script
+├── dev.sh            # Script for dev server/workflow
+└── README.md         # Project docs
 ```
 
-The API will be accessible on port `5000`.
+## Getting Started
 
-### Accessing the API from Windows (using Postman/Browser)
+### Installation
 
-If you are running the Flask API in WSL and trying to access it from a Windows client (like Postman or a web browser), use the following URL:
+Run the one-time installation script to set up both backend and frontend:
 
 ```bash
-http://127.0.0.1:5000/api/waybills/prints
+./install.sh
 ```
 
-**Note:** WSL automatically forwards ports from the WSL environment to your Windows host's `localhost`. Therefore, you can use `127.0.0.1` (or `localhost`) on your Windows machine to reach the Flask application running on `0.0.0.0:5000` inside WSL.
+**What `install.sh` does:**
 
-## References
+- **Backend Setup:**
+  - Creates Python virtual environment (`venv/`)
+  - Installs Flask and all Python dependencies from `requirements.txt`
+  - Initializes database migrations
+  - Creates necessary directories (`app/instance/`)
 
-* [Flask Quickstart Guide](https://flask.palletsprojects.com/en/stable/quickstart/)
+- **Frontend Setup:**
+  - Checks for Node.js/npm availability
+  - Installs all React dependencies from `frontend/package.json`
+  - Sets up the complete development environment
 
-## Troubleshooting
+- **Verification:**
+  - Provides clear status updates with colored output
+  - Shows next steps for running the application
 
-### Import "flask" could not be resolved
+**Prerequisites:**
 
-If you encounter an "Import "flask" could not be resolved" error, it means your IDE is not using the correct Python interpreter. Follow these steps to select the virtual environment:
+- Python 3.x
+- Node.js and npm (will prompt for installation if missing)
 
-1. **Open the Command Palette:** Press `F1`.
-2. **Select Python Interpreter:** Type "Python: Select Interpreter" and choose the option.
-3. **Enter interpreter path:** If your virtual environment is not listed, select "Enter interpreter path..." and provide the full path to your virtual environment's Python executable: `path_to_your_project/backend/venv/bin/python`
+Before running `install.sh`, make sure to install the Python virtual environment package:
 
-    After selecting the interpreter, you might need to restart your IDE or close and reopen `app.py` for the changes to take effect.
+```bash
+sudo apt install python3-venv
+```
+
+### Running the Application
+
+After installation, you can start the services:
+
+```bash
+# Start backend only (Flask API on port 5000)
+./run.sh
+
+# Start both backend + frontend (development mode)
+./dev.sh
+```
+
+The `dev.sh` script runs:
+
+- Backend: [http://localhost:5000](http://localhost:5000)
+- Frontend: [http://localhost:5173](http://localhost:5173)
+
+## Database Migrations
+
+This project uses Flask-Migrate with Laravel-style commands for database management.
+
+### Available Migration Commands
+
+```bash
+# Create a new migration
+flask db migrate "Create waybills table"
+
+# Apply pending migrations to database
+flask db upgrade
+
+# Rollback the last migration
+flask db rollback
+
+# Check current migration status
+flask db status
+
+# Create and apply migration in one command
+flask db fresh "Add new models"
+```
+
+### Migration Workflow
+
+1. **Create Models** - Define your SQLAlchemy models in `app/services/*/models.py`
+2. **Import Models** - Make sure models are imported in `app/__init__.py`
+3. **Generate Migration** - Run `flask db migrate "Description"`
+4. **Apply Migration** - Run `flask db upgrade`
+
+### Example: Creating Your First Migration
+
+```bash
+# 1. Create a migration for your models
+flask db migrate "Create waybills table"
+
+# 2. Apply the migration to database
+flask db upgrade
+
+# 3. Check migration status
+flask db status
+```
+
+**Note:** Make sure to activate your virtual environment first:
+
+```bash
+source venv/bin/activate
+export FLASK_APP=run:app
+```

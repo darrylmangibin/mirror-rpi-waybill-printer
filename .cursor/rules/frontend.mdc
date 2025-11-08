@@ -1,0 +1,28 @@
+---
+globs: *.tsx,*.ts,*.jsx,*.js
+alwaysApply: false
+---
+
+# Frontend Development Rules
+
+## Barrel Files
+
+Create `index.ts` in folders with multiple exports.
+
+## Import Aliases
+
+Always use `@/` for internal imports.
+
+## Component Standards
+
+- Define props interfaces at the top
+- Use responsive design (Chromebook-friendly)
+- Light theme only: `bg-white`, `text-gray-900`
+- Descriptive component names
+
+## TypeScript Type Safety
+
+- Never use `any` type
+- Use explicit type annotations
+- Use generics for components
+- Prefer `unknown` or specific types
