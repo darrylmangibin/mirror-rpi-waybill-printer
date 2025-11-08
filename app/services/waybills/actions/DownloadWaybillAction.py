@@ -39,7 +39,7 @@ class DownloadWaybillAction:
                 raise ValueError("Waybill URL is missing")
             
             # Delegate to service for actual download
-            result = self.download_service.download(waybill_url, invoice_number)
+            result = self.download_service.download(waybill_url, invoice_number, waybill_print.id)
             
             if result['success']:
                 return {

@@ -1,6 +1,7 @@
 import os
 import pathlib
 import requests
+from datetime import datetime
 from urllib.parse import urlparse
 from app.utils.loggers import get_logger
 
@@ -40,13 +41,16 @@ class WaybillDownloadService:
     def _get_filename_from_url(self, url: str) -> str:
         """Extract filename from URL or generate one."""
         try:
-            # Try to get filename from URL path
+            # Try to get filename from URL path (before query string)
             parsed_url = urlparse(url)
-            filename = os.path.basename(parsed_url.path)
+            path = parsed_url.path
             
-            # If no extension, assume PDF
-            if not os.path.splitext(filename)[1]:
-                filename = f"{filename}.pdf"
+            # Remove query parameters
+            filename = os.path.basename(path)
+            
+            # If filename is empty or no extension, return None to trigger fallback
+            if not filename or not os.path.splitext(filename)[1]:
+                return None
             
             return filename
         except Exception:
@@ -56,13 +60,35 @@ class WaybillDownloadService:
         """Ensure safe filename (remove problematic characters)."""
         return "".join(c for c in filename if c.isalnum() or c in ('.', '-', '_')).rstrip()
     
-    def download(self, waybill_url: str, invoice_number: str) -> dict:
+    def _get_extension_from_content_type(self, content_type: str) -> str:
+        """Get file extension from Content-Type header."""
+        if not content_type:
+            return None
+        
+        # Map common content types to extensions
+        content_type_map = {
+            'application/pdf': '.pdf',
+            'image/png': '.png',
+            'image/jpeg': '.jpg',
+            'image/jpg': '.jpg',
+            'image/gif': '.gif',
+            'image/webp': '.webp',
+            'application/zip': '.zip',
+        }
+        
+        # Get base content type (before semicolon)
+        base_type = content_type.split(';')[0].strip().lower()
+        return content_type_map.get(base_type)
+    
+    def download(self, waybill_url: str, invoice_number: str, waybill_id: int) -> dict:
         """
         Download a waybill file from URL and save to local storage.
+        Trusts Content-Type header over URL extension (server is authoritative).
         
         Args:
             waybill_url (str): URL of the waybill file
-            invoice_number (str): Invoice number for logging and fallback filename
+            invoice_number (str): Invoice number for filename
+            waybill_id (int): Waybill print ID for unique filename
         
         Returns:
             dict: {
@@ -80,10 +106,22 @@ class WaybillDownloadService:
             response = requests.get(waybill_url, timeout=30, stream=True)
             response.raise_for_status()
             
-            # Generate filename
-            filename = self._get_filename_from_url(waybill_url)
-            if not filename:
-                filename = f"waybill_{invoice_number}.pdf"
+            # PRIORITY 1: Check Content-Type header from server (authoritative source)
+            extension = self._get_extension_from_content_type(response.headers.get('Content-Type'))
+            
+            # PRIORITY 2: Fallback to URL filename extension if Content-Type not recognized
+            if not extension:
+                url_filename = self._get_filename_from_url(waybill_url)
+                if url_filename:
+                    extension = os.path.splitext(url_filename)[1]
+            
+            # PRIORITY 3: Default to PDF if all else fails
+            if not extension:
+                extension = '.pdf'
+            
+            # Generate unique filename: id_invoice_number_datetime (no milliseconds)
+            timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+            filename = f"{waybill_id}_{invoice_number}_{timestamp}{extension}"
             
             # Ensure safe filename
             filename = self._sanitize_filename(filename)
