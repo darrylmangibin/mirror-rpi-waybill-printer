@@ -35,7 +35,6 @@ class WaybillDownloadService:
         """Ensure app/storage/waybills/ directory exists, create if needed."""
         try:
             pathlib.Path(self.download_directory).mkdir(parents=True, exist_ok=True)
-            logger.info(f"Download directory ready: {self.download_directory}")
         except Exception as e:
             logger.error(f"Failed to create download directory: {str(e)}")
             raise
@@ -107,8 +106,6 @@ class WaybillDownloadService:
             }
         """
         try:
-            logger.info(f"File download initiated - Invoice: {invoice_number}, URL: {waybill_url}")
-            
             # Download file with timeout and streaming
             response = requests.get(waybill_url, timeout=30, stream=True)
             response.raise_for_status()
@@ -152,9 +149,6 @@ class WaybillDownloadService:
             waybill_print.local_file_path = filepath
             waybill_print.downloaded_at = datetime.now().replace(microsecond=0)
             db.session.commit()
-            
-            logger.info(f"File downloaded successfully - Invoice: {invoice_number}, Path: {filepath}, Size: {file_size} bytes")
-            logger.info(f"WaybillPrint record updated - ID: {waybill_print.id}, Status: {WaybillPrintStatuses.FOR_PRINTING.value}")
             
             return {
                 'status': 'success',
