@@ -4,6 +4,8 @@ import requests
 from datetime import datetime
 from urllib.parse import urlparse
 from app.utils.loggers import get_logger
+from app.database import db
+from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 
 logger = get_logger(__name__)
 
@@ -80,23 +82,28 @@ class WaybillDownloadService:
         base_type = content_type.split(';')[0].strip().lower()
         return content_type_map.get(base_type)
     
-    def download(self, waybill_url: str, invoice_number: str, waybill_id: int) -> dict:
+    def download(self, waybill_print, waybill_url: str, invoice_number: str) -> dict:
         """
         Download a waybill file from URL and save to local storage.
         Trusts Content-Type header over URL extension (server is authoritative).
+        Updates the WaybillPrint record with download status and file path.
         
         Args:
+            waybill_print: WaybillPrint model instance
             waybill_url (str): URL of the waybill file
             invoice_number (str): Invoice number for filename
-            waybill_id (int): Waybill print ID for unique filename
         
         Returns:
             dict: {
-                'success': bool,
-                'filepath': str (if successful),
-                'filename': str (if successful),
-                'file_size': int (if successful),
-                'error': str (if failed)
+                'status': 'success' or 'error',
+                'message': str,
+                'data': {
+                    'waybill_id': int,
+                    'invoice_number': str,
+                    'filepath': str (if successful),
+                    'filename': str (if successful),
+                    'file_size': int (if successful)
+                }
             }
         """
         try:
@@ -121,7 +128,7 @@ class WaybillDownloadService:
             
             # Generate unique filename: id_invoice_number_datetime (no milliseconds)
             timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
-            filename = f"{waybill_id}_{invoice_number}_{timestamp}{extension}"
+            filename = f"{waybill_print.id}_{invoice_number}_{timestamp}{extension}"
             
             # Ensure safe filename
             filename = self._sanitize_filename(filename)
@@ -139,35 +146,88 @@ class WaybillDownloadService:
                 raise IOError(f"File was not saved successfully: {filepath}")
             
             file_size = os.path.getsize(filepath)
+            
+            # Update database record with download status
+            waybill_print.status = WaybillPrintStatuses.FOR_PRINTING.value
+            waybill_print.local_file_path = filepath
+            waybill_print.downloaded_at = datetime.now().replace(microsecond=0)
+            db.session.commit()
+            
             logger.info(f"File downloaded successfully - Invoice: {invoice_number}, Path: {filepath}, Size: {file_size} bytes")
+            logger.info(f"WaybillPrint record updated - ID: {waybill_print.id}, Status: {WaybillPrintStatuses.FOR_PRINTING.value}")
             
             return {
-                'success': True,
-                'filepath': filepath,
-                'filename': filename,
-                'file_size': file_size
+                'status': 'success',
+                'message': 'Waybill downloaded and saved successfully',
+                'data': {
+                    'waybill_id': waybill_print.id,
+                    'invoice_number': invoice_number,
+                    'filepath': filepath,
+                    'filename': filename,
+                    'file_size': file_size
+                }
             }
         
         except requests.exceptions.Timeout:
-            error_msg = f"Download timeout for Invoice: {invoice_number}"
-            logger.error(error_msg)
+            error_msg = "Download timed out. Please try again."
+            logger.error(f"Download timeout for Invoice: {invoice_number}")
+            
+            # Update database with error status
+            try:
+                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.error_message = error_msg
+                db.session.commit()
+            except Exception as db_error:
+                logger.error(f"Failed to update WaybillPrint on timeout: {str(db_error)}", exc_info=True)
+            
             return {
-                'success': False,
-                'error': "Download timed out. Please try again."
+                'status': 'error',
+                'message': error_msg,
+                'data': {
+                    'waybill_id': waybill_print.id,
+                    'invoice_number': invoice_number
+                }
             }
         
         except requests.exceptions.RequestException as e:
-            error_msg = f"Network error downloading waybill for Invoice: {invoice_number} - {str(e)}"
-            logger.error(error_msg)
+            error_msg = f"Network error: {str(e)}"
+            logger.error(f"Network error downloading waybill for Invoice: {invoice_number} - {str(e)}")
+            
+            # Update database with error status
+            try:
+                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.error_message = error_msg
+                db.session.commit()
+            except Exception as db_error:
+                logger.error(f"Failed to update WaybillPrint on network error: {str(db_error)}", exc_info=True)
+            
             return {
-                'success': False,
-                'error': f"Network error: {str(e)}"
+                'status': 'error',
+                'message': error_msg,
+                'data': {
+                    'waybill_id': waybill_print.id,
+                    'invoice_number': invoice_number
+                }
             }
         
         except Exception as e:
-            logger.error(f"Error downloading waybill for Invoice: {invoice_number}: {str(e)}", exc_info=True)
+            error_msg = str(e)
+            logger.error(f"Error downloading waybill for Invoice: {invoice_number}: {error_msg}", exc_info=True)
+            
+            # Update database with error status
+            try:
+                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.error_message = error_msg
+                db.session.commit()
+            except Exception as db_error:
+                logger.error(f"Failed to update WaybillPrint on error: {str(db_error)}", exc_info=True)
+            
             return {
-                'success': False,
-                'error': str(e)
+                'status': 'error',
+                'message': error_msg,
+                'data': {
+                    'waybill_id': waybill_print.id,
+                    'invoice_number': invoice_number
+                }
             }
 
