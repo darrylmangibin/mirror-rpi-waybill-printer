@@ -27,8 +27,6 @@ class WaybillPrintController:
             - to: Filter by created_at end date (YYYY-MM-DD format, default: today)
         """
         try:
-            logger.info("Fetching waybill prints with pagination, search, and filters")
-            
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 15, type=int)
             
@@ -39,7 +37,6 @@ class WaybillPrintController:
             search = request.args.get('search', '').strip()
             if search:
                 query = query.filter(WaybillPrint.invoice_number.ilike(f'%{search}%'))
-                logger.info(f"Applied search filter for invoice_number: {search}")
             
             # Status filter - can be multiple values
             status_param = request.args.get('status', '').strip()
@@ -52,7 +49,6 @@ class WaybillPrintController:
                 
                 if statuses:
                     query = query.filter(WaybillPrint.status.in_(statuses))
-                    logger.info(f"Applied status filter for: {statuses}")
             
             # Date range filter - created_at
             created_at_from = request.args.get('from', '').strip()
@@ -60,7 +56,6 @@ class WaybillPrintController:
                 try:
                     from_date = datetime.strptime(created_at_from, '%Y-%m-%d')
                     query = query.filter(WaybillPrint.created_at >= from_date)
-                    logger.info(f"Applied created_at_from filter: {created_at_from}")
                 except ValueError:
                     logger.warning(f"Invalid created_at_from format: {created_at_from}")
             else:
@@ -68,14 +63,12 @@ class WaybillPrintController:
                 today = datetime.now()
                 year_start = datetime(today.year, 1, 1)
                 query = query.filter(WaybillPrint.created_at >= year_start)
-                logger.info(f"Applied default created_at_from filter: {year_start.strftime('%Y-%m-%d')}")
             
             created_at_to = request.args.get('to', '').strip()
             if created_at_to:
                 try:
                     to_date = datetime.strptime(created_at_to, '%Y-%m-%d') + timedelta(days=1)
                     query = query.filter(WaybillPrint.created_at < to_date)
-                    logger.info(f"Applied created_at_to filter: {created_at_to}")
                 except ValueError:
                     logger.warning(f"Invalid created_at_to format: {created_at_to}")
             else:
@@ -83,16 +76,12 @@ class WaybillPrintController:
                 today = datetime.now()
                 end_of_today = datetime(today.year, today.month, today.day) + timedelta(days=1)
                 query = query.filter(WaybillPrint.created_at < end_of_today)
-                logger.info(f"Applied default created_at_to filter: {today.strftime('%Y-%m-%d')}")
             
             # Sort by created_at in descending order (newest first)
             query = query.order_by(WaybillPrint.created_at.desc())
-            logger.info("Applied sorting: created_at descending (newest first)")
             
             # Apply pagination
             paginated = query.paginate(page=page, per_page=per_page, error_out=False)
-            
-            logger.info(f"Successfully fetched page {page} with {len(paginated.items)} results")
             
             return format_pagination(paginated, message="Waybill prints retrieved successfully")
             
@@ -119,12 +108,8 @@ class WaybillPrintController:
             invoice_number = data.get('invoice_number')
             waybill_url = data.get('waybill_url')
             
-            logger.info(f"Storing waybill print - Invoice: {invoice_number}")
-            
             # Call service method to create and save waybill
             waybill_print = WaybillPrintService.create(data)
-            
-            logger.info(f"Successfully stored waybill {invoice_number}")
             
             return {
                 "status": "success",
@@ -151,12 +136,9 @@ class WaybillPrintController:
         """
         try:
             waybill_id = waybill_print.id
-            logger.info(f"Deleting waybill print - ID: {waybill_id}")
             
             # Call service method to delete waybill
             WaybillPrintService.destroy(waybill_print)
-            
-            logger.info(f"Successfully deleted waybill {waybill_id}")
             
             return {
                 "status": "success",
