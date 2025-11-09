@@ -9,7 +9,11 @@ import {
 	DialogFooter,
 	DialogTrigger,
 } from '@/components/ui/dialog';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+	Tooltip,
+	TooltipTrigger,
+	TooltipContent,
+} from '@/components/ui/tooltip';
 import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 import { cn } from '@/lib';
@@ -23,30 +27,27 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useCreateWaybillPrint } from '@/modules/Home/hooks';
 
 interface ManualCreatePrintJobDialogProps {
 	onSubmit?: (invoiceNumber: string, url: string) => Promise<void>;
 }
 
 const formSchema = z.object({
-	invoiceNumber: z
-		.string()
-		.min(1, 'Invoice number is required')
-		.trim(),
-	url: z
-		.string()
-		.min(1, 'URL is required')
-		.url('Please enter a valid URL'),
+	invoiceNumber: z.string().min(1, 'Invoice number is required').trim(),
+	url: z.string().min(1, 'URL is required').url('Please enter a valid URL'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const DEFAULT_WAYBILL_URL = 'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/68f0d71c4179b1760614172.png';
+const DEFAULT_WAYBILL_URL =
+	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/68f0d71c4179b1760614172.png';
 
-export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDialogProps) => {
+export const ManualCreatePrintJobDialog = ({
+	onSubmit,
+}: ManualCreatePrintJobDialogProps) => {
 	const [open, setOpen] = useState(false);
-	const [loading, setLoading] = useState(false);
-	const [submitError, setSubmitError] = useState<string | null>(null);
+	const { mutateAsync, isPending } = useCreateWaybillPrint();
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -61,26 +62,27 @@ export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDia
 		if (!newOpen) {
 			// Reset form when closing
 			form.reset();
-			setSubmitError(null);
 		}
 	};
 
 	const handleSubmit = async (data: FormValues) => {
-		setSubmitError(null);
-		setLoading(true);
-
 		try {
+			// Call the backend API to create waybill print
+			await mutateAsync({
+				invoiceNumber: data.invoiceNumber,
+				waybillUrl: data.url,
+			});
+
+			// Call onSubmit callback if provided (for backward compatibility)
 			if (onSubmit) {
 				await onSubmit(data.invoiceNumber, data.url);
 			}
+
 			setOpen(false);
 			form.reset();
-			setSubmitError(null);
-		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : 'Failed to create print job';
-			setSubmitError(errorMessage);
-		} finally {
-			setLoading(false);
+		} catch (error) {
+			// Error is handled by the hook, just close on success
+			console.error('Failed to create waybill print:', error);
 		}
 	};
 
@@ -128,14 +130,10 @@ export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDia
 				/>
 
 				<div className='px-4 py-4 space-y-4'>
-					{submitError && (
-						<div className='bg-red-50 border border-red-200 rounded p-3'>
-							<p className='text-sm text-red-600'>{submitError}</p>
-						</div>
-					)}
-
 					<Form {...form}>
-						<form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-4'>
+						<form
+							onSubmit={form.handleSubmit(handleSubmit)}
+							className='space-y-4'>
 							<FormField
 								control={form.control}
 								name='invoiceNumber'
@@ -145,7 +143,7 @@ export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDia
 										<FormControl>
 											<Input
 												placeholder='Enter invoice number'
-												disabled={loading}
+												disabled={isPending}
 												{...field}
 											/>
 										</FormControl>
@@ -164,7 +162,7 @@ export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDia
 											<Input
 												type='url'
 												placeholder='Enter URL to print'
-												disabled={loading}
+												disabled={isPending}
 												{...field}
 											/>
 										</FormControl>
@@ -176,24 +174,23 @@ export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDia
 					</Form>
 				</div>
 
-				<DialogFooter>
-					<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
-						<Button
-							type='button'
-							variant='outline'
-							onClick={() => setOpen(false)}
-							disabled={loading}>
-							Cancel
-						</Button>
-						<PrimaryButton
-							onClick={form.handleSubmit(handleSubmit)}
-							disabled={loading}>
-							{loading ? 'Creating...' : 'Create'}
-						</PrimaryButton>
-					</div>
-				</DialogFooter>
+			<DialogFooter>
+				<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
+					<Button
+						type='button'
+						variant='outline'
+						onClick={() => setOpen(false)}
+						disabled={isPending}>
+						Cancel
+					</Button>
+					<PrimaryButton
+						onClick={form.handleSubmit(handleSubmit)}
+						disabled={isPending}>
+						{isPending ? 'Creating...' : 'Create'}
+					</PrimaryButton>
+				</div>
+			</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
 };
-

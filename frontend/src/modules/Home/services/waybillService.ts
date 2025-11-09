@@ -62,6 +62,31 @@ const waybillService = {
   },
 
   /**
+   * Create a new waybill print
+   * @param invoiceNumber - Invoice number for the waybill
+   * @param waybillUrl - URL of the waybill to print
+   * @returns Promise with created waybill print
+   */
+  async createWaybillPrint(
+    invoiceNumber: string,
+    waybillUrl: string
+  ): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(WAYBILL_ENDPOINTS.CREATE_PRINT, {
+        invoice_number: invoiceNumber,
+        waybill_url: waybillUrl,
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to create waybill print: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Fetch network information for print job QR endpoint
    * @returns Promise with network info containing local IP and API URL
    */

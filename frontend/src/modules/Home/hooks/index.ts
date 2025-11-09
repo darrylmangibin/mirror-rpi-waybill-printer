@@ -1,2 +1,3 @@
 export { useGetWaybillPrints } from './useGetWaybillPrints';
+export { useCreateWaybillPrint } from './useCreateWaybillPrint';
 export { useGetPrintJobQREndPoint } from './useGetPrintJobQREndPoint';

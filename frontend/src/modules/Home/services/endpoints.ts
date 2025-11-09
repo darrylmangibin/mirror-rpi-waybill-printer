@@ -5,11 +5,9 @@
 export const WAYBILL_ENDPOINTS = {
   // Waybill operations
   LIST_PRINTS: '/api/waybills/prints',
-  
-  // Future endpoints for CRUD operations
-  // CREATE_PRINT: '/api/prints',
-  // UPDATE_PRINT: (id: number) => `/api/prints/${id}`,
-  // DELETE_PRINT: (id: number) => `/api/prints/${id}`,
+  CREATE_PRINT: '/api/waybills/prints',
+  UPDATE_PRINT: (id: number) => `/api/waybills/prints/${id}`,
+  DELETE_PRINT: (id: number) => `/api/waybills/prints/${id}`,
 } as const;
 
 export const NETWORK_ENDPOINTS = {
