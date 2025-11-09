@@ -14,9 +14,12 @@ import PrimaryButton from '@/components/global/components/buttons/PrimaryButton'
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 import { cn } from '@/lib';
 import { Button } from '@/components/ui/button';
+import { useDownloadWaybill } from '@/modules/Home/hooks';
 
 interface DownloadWaybillDialogProps {
 	waybillId: string;
+	invoiceNumber?: string | null;
+	waybillUrl?: string | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onConfirm?: (waybillId: string) => void;
@@ -25,15 +28,23 @@ interface DownloadWaybillDialogProps {
 
 export const DownloadWaybillDialog = ({
 	waybillId,
+	invoiceNumber,
+	waybillUrl,
 	open,
 	onOpenChange,
 	onConfirm,
 	showTrigger = true,
 }: DownloadWaybillDialogProps) => {
-	const handleConfirm = () => {
-		console.log(`Downloading waybill: ${waybillId}`);
-		onConfirm?.(waybillId);
-		onOpenChange(false);
+	const { mutateAsync, isPending, isError, error } = useDownloadWaybill();
+
+	const handleConfirm = async () => {
+		try {
+			await mutateAsync(waybillId);
+			onConfirm?.(waybillId);
+			onOpenChange(false);
+		} catch (err) {
+			console.error('Download failed:', err);
+		}
 	};
 
 	return (
@@ -79,22 +90,49 @@ export const DownloadWaybillDialog = ({
 					description='Are you sure you want to download this waybill?'
 				/>
 
-				<div className='px-4 py-4'>
-					<p className='text-sm text-gray-600'>
-						Waybill ID: <span className='font-semibold'>{waybillId}</span>
-					</p>
-				</div>
+			<div className='px-4 py-4 space-y-3'>
+				{invoiceNumber && (
+					<div>
+						<p className='text-xs text-gray-500 mb-1'>Invoice Number</p>
+						<p className='text-sm font-semibold text-gray-900'>{invoiceNumber}</p>
+					</div>
+				)}
+				
+				{waybillUrl && (
+					<div>
+						<p className='text-xs text-gray-500 mb-1'>Waybill URL</p>
+						<p className='text-sm text-blue-600 font-mono truncate hover:text-blue-800 cursor-pointer' 
+							title={waybillUrl}
+							onClick={() => {
+								if (waybillUrl) navigator.clipboard.writeText(waybillUrl);
+							}}>
+							{waybillUrl}
+						</p>
+					</div>
+				)}
+
+				{isError && (
+					<div className='bg-red-50 border border-red-200 rounded p-3 mt-3'>
+						<p className='text-sm text-red-700'>
+							{error || 'An error occurred during download'}
+						</p>
+					</div>
+				)}
+			</div>
 
 				<DialogFooter>
 					<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
 						<Button
 							type='button'
 							variant='outline'
-							onClick={() => onOpenChange(false)}>
+							onClick={() => onOpenChange(false)}
+							disabled={isPending}>
 							Cancel
 						</Button>
-						<PrimaryButton onClick={handleConfirm}>
-							Download
+						<PrimaryButton 
+							onClick={handleConfirm}
+							disabled={isPending}>
+							{isPending ? 'Downloading...' : 'Download'}
 						</PrimaryButton>
 					</div>
 				</DialogFooter>

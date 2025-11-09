@@ -1,2 +1,2 @@
-export { DownloadWaybillDialog } from './DownloadWaybillDialog';
+export { DownloadWaybillDialog } from './index.tsx';
 

@@ -87,6 +87,26 @@ const waybillService = {
   },
 
   /**
+   * Download a waybill file from URL and save to local storage
+   * @param waybillId - ID of the waybill to download
+   * @returns Promise with download result
+   */
+  async downloadWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.DOWNLOAD_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to download waybill: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Fetch network information for print job QR endpoint
    * @returns Promise with network info containing local IP and API URL
    */
