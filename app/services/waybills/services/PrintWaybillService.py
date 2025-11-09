@@ -1,4 +1,5 @@
 import os
+import cups
 from datetime import datetime
 from app.utils.loggers import get_logger
 from app.database import db
@@ -9,20 +10,61 @@ logger = get_logger(__name__)
 
 class PrintWaybillService:
     """
-    Service for printing waybill files.
+    Service for printing waybill files using CUPS.
     Similar to Laravel Service pattern for business logic separation.
     Handles file validation, status management, and printing process.
     """
     
-    def __init__(self):
-        """Initialize the service."""
-        pass
+    def __init__(self, printer_name=None):
+        """
+        Initialize the service with optional printer name.
+        If not specified, uses the default printer configured in CUPS.
+        
+        Args:
+            printer_name (str, optional): Name of the printer to use. Defaults to system default printer.
+        """
+        self.printer_name = printer_name
+    
+    def _get_cups_connection(self):
+        """
+        Get CUPS connection and determine printer to use.
+        
+        Returns:
+            tuple: (cups.Connection object, printer_name)
+        
+        Raises:
+            ValueError: If no printer is available
+        """
+        try:
+            conn = cups.Connection()
+            
+            # Use specified printer or get default
+            if self.printer_name:
+                printers = conn.getPrinters()
+                if self.printer_name not in printers:
+                    raise ValueError(f"Printer '{self.printer_name}' not found. Available printers: {list(printers.keys())}")
+                printer_name = self.printer_name
+            else:
+                # Get default printer from CUPS
+                default_printer = conn.getDefault()
+                if not default_printer:
+                    raise ValueError("No default printer configured in CUPS. Please set a default printer using: lpadmin -d <printer_name>")
+                printer_name = default_printer
+            
+            logger.info(f"CUPS connection established - Using printer: {printer_name}")
+            return conn, printer_name
+        
+        except cups.IPPError as e:
+            raise Exception(f"CUPS connection error: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Failed to connect to CUPS: {str(e)}")
     
     def print_waybill(self, waybill_print) -> dict:
         """
-        Print a waybill file.
+        Print a waybill file using CUPS.
         Validates local file path exists before processing.
-        Updates status to "for printing" and handles errors.
+        Updates status to "for printing" before sending to printer,
+        then to "printed" after successful submission.
         
         Args:
             waybill_print: WaybillPrint model instance
@@ -34,7 +76,9 @@ class PrintWaybillService:
                 'data': {
                     'waybill_id': int,
                     'invoice_number': str,
-                    'local_file_path': str (if successful)
+                    'local_file_path': str (if successful),
+                    'job_id': int (if successful),
+                    'printer': str (if successful)
                 }
             }
         """
@@ -53,14 +97,26 @@ class PrintWaybillService:
             # Log the file path for debugging
             logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}")
             
-            # Update status to "for printing" before processing
+            # Update status to "for printing" before sending to printer
             waybill_print.status = WaybillPrintStatuses.FOR_PRINTING.value
             db.session.commit()
             
             logger.info(f"Waybill status updated to 'for printing' - Invoice: {invoice_number}")
             
-            # TODO: Add actual printing logic here
-            # This is where you would integrate with the printer driver
+            # Get CUPS connection and printer
+            conn, printer_name = self._get_cups_connection()
+            
+            # Submit print job to CUPS
+            job_title = f"Waybill-{invoice_number}"
+            job_id = conn.printFile(printer_name, local_file_path, job_title, {})
+            
+            logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}")
+            
+            # Update status to "printed" after successful submission
+            waybill_print.status = WaybillPrintStatuses.PRINTED.value
+            db.session.commit()
+            
+            logger.info(f"Waybill status updated to 'printed' - Invoice: {invoice_number}, JobID: {job_id}")
             
             return {
                 'status': 'success',
@@ -68,7 +124,9 @@ class PrintWaybillService:
                 'data': {
                     'waybill_id': waybill_print.id,
                     'invoice_number': invoice_number,
-                    'local_file_path': local_file_path
+                    'local_file_path': local_file_path,
+                    'job_id': job_id,
+                    'printer': printer_name
                 }
             }
         
