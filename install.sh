@@ -106,20 +106,28 @@ echo -e "${YELLOW}Creating database tables...${NC}"
 flask db upgrade
 echo -e "${GREEN}✅ Database tables created${NC}"
 
-# Install frontend dependencies
-echo -e "${YELLOW}Installing frontend dependencies...${NC}"
-cd frontend
+# ============================================
+# FRONTEND SETUP
+# ============================================
 
 # Check if Node.js is installed
+echo -e "${YELLOW}Step 7: Checking Node.js/npm installation...${NC}"
 if ! command -v npm &> /dev/null; then
-    echo -e "${YELLOW}⚠️  Node.js/npm not found. Please install Node.js first:${NC}"
-    echo -e "${BLUE}   Ubuntu/Debian: sudo apt install nodejs npm${NC}"
-    echo -e "${BLUE}   Or visit: https://nodejs.org/${NC}"
-    exit 1
+    echo -e "${YELLOW}  Node.js/npm not found. Installing Node.js and npm...${NC}"
+    sudo apt update
+    sudo apt install -y nodejs npm
+    echo -e "${GREEN}  ✅ Node.js and npm installed${NC}"
+else
+    echo -e "${GREEN}  ✅ Node.js and npm already installed${NC}"
 fi
+
+# Install frontend dependencies
+echo -e "${YELLOW}Step 8: Installing frontend dependencies...${NC}"
+cd frontend
 
 # Install frontend packages
 npm install
+echo -e "${GREEN}  ✅ Frontend dependencies installed${NC}"
 
 # Return to root directory
 cd ..
