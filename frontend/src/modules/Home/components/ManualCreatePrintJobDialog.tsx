@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { PlusIcon } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 import {
 	Dialog,
 	DialogContent,
@@ -11,56 +14,71 @@ import PrimaryButton from '@/components/global/components/buttons/PrimaryButton'
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 import { cn } from '@/lib';
 import { Button } from '@/components/ui/button';
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 interface ManualCreatePrintJobDialogProps {
 	onSubmit?: (invoiceNumber: string, url: string) => Promise<void>;
 }
 
+const formSchema = z.object({
+	invoiceNumber: z
+		.string()
+		.min(1, 'Invoice number is required')
+		.trim(),
+	url: z
+		.string()
+		.min(1, 'URL is required')
+		.url('Please enter a valid URL'),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+const DEFAULT_WAYBILL_URL = 'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/68f0d71c4179b1760614172.png';
+
 export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDialogProps) => {
 	const [open, setOpen] = useState(false);
-	const [invoiceNumber, setInvoiceNumber] = useState('');
-	const [url, setUrl] = useState('');
 	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+
+	const form = useForm<FormValues>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			invoiceNumber: 'INV-001',
+			url: DEFAULT_WAYBILL_URL,
+		},
+	});
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen);
 		if (!newOpen) {
 			// Reset form when closing
-			setInvoiceNumber('');
-			setUrl('');
-			setError(null);
+			form.reset();
+			setSubmitError(null);
 		}
 	};
 
-	const handleSubmit = async () => {
-		setError(null);
-
-		if (!invoiceNumber.trim() || !url.trim()) {
-			setError('Please fill in all fields');
-			return;
-		}
-
-		// Basic URL validation
-		try {
-			new URL(url);
-		} catch {
-			setError('Please enter a valid URL');
-			return;
-		}
-
+	const handleSubmit = async (data: FormValues) => {
+		setSubmitError(null);
 		setLoading(true);
+
 		try {
 			if (onSubmit) {
-				await onSubmit(invoiceNumber, url);
+				await onSubmit(data.invoiceNumber, data.url);
 			}
 			setOpen(false);
-			setInvoiceNumber('');
-			setUrl('');
-			setError(null);
+			form.reset();
+			setSubmitError(null);
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : 'Failed to create print job';
-			setError(errorMessage);
+			setSubmitError(errorMessage);
 		} finally {
 			setLoading(false);
 		}
@@ -110,52 +128,65 @@ export const ManualCreatePrintJobDialog = ({ onSubmit }: ManualCreatePrintJobDia
 				/>
 
 				<div className='px-4 py-4 space-y-4'>
-					{error && (
+					{submitError && (
 						<div className='bg-red-50 border border-red-200 rounded p-3'>
-							<p className='text-sm text-red-600'>{error}</p>
+							<p className='text-sm text-red-600'>{submitError}</p>
 						</div>
 					)}
 
-					<div className='space-y-2'>
-						<label className='block text-sm font-medium text-gray-900'>
-							Invoice Number
-						</label>
-						<input
-							type='text'
-							value={invoiceNumber}
-							onChange={(e) => setInvoiceNumber(e.target.value)}
-							placeholder='Enter invoice number'
-							disabled={loading}
-							className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 disabled:bg-gray-100'
-						/>
-					</div>
+					<Form {...form}>
+						<form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-4'>
+							<FormField
+								control={form.control}
+								name='invoiceNumber'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Invoice Number</FormLabel>
+										<FormControl>
+											<Input
+												placeholder='Enter invoice number'
+												disabled={loading}
+												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 
-					<div className='space-y-2'>
-						<label className='block text-sm font-medium text-gray-900'>
-							URL
-						</label>
-						<input
-							type='url'
-							value={url}
-							onChange={(e) => setUrl(e.target.value)}
-							placeholder='Enter URL to print'
-							disabled={loading}
-							className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 disabled:bg-gray-100'
-						/>
-					</div>
+							<FormField
+								control={form.control}
+								name='url'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>URL</FormLabel>
+										<FormControl>
+											<Input
+												type='url'
+												placeholder='Enter URL to print'
+												disabled={loading}
+												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</form>
+					</Form>
 				</div>
 
 				<DialogFooter>
 					<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
 						<Button
-              type='button'
-              variant='outline'
+							type='button'
+							variant='outline'
 							onClick={() => setOpen(false)}
 							disabled={loading}>
 							Cancel
 						</Button>
 						<PrimaryButton
-							onClick={handleSubmit}
+							onClick={form.handleSubmit(handleSubmit)}
 							disabled={loading}>
 							{loading ? 'Creating...' : 'Create'}
 						</PrimaryButton>
