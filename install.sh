@@ -38,7 +38,8 @@ fi
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}Creating Python virtual environment...${NC}"
-    python3 -m venv venv
+    # Use --system-site-packages to allow access to system-installed packages like python3-cups
+    python3 -m venv --system-site-packages venv
 fi
 
 # Activate virtual environment
