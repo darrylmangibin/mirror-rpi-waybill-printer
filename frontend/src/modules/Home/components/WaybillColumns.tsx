@@ -15,7 +15,7 @@ import type { WaybillPrint } from '@/modules/Home/services';
 export type { WaybillPrint } from '@/modules/Home/services';
 
 export interface WaybillColumnsContext {
-	onDownloadClick: (waybillId: string) => void;
+	onDownloadClick: (waybill: WaybillPrint) => void;
 }
 
 export const getWaybillColumns = (
@@ -117,9 +117,9 @@ export const getWaybillColumns = (
 					<DropdownMenuContent
 						align='end'
 						className='bg-white border-gray-200'>
-						<DropdownMenuItem
-							onClick={() => context.onDownloadClick(String(waybill.id))}
-							className='text-gray-900 hover:bg-gray-100 p-0!'>
+					<DropdownMenuItem
+						onClick={() => context.onDownloadClick(waybill)}
+						className='text-gray-900 hover:bg-gray-100 p-0!'>
 							<Button
 								asChild
 								type='button'

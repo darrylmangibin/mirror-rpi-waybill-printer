@@ -2,7 +2,7 @@ import React from 'react';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
-import { getWaybillColumns } from '@/modules/Home/components/WaybillColumns';
+import { getWaybillColumns, type WaybillPrint } from '@/modules/Home/components/WaybillColumns';
 import { useGetWaybillPrints } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
@@ -11,11 +11,11 @@ import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybill
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
-	const [selectedWaybillId, setSelectedWaybillId] = React.useState<string>('');
+	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints();
 
-	const handleDownloadClick = (waybillId: string) => {
-		setSelectedWaybillId(waybillId);
+	const handleDownloadClick = (waybill: WaybillPrint) => {
+		setSelectedWaybill(waybill);
 		setDownloadDialogOpen(true);
 	};
 
@@ -83,13 +83,17 @@ const Home = () => {
 					isLoading={loading}
 				/>
 
-			{/* DIALOGS / MODALS */}
+		{/* DIALOGS / MODALS */}
+		{selectedWaybill && (
 			<DownloadWaybillDialog
-				waybillId={selectedWaybillId}
+				waybillId={String(selectedWaybill.id)}
+				invoiceNumber={selectedWaybill.invoice_number}
+				waybillUrl={selectedWaybill.waybill_url}
 				open={downloadDialogOpen}
 				onOpenChange={setDownloadDialogOpen}
 				showTrigger={false}
 			/>
+		)}
 			</div>
 		</>
 	);
