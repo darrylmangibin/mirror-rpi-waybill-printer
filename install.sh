@@ -20,12 +20,19 @@ fi
 echo -e "${YELLOW}Installing CUPS (Common Unix Printing System)...${NC}"
 if ! command -v lpstat &> /dev/null; then
     sudo apt update
-    sudo apt install -y cups cups-client
+    sudo apt install -y cups cups-client libcups2-dev
     sudo systemctl start cups
     sudo systemctl enable cups
     echo -e "${GREEN}✅ CUPS installed and enabled${NC}"
 else
     echo -e "${GREEN}✅ CUPS already installed${NC}"
+    # Ensure development headers are installed for Python bindings
+    if ! dpkg -l | grep -q libcups2-dev; then
+        echo -e "${YELLOW}Installing CUPS development headers...${NC}"
+        sudo apt update
+        sudo apt install -y libcups2-dev
+        echo -e "${GREEN}✅ CUPS development headers installed${NC}"
+    fi
 fi
 
 # Create virtual environment if it doesn't exist
