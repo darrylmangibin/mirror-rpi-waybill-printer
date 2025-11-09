@@ -1,8 +1,4 @@
-import { useState } from 'react';
 import { PlusIcon } from 'lucide-react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 import {
 	Dialog,
 	DialogContent,
@@ -27,69 +23,20 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCreateWaybillPrint } from '@/modules/Home/hooks';
+import { useManualPrintJobForm } from './useManualPrintJobForm';
 
 interface ManualCreatePrintJobDialogProps {
 	onSubmit?: (invoiceNumber: string, url: string) => Promise<void>;
 }
 
-const formSchema = z.object({
-	invoiceNumber: z.string().min(1, 'Invoice number is required').trim(),
-	url: z.string().min(1, 'URL is required').url('Please enter a valid URL'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-const DEFAULT_WAYBILL_URL =
-	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/68f0d71c4179b1760614172.png';
-
 export const ManualCreatePrintJobDialog = ({
 	onSubmit,
 }: ManualCreatePrintJobDialogProps) => {
-	const [open, setOpen] = useState(false);
-	const { mutateAsync, isPending } = useCreateWaybillPrint();
-
-	const form = useForm<FormValues>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			invoiceNumber: 'INV-001',
-			url: DEFAULT_WAYBILL_URL,
-		},
-	});
-
-	const handleOpenChange = (newOpen: boolean) => {
-		setOpen(newOpen);
-		if (!newOpen) {
-			// Reset form when closing
-			form.reset();
-		}
-	};
-
-	const handleSubmit = async (data: FormValues) => {
-		try {
-			// Call the backend API to create waybill print
-			await mutateAsync({
-				invoiceNumber: data.invoiceNumber,
-				waybillUrl: data.url,
-			});
-
-			// Call onSubmit callback if provided (for backward compatibility)
-			if (onSubmit) {
-				await onSubmit(data.invoiceNumber, data.url);
-			}
-
-			setOpen(false);
-			form.reset();
-		} catch (error) {
-			// Error is handled by the hook, just close on success
-			console.error('Failed to create waybill print:', error);
-		}
-	};
+	const { open, handleOpenChange, form, handleSubmit, isPending } =
+		useManualPrintJobForm({ onSuccess: onSubmit });
 
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={handleOpenChange}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<div className='flex flex-col gap-1'>
 					<Tooltip>
@@ -174,23 +121,24 @@ export const ManualCreatePrintJobDialog = ({
 					</Form>
 				</div>
 
-			<DialogFooter>
-				<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
-					<Button
-						type='button'
-						variant='outline'
-						onClick={() => setOpen(false)}
-						disabled={isPending}>
-						Cancel
-					</Button>
-					<PrimaryButton
-						onClick={form.handleSubmit(handleSubmit)}
-						disabled={isPending}>
-						{isPending ? 'Creating...' : 'Create'}
-					</PrimaryButton>
-				</div>
-			</DialogFooter>
+				<DialogFooter>
+					<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
+						<Button
+							type='button'
+							variant='outline'
+							onClick={() => handleOpenChange(false)}
+							disabled={isPending}>
+							Cancel
+						</Button>
+						<PrimaryButton
+							onClick={form.handleSubmit(handleSubmit)}
+							disabled={isPending}>
+							{isPending ? 'Creating...' : 'Create'}
+						</PrimaryButton>
+					</div>
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
 };
+
