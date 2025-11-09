@@ -2,6 +2,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { WaybillPrintStatusBadge } from '@/modules/Home/components/WaybillPrintStatusBadge';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -65,16 +66,7 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 		header: 'Status',
 		cell: ({ row }) => {
 			const status = row.getValue('status') as string;
-			return (
-				<div className='flex items-center'>
-					<span
-						className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getStatusBadge(
-							status
-						)}`}>
-						{status}
-					</span>
-				</div>
-			);
+			return <WaybillPrintStatusBadge status={status} />;
 		},
 	},
 	{
