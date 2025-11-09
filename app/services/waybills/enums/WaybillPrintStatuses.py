@@ -10,7 +10,7 @@ class WaybillPrintStatuses(Enum):
     PENDING = "pending"
     DOWNLOADED = "downloaded"
     FOR_PRINTING = "for printing"
-    PRINTED = "printed"
+    COMPLETED = "completed"
     ERROR = "error"
     
     def __str__(self):
