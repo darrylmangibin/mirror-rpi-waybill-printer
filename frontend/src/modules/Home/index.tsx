@@ -5,6 +5,7 @@ import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { waybillColumns } from '@/modules/Home/components/WaybillColumns';
 import { useGetWaybillPrints } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
+import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -52,7 +53,10 @@ const Home = () => {
 						/>
 					</div>
 					{/* Commented for now */}
-					<ScanPrintJobDialog />
+					<div className='flex gap-2'>
+						<ManualCreatePrintJobDialog />
+						<ScanPrintJobDialog />
+					</div>
 				</div>
 
 				<DataTable
