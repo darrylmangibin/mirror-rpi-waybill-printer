@@ -21,9 +21,6 @@ export interface PaginationProps<TData> {
 }
 
 export function Pagination<TData>({ table, className, currentPage: externalCurrentPage, totalPages: externalTotalPages, onPageChange, isLoading }: PaginationProps<TData>) {
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length
-  const totalCount = table.getRowModel().rows.length
-  
   // Use external pagination if provided, otherwise use table's internal pagination
   const pageCount = externalTotalPages ?? table.getPageCount()
   const currentPage = externalCurrentPage ?? (table.getState().pagination.pageIndex + 1)
