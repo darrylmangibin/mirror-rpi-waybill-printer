@@ -3,7 +3,7 @@ from flask_sieve import validate
 from app.services.waybills.requests import StoreWaybillRequest
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
-from app.services.waybills.actions import DownloadWaybillAction
+from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction
 from app.utils.decorators import get_model
 
 # Create a Blueprint for waybill routes
@@ -47,5 +47,15 @@ def download(waybill_print):
     """Download a waybill file from URL and save to local storage."""
     download_action = DownloadWaybillAction()
     result = download_action(waybill_print)
+    status_code = 200 if result.get('status') == 'success' else 400
+    return jsonify(result), status_code
+
+
+@waybills_bp.route('/prints/<int:waybill_print>/print', methods=['POST'])
+@get_model(WaybillPrint)
+def print_waybill(waybill_print):
+    """Print a waybill."""
+    print_action = PrintWaybillAction()
+    result = print_action(waybill_print)
     status_code = 200 if result.get('status') == 'success' else 400
     return jsonify(result), status_code
