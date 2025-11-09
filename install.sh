@@ -16,6 +16,18 @@ if ! command -v python3 &> /dev/null; then
     echo -e "${GREEN}✅ Python 3 installed${NC}"
 fi
 
+# Install CUPS for printing functionality
+echo -e "${YELLOW}Installing CUPS (Common Unix Printing System)...${NC}"
+if ! command -v lpstat &> /dev/null; then
+    sudo apt update
+    sudo apt install -y cups cups-client
+    sudo systemctl start cups
+    sudo systemctl enable cups
+    echo -e "${GREEN}✅ CUPS installed and enabled${NC}"
+else
+    echo -e "${GREEN}✅ CUPS already installed${NC}"
+fi
+
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}Creating Python virtual environment...${NC}"
