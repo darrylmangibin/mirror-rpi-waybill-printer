@@ -1,4 +1,4 @@
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontalIcon, DownloadIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,8 +7,6 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -16,7 +14,13 @@ import type { WaybillPrint } from '@/modules/Home/services';
 
 export type { WaybillPrint } from '@/modules/Home/services';
 
-export const waybillColumns: ColumnDef<WaybillPrint>[] = [
+export interface WaybillColumnsContext {
+	onDownloadClick: (waybillId: string) => void;
+}
+
+export const getWaybillColumns = (
+	context: WaybillColumnsContext
+): ColumnDef<WaybillPrint>[] => [
 	{
 		id: 'select',
 		header: ({ table }) => (
@@ -107,28 +111,26 @@ export const waybillColumns: ColumnDef<WaybillPrint>[] = [
 							variant='ghost'
 							className='h-8 w-8 p-0 hover:bg-gray-100'>
 							<span className='sr-only'>Open menu</span>
-							<MoreHorizontal className='h-4 w-4' />
+							<MoreHorizontalIcon className='h-4 w-4' />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align='end'
 						className='bg-white border-gray-200'>
-						<DropdownMenuLabel>Actions</DropdownMenuLabel>
 						<DropdownMenuItem
-							onClick={() => {
-								if (waybill.invoice_number) {
-									navigator.clipboard.writeText(waybill.invoice_number);
-								}
-							}}
-							className='text-gray-900 hover:bg-gray-100'>
-							Copy invoice number
-						</DropdownMenuItem>
-						<DropdownMenuSeparator className='bg-gray-200' />
-						<DropdownMenuItem className='text-gray-900 hover:bg-gray-100'>
-							View details
-						</DropdownMenuItem>
-						<DropdownMenuItem className='text-red-600 hover:bg-red-50'>
-							Delete waybill
+							onClick={() => context.onDownloadClick(String(waybill.id))}
+							className='text-gray-900 hover:bg-gray-100 p-0!'>
+							<Button
+								asChild
+								type='button'
+								variant='ghost'
+								size='sm'
+								className='hover:bg-transparent'>
+								<div className='flex items-center justify-end gap-2'>
+									<DownloadIcon className='h-4 w-4' />
+									<span className='text-xs'>Download</span>
+								</div>
+							</Button>
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>

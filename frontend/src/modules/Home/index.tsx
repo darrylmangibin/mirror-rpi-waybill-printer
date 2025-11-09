@@ -2,14 +2,27 @@ import React from 'react';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
-import { waybillColumns } from '@/modules/Home/components/WaybillColumns';
+import { getWaybillColumns } from '@/modules/Home/components/WaybillColumns';
 import { useGetWaybillPrints } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
+import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
+	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
+	const [selectedWaybillId, setSelectedWaybillId] = React.useState<string>('');
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints();
+
+	const handleDownloadClick = (waybillId: string) => {
+		setSelectedWaybillId(waybillId);
+		setDownloadDialogOpen(true);
+	};
+
+	const waybillColumns = React.useMemo(
+		() => getWaybillColumns({ onDownloadClick: handleDownloadClick }),
+		[]
+	);
 
 	const handleRowsSelected = (rows: typeof waybills) => {
 		console.log('Selected rows:', rows);
@@ -69,6 +82,14 @@ const Home = () => {
 					onPageChange={actions.goToPage}
 					isLoading={loading}
 				/>
+
+			{/* DIALOGS / MODALS */}
+			<DownloadWaybillDialog
+				waybillId={selectedWaybillId}
+				open={downloadDialogOpen}
+				onOpenChange={setDownloadDialogOpen}
+				showTrigger={false}
+			/>
 			</div>
 		</>
 	);
