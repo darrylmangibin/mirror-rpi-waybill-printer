@@ -9,6 +9,7 @@ export const WAYBILL_ENDPOINTS = {
   UPDATE_PRINT: (id: number) => `/api/waybills/prints/${id}`,
   DELETE_PRINT: (id: number) => `/api/waybills/prints/${id}`,
   DOWNLOAD_PRINT: (id: number) => `/api/waybills/prints/${id}/download`,
+  UPDATE_STATUS: (id: number) => `/api/waybills/prints/${id}/status`,
 } as const;
 
 export const NETWORK_ENDPOINTS = {

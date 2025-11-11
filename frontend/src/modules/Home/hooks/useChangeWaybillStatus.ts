@@ -15,7 +15,7 @@ export const useChangeWaybillStatus = () => {
 	const mutation = useMutation({
 		mutationFn: async ({ waybillId, newStatus }: ChangeStatusPayload) => {
 			const response = await api.put<ChangeStatusResponse>(
-				`/waybills/prints/${waybillId}/status`,
+				`/api/waybills/prints/${waybillId}/status`,
 				{ status: newStatus }
 			);
 			return response.data;
