@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import { Toaster } from 'sonner'
+import { Toaster } from '@/components/ui/sonner'
 import Home from '@/pages/home/page'
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
       </Routes>
-      <Toaster />
+      <Toaster position="top-right" />
     </main>
   )
 }
