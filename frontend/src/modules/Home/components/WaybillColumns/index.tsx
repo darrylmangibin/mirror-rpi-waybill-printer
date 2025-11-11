@@ -1,9 +1,10 @@
 import { MoreHorizontalIcon, DownloadIcon } from 'lucide-react';
-import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { WaybillPrintStatusBadge } from '@/modules/Home/components/WaybillPrintStatusBadge';
 import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/components/WaybillUrlBadge';
+import { FilePath } from '@/modules/Home/components/WaybillColumns/components/FilePath';
+import { FormattedDate } from '@/components/global';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -48,7 +49,7 @@ export const getWaybillColumns = (
 		accessorKey: 'invoice_number',
 		header: 'Invoice',
 		cell: ({ row }) => (
-			<div className='font-medium text-gray-900'>
+			<div className=' text-gray-900 text-xs'>
 				{row.getValue('invoice_number')}
 			</div>
 		),
@@ -74,18 +75,7 @@ export const getWaybillColumns = (
 		header: 'File Path',
 		cell: ({ row }) => {
 			const path = row.getValue('local_file_path') as string | null;
-			if (!path) return <div className='text-gray-500'>-</div>;
-			
-			// Extract just the filename
-			const filename = path.split('/').pop() || path;
-			
-			return (
-				<div 
-					className='text-xs text-gray-600 cursor-pointer hover:text-gray-900 transition-colors'
-					title={path}>
-					{filename}
-				</div>
-			);
+			return <FilePath path={path} />;
 		},
 	},
 	{
@@ -93,11 +83,15 @@ export const getWaybillColumns = (
 		header: 'Downloaded At',
 		cell: ({ row }) => {
 			const date = row.getValue('downloaded_at') as string | null;
-			return (
-				<div className='text-sm text-gray-700'>
-					{date ? format(new Date(date), 'MMM d, yyyy h:mm a') : '-'}
-				</div>
-			);
+			return <FormattedDate date={date} />;
+		},
+	},
+	{
+		accessorKey: 'created_at',
+		header: 'Created At',
+		cell: ({ row }) => {
+			const date = row.getValue('created_at') as string | null;
+			return <FormattedDate date={date} />;
 		},
 	},
 	{
@@ -119,9 +113,9 @@ export const getWaybillColumns = (
 					<DropdownMenuContent
 						align='end'
 						className='bg-white border-gray-200'>
-					<DropdownMenuItem
-						onClick={() => context.onDownloadClick(waybill)}
-						className='text-gray-900 hover:bg-gray-100 p-0!'>
+						<DropdownMenuItem
+							onClick={() => context.onDownloadClick(waybill)}
+							className='text-gray-900 hover:bg-gray-100 p-0!'>
 							<Button
 								asChild
 								type='button'
