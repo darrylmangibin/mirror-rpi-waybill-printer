@@ -34,6 +34,7 @@ instance/
 # Environment
 .env
 .env.local
+!.env.example
 
 # Frontend
 frontend/node_modules/
