@@ -1,6 +1,7 @@
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
+from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 
 logger = get_logger(__name__)
 
@@ -73,25 +74,26 @@ class WaybillPrintService:
     def change_status(waybill_print: WaybillPrint, status: str) -> WaybillPrint:
         """
         Change the status of a WaybillPrint record.
+        Validates status against WaybillPrintStatuses enum.
         
         Args:
             waybill_print (WaybillPrint): The waybill print instance to update
-            status (str): New status value ('pending', 'downloaded', 'failed')
+            status (str): New status value from WaybillPrintStatuses enum
         
         Returns:
             WaybillPrint: The updated waybill print instance
             
         Raises:
-            ValueError: If status is invalid
+            ValueError: If status is not a valid enum value
             Exception: If database update fails
             
         Example:
             >>> waybill = WaybillPrint.query.get(1)
-            >>> updated = WaybillPrintService.change_status(waybill, 'downloaded')
+            >>> updated = WaybillPrintService.change_status(waybill, WaybillPrintStatuses.DOWNLOADED.value)
         """
         try:
-            # Validate status
-            valid_statuses = ['pending', 'downloaded', 'failed']
+            # Validate status against enum values
+            valid_statuses = [s.value for s in WaybillPrintStatuses]
             if status not in valid_statuses:
                 raise ValueError(f"Invalid status: {status}. Must be one of {valid_statuses}")
             
@@ -99,11 +101,11 @@ class WaybillPrintService:
             waybill_print.status = status
             db.session.commit()
             
-            logger.info(f"WaybillPrint status updated - ID: {waybill_print.id}, Status: {status}")
+            logger.info(f"WaybillPrint status changed - ID: {waybill_print.id}, Status: {status}")
             
             return waybill_print
             
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Error updating WaybillPrint status: {str(e)}", exc_info=True)
+            logger.error(f"Error changing WaybillPrint status: {str(e)}", exc_info=True)
             raise

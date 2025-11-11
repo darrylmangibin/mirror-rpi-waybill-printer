@@ -1,6 +1,7 @@
 from app.utils.loggers import get_logger
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.services.WaybillPrintService import WaybillPrintService
+from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 
 logger = get_logger(__name__)
 
