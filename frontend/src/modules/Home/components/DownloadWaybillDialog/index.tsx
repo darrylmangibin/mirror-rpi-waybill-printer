@@ -23,6 +23,8 @@ interface DownloadWaybillDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onConfirm?: (waybillId: string) => void;
+	onDownloadStart?: () => void;
+	onDownloadComplete?: () => void;
 	showTrigger?: boolean;
 }
 
@@ -33,9 +35,14 @@ export const DownloadWaybillDialog = ({
 	open,
 	onOpenChange,
 	onConfirm,
+	onDownloadStart,
+	onDownloadComplete,
 	showTrigger = true,
 }: DownloadWaybillDialogProps) => {
-	const { mutateAsync, isPending, isError, error } = useDownloadWaybill();
+	const { mutateAsync, isPending, isError, error } = useDownloadWaybill({
+		onDownloadStart,
+		onDownloadComplete,
+	});
 
 	const handleConfirm = async () => {
 		try {

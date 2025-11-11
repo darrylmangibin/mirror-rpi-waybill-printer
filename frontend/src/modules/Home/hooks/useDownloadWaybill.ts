@@ -2,12 +2,18 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { waybillService, type WaybillsResponse } from '@/modules/Home/services';
 import { WAYBILL_QUERY_KEYS } from '@/modules/Home/constants';
 
+interface DownloadWaybillOptions {
+  onDownloadStart?: () => void;
+  onDownloadComplete?: () => void;
+}
+
 /**
  * Hook to download a waybill file using TanStack Query
  * Automatically invalidates waybill list on success
+ * Supports callbacks to trigger polling during download
  * @returns Mutation object with state and mutate function
  */
-export const useDownloadWaybill = () => {
+export const useDownloadWaybill = (options?: DownloadWaybillOptions) => {
   const queryClient = useQueryClient();
 
   const {
@@ -23,18 +29,25 @@ export const useDownloadWaybill = () => {
     Error,
     string | number
   >({
-    mutationFn: (waybillId) =>
-      waybillService.downloadWaybill(waybillId),
+    mutationFn: (waybillId) => {
+      // Trigger polling when download starts
+      options?.onDownloadStart?.();
+      return waybillService.downloadWaybill(waybillId);
+    },
     
     onSuccess: () => {
       // Invalidate the waybill list query to refetch data
       queryClient.invalidateQueries({
         queryKey: [WAYBILL_QUERY_KEYS.waybills],
       });
+      // Stop polling after successful download
+      options?.onDownloadComplete?.();
     },
     
     onError: (error: Error) => {
       console.error('Failed to download waybill:', error.message);
+      // Stop polling after error
+      options?.onDownloadComplete?.();
     },
   });
 

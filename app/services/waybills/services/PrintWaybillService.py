@@ -136,7 +136,7 @@ class PrintWaybillService:
             
             # Update database with error status
             try:
-                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
                 waybill_print.error_message = error_msg
                 db.session.commit()
             except Exception as db_error:
@@ -170,7 +170,7 @@ class PrintWaybillService:
             
             # Update database with error status
             try:
-                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
                 waybill_print.error_message = error_msg
                 db.session.commit()
             except Exception as db_error:

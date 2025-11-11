@@ -145,7 +145,7 @@ class WaybillDownloadService:
             file_size = os.path.getsize(filepath)
             
             # Update database record with download status
-            waybill_print.status = WaybillPrintStatuses.FOR_PRINTING.value
+            waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
             waybill_print.local_file_path = filepath
             waybill_print.downloaded_at = datetime.now().replace(microsecond=0)
             db.session.commit()
@@ -168,7 +168,7 @@ class WaybillDownloadService:
             
             # Update database with error status
             try:
-                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
                 waybill_print.error_message = error_msg
                 db.session.commit()
             except Exception as db_error:
@@ -189,7 +189,7 @@ class WaybillDownloadService:
             
             # Update database with error status
             try:
-                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
                 waybill_print.error_message = error_msg
                 db.session.commit()
             except Exception as db_error:
@@ -210,7 +210,7 @@ class WaybillDownloadService:
             
             # Update database with error status
             try:
-                waybill_print.status = WaybillPrintStatuses.FAILED.value
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
                 waybill_print.error_message = error_msg
                 db.session.commit()
             except Exception as db_error:

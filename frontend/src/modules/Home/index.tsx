@@ -12,7 +12,8 @@ const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
-	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints();
+	const [isPolling, setIsPolling] = React.useState(false);
+	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, 2000);
 
 	const handleDownloadClick = (waybill: WaybillPrint) => {
 		setSelectedWaybill(waybill);
@@ -83,17 +84,19 @@ const Home = () => {
 					isLoading={loading}
 				/>
 
-		{/* DIALOGS / MODALS */}
-		{selectedWaybill && (
-			<DownloadWaybillDialog
-				waybillId={String(selectedWaybill.id)}
-				invoiceNumber={selectedWaybill.invoice_number}
-				waybillUrl={selectedWaybill.waybill_url}
-				open={downloadDialogOpen}
-				onOpenChange={setDownloadDialogOpen}
-				showTrigger={false}
-			/>
-		)}
+	{/* DIALOGS / MODALS */}
+	{selectedWaybill && (
+		<DownloadWaybillDialog
+			waybillId={String(selectedWaybill.id)}
+			invoiceNumber={selectedWaybill.invoice_number}
+			waybillUrl={selectedWaybill.waybill_url}
+			open={downloadDialogOpen}
+			onOpenChange={setDownloadDialogOpen}
+			onDownloadStart={() => setIsPolling(true)}
+			onDownloadComplete={() => setIsPolling(false)}
+			showTrigger={false}
+		/>
+	)}
 			</div>
 		</>
 	);
