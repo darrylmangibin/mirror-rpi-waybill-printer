@@ -68,75 +68,42 @@ class WaybillPrintService:
             db.session.rollback()
             logger.error(f"Error deleting WaybillPrint: {str(e)}", exc_info=True)
             raise
-    # ============================================================================
-    # SCALABILITY: Other CRUD operations (for future implementation)
-    # ============================================================================
     
-    # @staticmethod
-    # def all() -> list:
-    #     """Retrieve all WaybillPrint records."""
-    #     try:
-    #         return WaybillPrint.query.all()
-    #     except Exception as e:
-    #         logger.error(f"Error retrieving all WaybillPrints: {str(e)}", exc_info=True)
-    #         raise
-    
-    # @staticmethod
-    # def find(id: int) -> WaybillPrint:
-    #     """Find a WaybillPrint record by ID."""
-    #     try:
-    #         waybill = WaybillPrint.query.get(id)
-    #         if not waybill:
-    #             raise ValueError(f"WaybillPrint with ID {id} not found")
-    #         return waybill
-    #     except Exception as e:
-    #         logger.error(f"Error finding WaybillPrint: {str(e)}", exc_info=True)
-    #         raise
-    
-    # @staticmethod
-    # def find_by_invoice_number(invoice_number: str) -> WaybillPrint:
-    #     """Find a WaybillPrint record by invoice number."""
-    #     try:
-    #         return WaybillPrint.query.filter_by(invoice_number=invoice_number).first()
-    #     except Exception as e:
-    #         logger.error(f"Error finding WaybillPrint by invoice: {str(e)}", exc_info=True)
-    #         raise
-    
-    # @staticmethod
-    # def update(id: int, data: dict) -> WaybillPrint:
-    #     """Update an existing WaybillPrint record."""
-    #     try:
-    #         waybill = WaybillPrint.query.get(id)
-    #         if not waybill:
-    #             raise ValueError(f"WaybillPrint with ID {id} not found")
-    #         
-    #         # Update only provided fields
-    #         if 'invoice_number' in data:
-    #             waybill.invoice_number = data['invoice_number']
-    #         if 'waybill_url' in data:
-    #             waybill.waybill_url = data['waybill_url']
-    #         
-    #         db.session.commit()
-    #         logger.info(f"WaybillPrint updated - ID: {id}")
-    #         return waybill
-    #     except Exception as e:
-    #         db.session.rollback()
-    #         logger.error(f"Error updating WaybillPrint: {str(e)}", exc_info=True)
-    #         raise
-    
-    # @staticmethod
-    # def delete(id: int) -> bool:
-    #     """Delete a WaybillPrint record."""
-    #     try:
-    #         waybill = WaybillPrint.query.get(id)
-    #         if not waybill:
-    #             raise ValueError(f"WaybillPrint with ID {id} not found")
-    #         
-    #         db.session.delete(waybill)
-    #         db.session.commit()
-    #         logger.info(f"WaybillPrint deleted - ID: {id}")
-    #         return True
-    #     except Exception as e:
-    #         db.session.rollback()
-    #         logger.error(f"Error deleting WaybillPrint: {str(e)}", exc_info=True)
-    #         raise
+    @staticmethod
+    def change_status(waybill_print: WaybillPrint, status: str) -> WaybillPrint:
+        """
+        Change the status of a WaybillPrint record.
+        
+        Args:
+            waybill_print (WaybillPrint): The waybill print instance to update
+            status (str): New status value ('pending', 'downloaded', 'failed')
+        
+        Returns:
+            WaybillPrint: The updated waybill print instance
+            
+        Raises:
+            ValueError: If status is invalid
+            Exception: If database update fails
+            
+        Example:
+            >>> waybill = WaybillPrint.query.get(1)
+            >>> updated = WaybillPrintService.change_status(waybill, 'downloaded')
+        """
+        try:
+            # Validate status
+            valid_statuses = ['pending', 'downloaded', 'failed']
+            if status not in valid_statuses:
+                raise ValueError(f"Invalid status: {status}. Must be one of {valid_statuses}")
+            
+            # Update status
+            waybill_print.status = status
+            db.session.commit()
+            
+            logger.info(f"WaybillPrint status updated - ID: {waybill_print.id}, Status: {status}")
+            
+            return waybill_print
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error updating WaybillPrint status: {str(e)}", exc_info=True)
+            raise

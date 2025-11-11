@@ -151,3 +151,37 @@ class WaybillPrintController:
                 "status": "error",
                 "message": str(e)
             }
+    
+    def change_status(self, waybill_print: WaybillPrint, status: str) -> dict:
+        """
+        Change the status of a waybill print.
+        
+        Args:
+            waybill_print: WaybillPrint model instance to update
+            status: New status value ('pending', 'downloaded', 'failed')
+            
+        Returns:
+            dict: Response with status and updated waybill data
+        """
+        try:
+            # Call service method to change status
+            updated_waybill = WaybillPrintService.change_status(waybill_print, status)
+            
+            return {
+                "status": "success",
+                "message": f"Waybill status updated to '{status}' successfully",
+                "data": updated_waybill.to_dict()
+            }
+            
+        except ValueError as e:
+            logger.warning(f"Validation error updating status: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+        except Exception as e:
+            logger.error(f"Error updating waybill status: {str(e)}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
