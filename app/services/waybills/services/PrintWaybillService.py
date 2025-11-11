@@ -1,4 +1,5 @@
 import os
+import time
 import cups
 from datetime import datetime
 from app.utils.loggers import get_logger
@@ -59,12 +60,102 @@ class PrintWaybillService:
         except Exception as e:
             raise Exception(f"Failed to connect to CUPS: {str(e)}")
     
+    def _poll_job_status(self, conn, job_id, invoice_number, max_wait_seconds=300, poll_interval=1):
+        """
+        Poll CUPS job status until completion or timeout.
+        
+        Args:
+            conn: CUPS connection object
+            job_id: Job ID to monitor
+            invoice_number: Invoice number for logging
+            max_wait_seconds: Maximum time to wait for job completion (default 5 minutes)
+            poll_interval: How often to check job status in seconds (default 1 second)
+        
+        Returns:
+            dict: {
+                'completed': bool,
+                'state': int,
+                'state_name': str,
+                'message': str
+            }
+        
+        CUPS Job States:
+            3 = PENDING (queued, waiting)
+            5 = PROCESSING (currently printing)
+            9 = COMPLETED (done successfully)
+            7 = CANCELED (user canceled)
+            8 = ABORTED (error occurred)
+        """
+        start_time = time.time()
+        
+        # Map CUPS job states to readable names
+        state_names = {
+            3: "PENDING",
+            5: "PROCESSING",
+            9: "COMPLETED",
+            7: "CANCELED",
+            8: "ABORTED"
+        }
+        
+        while True:
+            try:
+                # Get job attributes from CUPS
+                job_attrs = conn.getJobAttributes(job_id)
+                job_state = job_attrs.get('job-state', [None])[0]
+                
+                state_name = state_names.get(job_state, "UNKNOWN")
+                logger.info(f"CUPS Job Status - JobID: {job_id}, Invoice: {invoice_number}, State: {state_name} ({job_state})")
+                
+                # Check if job reached terminal state
+                if job_state == 9:  # COMPLETED
+                    logger.info(f"✅ Print job completed - JobID: {job_id}, Invoice: {invoice_number}")
+                    return {
+                        'completed': True,
+                        'state': job_state,
+                        'state_name': state_name,
+                        'message': 'Job completed successfully'
+                    }
+                
+                elif job_state in [7, 8]:  # CANCELED or ABORTED
+                    logger.warning(f"⚠️ Print job failed - JobID: {job_id}, Invoice: {invoice_number}, State: {state_name}")
+                    return {
+                        'completed': False,
+                        'state': job_state,
+                        'state_name': state_name,
+                        'message': f'Job {state_name.lower()}'
+                    }
+                
+                # Check if timeout exceeded
+                elapsed = time.time() - start_time
+                if elapsed > max_wait_seconds:
+                    logger.error(f"⏱️ Print job timeout - JobID: {job_id}, Invoice: {invoice_number}, Waited {elapsed}s")
+                    return {
+                        'completed': False,
+                        'state': job_state,
+                        'state_name': state_name,
+                        'message': f'Timeout waiting for job completion (waited {int(elapsed)}s)'
+                    }
+                
+                # Job still pending or processing, wait and retry
+                logger.info(f"Job still processing... (State: {state_name}, Waited: {int(elapsed)}s)")
+                time.sleep(poll_interval)
+                
+            except Exception as e:
+                logger.error(f"Error polling job status - JobID: {job_id}, Invoice: {invoice_number}: {str(e)}", exc_info=True)
+                return {
+                    'completed': False,
+                    'state': None,
+                    'state_name': 'ERROR',
+                    'message': f'Error checking job status: {str(e)}'
+                }
+    
     def print_waybill(self, waybill_print) -> dict:
         """
-        Print a waybill file using CUPS.
+        Print a waybill file using CUPS and wait for completion.
+        
         Validates local file path exists before processing.
-        Updates status to "for printing" before sending to printer,
-        then to "printed" after successful submission.
+        Updates status to "for printing" before sending to printer.
+        Polls CUPS until job completes, then updates status to "completed" or "error".
         
         Args:
             waybill_print: WaybillPrint model instance
@@ -112,23 +203,55 @@ class PrintWaybillService:
             
             logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}")
             
-            # Update status to "printed" after successful submission
+            # Update status to "printed" temporarily while waiting for job to complete
             waybill_print.status = WaybillPrintStatuses.PRINTED.value
             db.session.commit()
             
             logger.info(f"Waybill status updated to 'printed' - Invoice: {invoice_number}, JobID: {job_id}")
             
-            return {
-                'status': 'success',
-                'message': 'Waybill sent to printer',
-                'data': {
-                    'waybill_id': waybill_print.id,
-                    'invoice_number': invoice_number,
-                    'local_file_path': local_file_path,
-                    'job_id': job_id,
-                    'printer': printer_name
+            # Poll CUPS to wait for job completion
+            logger.info(f"Polling CUPS for job completion - JobID: {job_id}, Invoice: {invoice_number}")
+            job_result = self._poll_job_status(conn, job_id, invoice_number)
+            
+            # Update final status based on CUPS job result
+            if job_result['completed']:
+                # Job completed successfully
+                waybill_print.status = WaybillPrintStatuses.COMPLETED.value
+                waybill_print.error_message = None
+                db.session.commit()
+                
+                logger.info(f"✅ Waybill status updated to 'completed' - Invoice: {invoice_number}, JobID: {job_id}")
+                
+                return {
+                    'status': 'success',
+                    'message': 'Waybill printed successfully',
+                    'data': {
+                        'waybill_id': waybill_print.id,
+                        'invoice_number': invoice_number,
+                        'local_file_path': local_file_path,
+                        'job_id': job_id,
+                        'printer': printer_name
+                    }
                 }
-            }
+            else:
+                # Job failed or timed out
+                error_msg = job_result['message']
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
+                waybill_print.error_message = error_msg
+                db.session.commit()
+                
+                logger.error(f"❌ Waybill status updated to 'error' - Invoice: {invoice_number}, JobID: {job_id}, Reason: {error_msg}")
+                
+                return {
+                    'status': 'error',
+                    'message': f'Print job failed: {error_msg}',
+                    'data': {
+                        'waybill_id': waybill_print.id,
+                        'invoice_number': invoice_number,
+                        'job_id': job_id,
+                        'printer': printer_name
+                    }
+                }
         
         except FileNotFoundError as e:
             error_msg = str(e)
