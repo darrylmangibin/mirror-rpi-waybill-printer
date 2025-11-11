@@ -13,7 +13,7 @@ class WaybillPrintStatuses(Enum):
     DOWNLOADED = "downloaded"
 
     FOR_PRINTING = "for printing"
-    PRINTED = "printed"
+    PRINTING = "printing"
     
     COMPLETED = "completed"
     ERROR = "error"
