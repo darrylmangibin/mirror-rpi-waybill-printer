@@ -25,7 +25,6 @@ export const PrintWaybillDialog = ({
 	if (!waybill) return null;
 
 	const handleConfirm = () => {
-		console.log('Print confirmed for waybill:', waybill.id, waybill);
 		onConfirm?.(waybill);
 		onOpenChange(false);
 	};

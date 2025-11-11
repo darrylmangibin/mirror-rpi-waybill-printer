@@ -64,7 +64,6 @@ class PrintWaybillService:
         Print a waybill file using CUPS.
         
         Validates local file path exists before processing.
-        Updates status to "for printing" before sending to printer.
         Updates status to "printing" when job is successfully submitted to CUPS.
         
         Args:
@@ -97,12 +96,6 @@ class PrintWaybillService:
             
             # Log the file path for debugging
             logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}")
-            
-            # Update status to "for printing" before sending to printer
-            waybill_print.status = WaybillPrintStatuses.FOR_PRINTING.value
-            db.session.commit()
-            
-            logger.info(f"Waybill status updated to 'for printing' - Invoice: {invoice_number}")
             
             # Get CUPS connection and printer
             conn, printer_name = self._get_cups_connection()
