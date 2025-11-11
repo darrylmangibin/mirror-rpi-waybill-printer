@@ -8,6 +8,7 @@ import {
 import { toast } from 'sonner';
 import { useChangeWaybillStatus } from '@/modules/Home/hooks';
 import { WaybillPrintStatuses, statusLabels } from '@/modules/Home/constants/waybillStatuses';
+import { ShimmerSkeleton } from '@/components/loaders/ShimmerSkeleton';
 
 interface StatusDropdownProps {
 	waybillId: number;
@@ -17,6 +18,7 @@ interface StatusDropdownProps {
 
 const WAYBILL_STATUSES = Object.values(WaybillPrintStatuses);
 
+// TODO: Need to add a Color coding theme per Status
 export const StatusDropdown = ({
 	waybillId,
 	currentStatus,
@@ -36,6 +38,12 @@ export const StatusDropdown = ({
 			toast.error(errorMessage);
 		}
 	};
+
+	if (isLoading) {
+		return (
+			<ShimmerSkeleton className='w-[100px] h-4 px-2 rounded-lg' />
+		);
+	}
 
 	return (
 		<Select
