@@ -7,7 +7,7 @@ export const WaybillPrintStatuses = {
   PENDING: 'pending',
   DOWNLOADING: 'downloading',
   DOWNLOADED: 'downloaded',
-  FOR_PRINTING: 'for_printing',
+  FOR_PRINTING: 'for printing',
   COMPLETED: 'completed',
   ERROR: 'error',
 } as const;
