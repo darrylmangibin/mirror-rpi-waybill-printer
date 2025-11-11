@@ -1,12 +1,11 @@
 import axios from 'axios';
-import { config } from '@/config';
 
 /**
  * Centralized Axios instance for all API calls
  * Optimized for small footprint (Chromebook, Raspberry Pi)
+ * Note: No baseURL - we use full URLs constructed via buildApiUrl()
  */
 export const api = axios.create({
-  baseURL: config.apiBaseUrl,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
