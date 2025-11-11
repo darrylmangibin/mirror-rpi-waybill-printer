@@ -48,8 +48,6 @@ class WaybillPrintService:
             db.session.add(waybill_print)
             db.session.commit()
             
-            logger.info(f"WaybillPrint created successfully - ID: {waybill_print.id}, Invoice: {invoice_number}")
-            
             return waybill_print
             
         except Exception as e:
@@ -63,7 +61,6 @@ class WaybillPrintService:
         try:
             db.session.delete(waybill_print)
             db.session.commit()
-            logger.info(f"WaybillPrint deleted successfully - ID: {waybill_print.id}")
             return True
         except Exception as e:
             db.session.rollback()
@@ -100,8 +97,6 @@ class WaybillPrintService:
             # Update status
             waybill_print.status = status
             db.session.commit()
-            
-            logger.info(f"WaybillPrint status changed - ID: {waybill_print.id}, Status: {status}")
             
             return waybill_print
             

@@ -57,7 +57,7 @@ class WaybillPrintController:
                     from_date = datetime.strptime(created_at_from, '%Y-%m-%d')
                     query = query.filter(WaybillPrint.created_at >= from_date)
                 except ValueError:
-                    logger.warning(f"Invalid created_at_from format: {created_at_from}")
+                    pass
             else:
                 # Default: from first day of current year
                 today = datetime.now()
@@ -70,7 +70,7 @@ class WaybillPrintController:
                     to_date = datetime.strptime(created_at_to, '%Y-%m-%d') + timedelta(days=1)
                     query = query.filter(WaybillPrint.created_at < to_date)
                 except ValueError:
-                    logger.warning(f"Invalid created_at_to format: {created_at_to}")
+                    pass
             else:
                 # Default: up to today (end of current day)
                 today = datetime.now()
@@ -174,7 +174,6 @@ class WaybillPrintController:
             }
             
         except ValueError as e:
-            logger.warning(f"Validation error updating status: {str(e)}")
             return {
                 "status": "error",
                 "message": str(e)
