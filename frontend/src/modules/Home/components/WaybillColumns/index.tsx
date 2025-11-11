@@ -1,16 +1,9 @@
-import { MoreHorizontalIcon, DownloadIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/components/WaybillUrlBadge';
 import { FilePath } from '@/modules/Home/components/WaybillColumns/components/FilePath';
 import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
+import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
 import { FormattedDate } from '@/components/global';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WaybillPrint } from '@/modules/Home/services';
 
@@ -18,6 +11,7 @@ export type { WaybillPrint } from '@/modules/Home/services';
 
 export interface WaybillColumnsContext {
 	onDownloadClick: (waybill: WaybillPrint) => void;
+	onPrintClick: (waybill: WaybillPrint) => void;
 }
 
 export const getWaybillColumns = (
@@ -109,37 +103,13 @@ export const getWaybillColumns = (
 		cell: ({ row }) => {
 			const waybill = row.original;
 
-			return (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant='ghost'
-							className='h-8 w-8 p-0 hover:bg-gray-100'>
-							<span className='sr-only'>Open menu</span>
-							<MoreHorizontalIcon className='h-4 w-4' />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						align='end'
-						className='bg-white border-gray-200'>
-						<DropdownMenuItem
-							onClick={() => context.onDownloadClick(waybill)}
-							className='text-gray-900 hover:bg-gray-100 p-0!'>
-							<Button
-								asChild
-								type='button'
-								variant='ghost'
-								size='sm'
-								className='hover:bg-transparent'>
-								<div className='flex items-center justify-end gap-2'>
-									<DownloadIcon className='h-4 w-4' />
-									<span className='text-xs'>Download</span>
-								</div>
-							</Button>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
+		return (
+			<WaybillPrintActions
+				waybill={waybill}
+				onDownloadClick={context.onDownloadClick}
+				onPrintClick={context.onPrintClick}
+			/>
+		);
 		},
 	},
 ];

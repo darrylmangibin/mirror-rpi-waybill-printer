@@ -7,10 +7,12 @@ import { useGetWaybillPrints } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
+import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
+	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
 	const [isPolling, setIsPolling] = React.useState(false);
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, 2000);
@@ -20,8 +22,13 @@ const Home = () => {
 		setDownloadDialogOpen(true);
 	};
 
+	const handlePrintClick = (waybill: WaybillPrint) => {
+		setSelectedWaybill(waybill);
+		setPrintDialogOpen(true);
+	};
+
 	const waybillColumns = React.useMemo(
-		() => getWaybillColumns({ onDownloadClick: handleDownloadClick }),
+		() => getWaybillColumns({ onDownloadClick: handleDownloadClick, onPrintClick: handlePrintClick }),
 		[]
 	);
 
@@ -86,16 +93,23 @@ const Home = () => {
 
 	{/* DIALOGS / MODALS */}
 	{selectedWaybill && (
-		<DownloadWaybillDialog
-			waybillId={String(selectedWaybill.id)}
-			invoiceNumber={selectedWaybill.invoice_number}
-			waybillUrl={selectedWaybill.waybill_url}
-			open={downloadDialogOpen}
-			onOpenChange={setDownloadDialogOpen}
-			onDownloadStart={() => setIsPolling(true)}
-			onDownloadComplete={() => setIsPolling(false)}
-			showTrigger={false}
-		/>
+		<>
+			<DownloadWaybillDialog
+				waybillId={String(selectedWaybill.id)}
+				invoiceNumber={selectedWaybill.invoice_number}
+				waybillUrl={selectedWaybill.waybill_url}
+				open={downloadDialogOpen}
+				onOpenChange={setDownloadDialogOpen}
+				onDownloadStart={() => setIsPolling(true)}
+				onDownloadComplete={() => setIsPolling(false)}
+				showTrigger={false}
+			/>
+			<PrintWaybillDialog
+				waybill={selectedWaybill}
+				open={printDialogOpen}
+				onOpenChange={setPrintDialogOpen}
+			/>
+		</>
 	)}
 			</div>
 		</>
