@@ -107,6 +107,26 @@ const waybillService = {
   },
 
   /**
+   * Print a waybill file
+   * @param waybillId - ID of the waybill to print
+   * @returns Promise with print result
+   */
+  async printWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.PRINT_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to print waybill: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Fetch network information for print job QR endpoint
    * @returns Promise with network info containing local IP and API URL
    */
