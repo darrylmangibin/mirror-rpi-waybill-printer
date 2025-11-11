@@ -32,20 +32,21 @@ export const WaybillPrintActions = ({
 			<DropdownMenuContent
 				align='end'
 				className='bg-white border-gray-200'>
-				<DropdownMenuItem
-					onClick={() => onDownloadClick(waybill)}
-					className='text-gray-900 hover:bg-gray-100 p-0!'>
-					<Button
-						asChild
-						type='button'
-						variant='ghost'
-						size='sm'
-						className='hover:bg-transparent w-full'>
-						<div className='flex items-center justify-start gap-2'>
-							<DownloadIcon className='h-4 w-4' />
-							<span className='text-xs'>Download</span>
-						</div>
-					</Button>
+			<DropdownMenuItem
+				onClick={() => onDownloadClick(waybill)}
+				disabled={!!waybill.local_file_path}
+				className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed'>
+				<Button
+					asChild
+					type='button'
+					variant='ghost'
+					size='sm'
+					className='hover:bg-transparent w-full'>
+					<div className='flex items-center justify-start gap-2'>
+						<DownloadIcon className='h-4 w-4' />
+						<span className='text-xs'>Download</span>
+					</div>
+				</Button>
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => onPrintClick(waybill)}
