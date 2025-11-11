@@ -1,9 +1,9 @@
-import { MoreHorizontalIcon, DownloadIcon, ExternalLink } from 'lucide-react';
+import { MoreHorizontalIcon, DownloadIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { WaybillPrintStatusBadge } from '@/modules/Home/components/WaybillPrintStatusBadge';
+import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/components/WaybillUrlBadge';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -66,18 +66,7 @@ export const getWaybillColumns = (
 		header: 'Waybill URL',
 		cell: ({ row }) => {
 			const url = row.getValue('waybill_url') as string | null;
-			return url ? (
-				<Badge
-					variant='secondary'
-					className='cursor-pointer hover:bg-blue-100 hover:text-blue-700 transition-all flex items-center gap-1.5 px-2.5 py-1'
-					onClick={() => window.open(url, '_blank')}
-					title={url}>
-					<span className='text-xs font-medium'>Open URL</span>
-					<ExternalLink className='h-3.5 w-3.5 shrink-0' />
-				</Badge>
-			) : (
-				<div className='text-gray-500'>-</div>
-			);
+			return <WaybillUrlBadge url={url} />;
 		},
 	},
 	{
@@ -85,14 +74,17 @@ export const getWaybillColumns = (
 		header: 'File Path',
 		cell: ({ row }) => {
 			const path = row.getValue('local_file_path') as string | null;
-			return path ? (
+			if (!path) return <div className='text-gray-500'>-</div>;
+			
+			// Extract just the filename
+			const filename = path.split('/').pop() || path;
+			
+			return (
 				<div 
-					className='text-xs text-gray-600 cursor-default truncate max-w-xs group hover:text-gray-900 transition-colors'
+					className='text-xs text-gray-600 cursor-pointer hover:text-gray-900 transition-colors'
 					title={path}>
-					{path}
+					{filename}
 				</div>
-			) : (
-				<div className='text-gray-500'>-</div>
 			);
 		},
 	},
