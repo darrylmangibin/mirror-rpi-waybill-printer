@@ -37,6 +37,10 @@ def worker():
                     from app.services.waybills.actions.DownloadWaybillAction import DownloadWaybillAction
                     action = DownloadWaybillAction()
                     result = action(waybill)
+                    
+                    # Refresh waybill object to ensure session is clean
+                    db.session.refresh(waybill)
+                    
                     logger.info(f"[DOWNLOAD COMPLETE] Invoice: {invoice}, Status: {result.get('status')}")
                 except Exception as e:
                     logger.error(f"[DOWNLOAD ERROR] Invoice: {invoice}: {str(e)}", exc_info=True)

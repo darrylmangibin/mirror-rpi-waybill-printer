@@ -14,9 +14,35 @@ const Home = () => {
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
+	
+	// Smart polling: track active downloads for dynamic intervals
+	const [activeDownloads, setActiveDownloads] = React.useState<Set<string>>(new Set());
 	const [isPolling, setIsPolling] = React.useState(false);
-	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, 2000);
+	
+	// Determine polling interval based on active downloads
+	// 1000ms (1s) when downloading, 5000ms (5s) otherwise for RPi efficiency
+	const pollingInterval = activeDownloads.size > 0 ? 1000 : 5000;
+	
+	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, pollingInterval);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
+
+	// Auto-stop polling when download completes (status becomes "downloaded")
+	React.useEffect(() => {
+		if (selectedWaybill && activeDownloads.has(String(selectedWaybill.id))) {
+			// Find current waybill data
+			const currentWaybill = waybills.find(w => w.id === selectedWaybill.id);
+			
+			if (currentWaybill && currentWaybill.status === 'downloaded') {
+				// Download completed! Stop polling
+				setActiveDownloads(prev => {
+					const next = new Set(prev);
+					next.delete(String(selectedWaybill.id));
+					return next;
+				});
+				setIsPolling(false);
+			}
+		}
+	}, [waybills, selectedWaybill, activeDownloads]);
 
 	const handleDownloadClick = (waybill: WaybillPrint) => {
 		setSelectedWaybill(waybill);
@@ -73,7 +99,7 @@ const Home = () => {
 			{/* Main Content */}
 			<div className='max-w-7xl mx-auto px-6 py-8'>
 				<div className='top-toolbar flex items-center justify-between mb-3'>
-					<div>
+					<div className='flex items-center gap-3'>
 						<SearchBoxInput
 							value={searchQuery}
 							onChange={setSearchQuery}
@@ -82,12 +108,28 @@ const Home = () => {
 							}}
 							autoSelectAllText={true}
 						/>
+						{/* Live polling indicator */}
+						{isPolling && (
+							<div className='flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 rounded-md'>
+								<span className='w-2 h-2 bg-blue-600 rounded-full animate-pulse' />
+								<span className='text-xs text-blue-600 font-medium'>
+									Live {activeDownloads.size > 0 ? `(${activeDownloads.size})` : ''}
+								</span>
+							</div>
+						)}
 					</div>
-					{/* Commented for now */}
-					<div className='flex gap-2'>
-						<ManualCreatePrintJobDialog />
-						<ScanPrintJobDialog />
-					</div>
+				{/* Create Print Jobs */}
+				<div className='flex gap-2'>
+					<ManualCreatePrintJobDialog 
+						onSubmit={(invoiceNumber, url) => {
+							// Enable polling to watch the auto-download
+							setIsPolling(true);
+							// The waybill will be in the list after creation
+							// Auto-download happens via event listener
+						}}
+					/>
+					<ScanPrintJobDialog />
+				</div>
 				</div>
 
 				<DataTable
@@ -110,8 +152,21 @@ const Home = () => {
 				waybillUrl={selectedWaybill.waybill_url}
 				open={downloadDialogOpen}
 				onOpenChange={setDownloadDialogOpen}
-				onDownloadStart={() => setIsPolling(true)}
-				onDownloadComplete={() => setIsPolling(false)}
+				onDownloadStart={() => {
+					// Add to active downloads and enable polling
+					setActiveDownloads(prev => new Set(prev).add(String(selectedWaybill.id)));
+					setIsPolling(true);
+				}}
+				onDownloadComplete={() => {
+					// Remove from active downloads
+					setActiveDownloads(prev => {
+						const next = new Set(prev);
+						next.delete(String(selectedWaybill.id));
+						return next;
+					});
+					// Disable polling only if no more active downloads
+					setIsPolling(false);
+				}}
 				showTrigger={false}
 			/>
 			<PrintWaybillDialog

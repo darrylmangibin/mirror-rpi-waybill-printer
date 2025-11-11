@@ -7,6 +7,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { WaybillPrint } from '@/modules/Home/services';
+import { WaybillPrintStatuses } from '@/modules/Home/constants/waybillStatuses';
 
 interface WaybillPrintActionsProps {
 	waybill: WaybillPrint;
@@ -34,7 +35,7 @@ export const WaybillPrintActions = ({
 				className='bg-white border-gray-200'>
 			<DropdownMenuItem
 				onClick={() => onDownloadClick(waybill)}
-				disabled={!!waybill.local_file_path}
+				disabled={!!waybill.local_file_path || waybill.status === WaybillPrintStatuses.DOWNLOADING}
 				className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed'>
 				<Button
 					asChild

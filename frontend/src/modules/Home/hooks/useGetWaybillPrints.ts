@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { waybillService, type WaybillPrint, type PaginatedWaybillsResponse } from '@/modules/Home/services';
 import { WAYBILL_QUERY_KEYS } from '@/modules/Home/constants';
@@ -17,6 +17,7 @@ const PAGE = 1;
 export const useGetWaybillPrints = (enablePolling = false, pollInterval = 2000) => {
   const [page, setPage] = useState<number>(PAGE);
   const perPage = PER_PAGE;
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
 		data: response,
@@ -28,21 +29,40 @@ export const useGetWaybillPrints = (enablePolling = false, pollInterval = 2000) 
 	} = useQuery<PaginatedWaybillsResponse>({
 		queryKey: [WAYBILL_QUERY_KEYS.waybills, page],
 		queryFn: () => waybillService.getWaybillPrints(page, perPage),
-		staleTime: enablePolling ? 0 : 1000 * 60 * 5, // 0ms when polling, 5 minutes otherwise
+		staleTime: 0, // Always consider data stale for real-time updates
 		gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
 		retry: 2,
 		retryDelay: (attemptIndex: number) =>
 			Math.min(1000 * 2 ** attemptIndex, 30000),
-		refetchInterval: enablePolling ? pollInterval : false, // Poll when enabled
+		refetchInterval: false, // Disabled - we use manual polling below
 	});
 
-	// Handle polling state changes
+	// Handle manual polling with dynamic intervals
 	useEffect(() => {
-		// When polling is disabled, force a refetch to ensure we have latest data
-		if (!enablePolling) {
-			// Just let the staleTime handle it
+		// Clear existing interval
+		if (pollingIntervalRef.current) {
+			clearInterval(pollingIntervalRef.current);
+			pollingIntervalRef.current = null;
 		}
-	}, [enablePolling]);
+
+		if (enablePolling) {
+			// Immediately refetch first time
+			refetch();
+			
+			// Then set up interval for subsequent fetches
+			pollingIntervalRef.current = setInterval(() => {
+				refetch();
+			}, pollInterval);
+		}
+
+		// Cleanup on unmount or when polling is disabled
+		return () => {
+			if (pollingIntervalRef.current) {
+				clearInterval(pollingIntervalRef.current);
+				pollingIntervalRef.current = null;
+			}
+		};
+	}, [enablePolling, pollInterval, refetch]);
 
   const waybills: WaybillPrint[] = response?.data || [];
   const errorMessage =
