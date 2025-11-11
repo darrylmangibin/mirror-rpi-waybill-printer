@@ -1,9 +1,9 @@
 import { MoreHorizontalIcon, DownloadIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { WaybillPrintStatusBadge } from '@/modules/Home/components/WaybillPrintStatusBadge';
 import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/components/WaybillUrlBadge';
 import { FilePath } from '@/modules/Home/components/WaybillColumns/components/FilePath';
+import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
 import { FormattedDate } from '@/components/global';
 import {
 	DropdownMenu,
@@ -59,7 +59,16 @@ export const getWaybillColumns = (
 		header: 'Status',
 		cell: ({ row }) => {
 			const status = row.getValue('status') as string;
-			return <WaybillPrintStatusBadge status={status} />;
+			const waybillId = row.original.id;
+			return (
+				<StatusDropdown
+					waybillId={waybillId}
+					currentStatus={status}
+					onStatusChanged={(newStatus) => {
+						row.original.status = newStatus as typeof row.original.status;
+					}}
+				/>
+			);
 		},
 	},
 	{

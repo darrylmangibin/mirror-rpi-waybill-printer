@@ -7,7 +7,7 @@ export interface WaybillPrint {
   updated_at: string;
   invoice_number: string | null;
   waybill_url: string | null;
-  status: 'pending' | 'downloaded' | 'failed';
+  status: 'pending' | 'downloading' | 'downloaded' | 'for printing' | 'completed' | 'error';
   local_file_path: string | null;
   error_message: string | null;
   downloaded_at: string | null;
