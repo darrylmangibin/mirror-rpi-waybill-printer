@@ -3,7 +3,7 @@ import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { getWaybillColumns, type WaybillPrint } from '@/modules/Home/components/WaybillColumns';
-import { useGetWaybillPrints } from '@/modules/Home/hooks';
+import { useGetWaybillPrints, usePrintWaybill } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
@@ -16,6 +16,7 @@ const Home = () => {
 	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
 	const [isPolling, setIsPolling] = React.useState(false);
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, 2000);
+	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
 
 	const handleDownloadClick = (waybill: WaybillPrint) => {
 		setSelectedWaybill(waybill);
@@ -25,6 +26,15 @@ const Home = () => {
 	const handlePrintClick = (waybill: WaybillPrint) => {
 		setSelectedWaybill(waybill);
 		setPrintDialogOpen(true);
+	};
+
+	const handlePrintConfirm = async (waybill: WaybillPrint) => {
+		try {
+			await printWaybillAsync(waybill.id);
+			setPrintDialogOpen(false);
+		} catch (error) {
+			console.error('Print failed:', error);
+		}
 	};
 
 	const waybillColumns = React.useMemo(
@@ -108,6 +118,7 @@ const Home = () => {
 				waybill={selectedWaybill}
 				open={printDialogOpen}
 				onOpenChange={setPrintDialogOpen}
+				onConfirm={handlePrintConfirm}
 			/>
 		</>
 	)}
