@@ -7,6 +7,11 @@ from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuse
 
 logger = get_logger(__name__)
 
+# XPrinter thermal printer default dimensions (in mm)
+DEFAULT_LABEL_WIDTH = 100  # Standard thermal label width
+DEFAULT_LABEL_HEIGHT = 150  # Standard thermal label height
+DEFAULT_SCALING = 100  # No scaling by default
+
 
 class PrintWaybillService:
     """
@@ -15,15 +20,20 @@ class PrintWaybillService:
     Handles file validation, status management, and printing process.
     """
     
-    def __init__(self, printer_name=None):
+    def __init__(self, printer_name=None, label_width=None, label_height=None, scaling=None):
         """
-        Initialize the service with optional printer name.
-        If not specified, uses the default printer configured in CUPS.
+        Initialize the service with optional printer name and print settings.
         
         Args:
             printer_name (str, optional): Name of the printer to use. Defaults to system default printer.
+            label_width (int, optional): Label width in mm. Defaults to 100mm for XPrinter thermal labels.
+            label_height (int, optional): Label height in mm. Defaults to 150mm for XPrinter thermal labels.
+            scaling (int, optional): Print scaling percentage. Defaults to 100 (no scaling).
         """
         self.printer_name = printer_name
+        self.label_width = label_width or DEFAULT_LABEL_WIDTH
+        self.label_height = label_height or DEFAULT_LABEL_HEIGHT
+        self.scaling = scaling or DEFAULT_SCALING
     
     def _get_cups_connection(self):
         """
@@ -59,15 +69,18 @@ class PrintWaybillService:
         except Exception as e:
             raise Exception(f"Failed to connect to CUPS: {str(e)}")
     
-    def print_waybill(self, waybill_print) -> dict:
+    def print_waybill(self, waybill_print, label_width=None, label_height=None, scaling=None) -> dict:
         """
-        Print a waybill file using CUPS.
+        Print a waybill file using CUPS with proper sizing for XPrinter thermal printer.
         
         Validates local file path exists before processing.
         Updates status to "printing" when job is successfully submitted to CUPS.
         
         Args:
             waybill_print: WaybillPrint model instance
+            label_width (int, optional): Label width in mm. Uses instance default if not specified.
+            label_height (int, optional): Label height in mm. Uses instance default if not specified.
+            scaling (int, optional): Print scaling percentage. Uses instance default if not specified.
         
         Returns:
             dict: {
@@ -78,13 +91,20 @@ class PrintWaybillService:
                     'invoice_number': str,
                     'local_file_path': str (if successful),
                     'job_id': int (if successful),
-                    'printer': str (if successful)
+                    'printer': str (if successful),
+                    'label_size': str (if successful),
+                    'scaling': int (if successful)
                 }
             }
         """
         try:
             invoice_number = waybill_print.invoice_number
             local_file_path = waybill_print.local_file_path
+            
+            # Use provided values or fall back to instance defaults
+            width = label_width or self.label_width
+            height = label_height or self.label_height
+            scale = scaling or self.scaling
             
             # Validate local file path exists
             if not local_file_path:
@@ -94,17 +114,25 @@ class PrintWaybillService:
             if not os.path.exists(local_file_path):
                 raise FileNotFoundError(f"Waybill file not found at: {local_file_path}")
             
-            # Log the file path for debugging
-            logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}")
+            # Log the file path and print settings for debugging
+            logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}, Label size: {width}x{height}mm, Scaling: {scale}%")
             
             # Get CUPS connection and printer
             conn, printer_name = self._get_cups_connection()
             
+            # Create print options dictionary for XPrinter thermal printer
+            print_options = {
+                "media": f"Custom.{width}x{height}mm",  # Custom label size for XPrinter
+                "scaling": str(scale),  # Scaling percentage
+                "fit-to-page": "true"  # Ensure content fits the label
+            }
+            
             # Submit print job to CUPS
             job_title = f"Waybill-{invoice_number}"
-            job_id = conn.printFile(printer_name, local_file_path, job_title, {})
+            job_id = conn.printFile(printer_name, local_file_path, job_title, print_options)
             
-            logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}")
+            label_size = f"{width}x{height}mm"
+            logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}, Label size: {label_size}, Scaling: {scale}%")
             
             # Update status to "printing" after successful submission to CUPS
             waybill_print.status = WaybillPrintStatuses.PRINTING.value
@@ -120,7 +148,9 @@ class PrintWaybillService:
                     'invoice_number': invoice_number,
                     'local_file_path': local_file_path,
                     'job_id': job_id,
-                    'printer': printer_name
+                    'printer': printer_name,
+                    'label_size': label_size,
+                    'scaling': scale
                 }
             }
         
