@@ -127,6 +127,26 @@ const waybillService = {
   },
 
   /**
+   * Delete a waybill print
+   * @param waybillId - ID of the waybill to delete
+   * @returns Promise with delete result
+   */
+  async deleteWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.delete<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.DELETE_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to delete waybill: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Fetch network information for print job QR endpoint
    * @returns Promise with network info containing local IP and API URL
    */

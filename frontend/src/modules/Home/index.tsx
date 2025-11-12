@@ -3,16 +3,18 @@ import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { getWaybillColumns, type WaybillPrint } from '@/modules/Home/components/WaybillColumns';
-import { useGetWaybillPrints, usePrintWaybill, useWaybillStream } from '@/modules/Home/hooks';
+import { useGetWaybillPrints, usePrintWaybill, useWaybillStream, useDeleteWaybill } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
 import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
+import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfirmationDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
 	
 	// Initialize Server-Sent Events stream for real-time updates
@@ -30,6 +32,7 @@ const Home = () => {
 	
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, pollingInterval);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
+	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting } = useDeleteWaybill();
 
 	// Auto-stop polling when download completes (status becomes "downloaded")
 	React.useEffect(() => {
@@ -68,8 +71,27 @@ const Home = () => {
 		}
 	};
 
+	const handleDeleteClick = (waybill: WaybillPrint) => {
+		setSelectedWaybill(waybill);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleDeleteConfirm = async (waybill: WaybillPrint) => {
+		try {
+			await deleteWaybillAsync(waybill.id);
+			setDeleteDialogOpen(false);
+			setSelectedWaybill(null);
+		} catch (error) {
+			console.error('Delete failed:', error);
+		}
+	};
+
 	const waybillColumns = React.useMemo(
-		() => getWaybillColumns({ onDownloadClick: handleDownloadClick, onPrintClick: handlePrintClick }),
+		() => getWaybillColumns({ 
+			onDownloadClick: handleDownloadClick, 
+			onPrintClick: handlePrintClick,
+			onDeleteClick: handleDeleteClick,
+		}),
 		[]
 	);
 
@@ -179,6 +201,13 @@ const Home = () => {
 				open={printDialogOpen}
 				onOpenChange={setPrintDialogOpen}
 				onConfirm={handlePrintConfirm}
+			/>
+			<DeleteConfirmationDialog
+				waybill={selectedWaybill}
+				open={deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+				onConfirm={handleDeleteConfirm}
+				isLoading={isDeleting}
 			/>
 		</>
 	)}

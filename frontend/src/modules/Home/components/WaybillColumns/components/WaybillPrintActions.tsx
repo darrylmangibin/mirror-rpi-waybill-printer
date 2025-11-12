@@ -1,4 +1,4 @@
-import { MoreHorizontalIcon, DownloadIcon, PrinterIcon } from 'lucide-react';
+import { MoreHorizontalIcon, DownloadIcon, PrinterIcon, TrashIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
 	DropdownMenu,
@@ -13,12 +13,14 @@ interface WaybillPrintActionsProps {
 	waybill: WaybillPrint;
 	onDownloadClick: (waybill: WaybillPrint) => void;
 	onPrintClick: (waybill: WaybillPrint) => void;
+	onDeleteClick: (waybill: WaybillPrint) => void;
 }
 
 export const WaybillPrintActions = ({
 	waybill,
 	onDownloadClick,
 	onPrintClick,
+	onDeleteClick,
 }: WaybillPrintActionsProps) => {
 	return (
 		<DropdownMenu>
@@ -61,6 +63,21 @@ export const WaybillPrintActions = ({
 						<div className='flex items-center justify-start gap-2'>
 							<PrinterIcon className='h-4 w-4' />
 							<span className='text-xs'>Print</span>
+						</div>
+					</Button>
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					onClick={() => onDeleteClick(waybill)}
+					className='text-red-600 hover:bg-red-50 p-0!'>
+					<Button
+						asChild
+						type='button'
+						variant='ghost'
+						size='sm'
+						className='hover:bg-transparent w-full'>
+						<div className='flex items-center justify-start gap-2'>
+							<TrashIcon className='h-4 w-4' />
+							<span className='text-xs'>Delete</span>
 						</div>
 					</Button>
 				</DropdownMenuItem>
