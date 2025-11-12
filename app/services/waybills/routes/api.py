@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, current_app
 from flask_sieve import validate
 from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest
 from app.services.waybills.controllers import WaybillPrintController
@@ -6,6 +6,7 @@ from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction
 from app.utils.decorators import get_model
 from app.utils.loggers import get_logger
+from app.database import db
 import json
 import time
 from datetime import datetime
@@ -101,29 +102,31 @@ def stream_waybills():
                 # Check for updates every 500ms
                 time.sleep(0.5)
                 
-                # Query for waybills updated since last check
-                recent_waybills = WaybillPrint.query.filter(
-                    WaybillPrint.updated_at > last_sync
-                ).all()
-                
-                if recent_waybills:
-                    # Send SSE event with update notification
-                    data = {
-                        'type': 'waybill_updated',
-                        'timestamp': datetime.now().isoformat(),
-                        'count': len(recent_waybills),
-                        'message': f'{len(recent_waybills)} waybill(s) updated'
-                    }
-                    yield f"data: {json.dumps(data)}\n\n"
-                    last_sync = datetime.now()
-                    consecutive_errors = 0  # Reset error counter on success
+                # Use app context for database access
+                with current_app.app_context():
+                    # Query for waybills updated since last check
+                    recent_waybills = WaybillPrint.query.filter(
+                        WaybillPrint.updated_at > last_sync
+                    ).all()
+                    
+                    if recent_waybills:
+                        # Send SSE event with update notification
+                        data = {
+                            'type': 'waybill_updated',
+                            'timestamp': datetime.now().isoformat(),
+                            'count': len(recent_waybills),
+                            'message': f'{len(recent_waybills)} waybill(s) updated'
+                        }
+                        yield f"data: {json.dumps(data)}\n\n"
+                        last_sync = datetime.now()
+                        consecutive_errors = 0  # Reset error counter on success
                     
             except GeneratorExit:
                 logger.info('Client closed SSE connection')
                 break
             except Exception as e:
                 consecutive_errors += 1
-                logger.error(f"Error in SSE stream (attempt {consecutive_errors}/{max_consecutive_errors}): {str(e)}")
+                logger.error(f"Error in SSE stream (attempt {consecutive_errors}/{max_consecutive_errors}): {str(e)}", exc_info=True)
                 if consecutive_errors >= max_consecutive_errors:
                     logger.error('Max consecutive errors in SSE stream, closing connection')
                     break

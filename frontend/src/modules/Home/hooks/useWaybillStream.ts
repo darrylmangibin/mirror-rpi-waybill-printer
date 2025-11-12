@@ -31,12 +31,21 @@ export const useWaybillStream = () => {
     const connect = () => {
       try {
         // Establish SSE connection
+        console.log('🔌 Attempting to connect to SSE stream...');
         eventSource = new EventSource('/api/waybills/prints/stream');
+
+        // Handle connection opened
+        eventSource.addEventListener('open', () => {
+          console.log('✅ Connected to waybill SSE stream');
+          reconnectAttempts = 0;
+        });
 
         // Handle incoming messages
         eventSource.addEventListener('message', (event) => {
           try {
+            console.log('📨 Raw SSE message received:', event.data);
             const message = JSON.parse(event.data);
+            console.log('✨ Parsed message:', message);
 
             if (message.type === 'waybill_updated') {
               console.log(
@@ -46,9 +55,11 @@ export const useWaybillStream = () => {
 
               // Invalidate query to trigger refetch
               // This causes React Query to refetch the waybill list
+              console.log('🔄 Invalidating React Query cache for waybills...');
               queryClient.invalidateQueries({
                 queryKey: [WAYBILL_QUERY_KEYS.waybills],
               });
+              console.log('✅ Cache invalidated, data should refetch now');
 
               // Reset reconnect counter on successful message
               reconnectAttempts = 0;
