@@ -1,3 +1,4 @@
+import os
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
@@ -57,8 +58,17 @@ class WaybillPrintService:
     
     @staticmethod
     def destroy(waybill_print: WaybillPrint) -> bool:
-        """Delete a WaybillPrint record."""
+        """Delete a WaybillPrint record and clean up associated local file."""
         try:
+            # Delete local file if it exists
+            if waybill_print.local_file_path and os.path.exists(waybill_print.local_file_path):
+                try:
+                    os.remove(waybill_print.local_file_path)
+                    logger.info(f"Deleted local file: {waybill_print.local_file_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete local file {waybill_print.local_file_path}: {str(e)}")
+            
+            # Delete database record
             db.session.delete(waybill_print)
             db.session.commit()
             return True
