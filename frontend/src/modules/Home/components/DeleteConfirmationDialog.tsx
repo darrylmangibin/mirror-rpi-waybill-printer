@@ -1,10 +1,6 @@
 import { AlertTriangleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 import DangerButton from '@/components/global/components/buttons/DangerButton';
 import type { WaybillPrint } from '@/modules/Home/services';
@@ -31,7 +27,9 @@ export const DeleteConfirmationDialog = ({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog
+			open={open}
+			onOpenChange={onOpenChange}>
 			<DialogContent
 				className='sm:max-w-md p-0 gap-0'
 				showCloseButton={false}>
@@ -59,23 +57,22 @@ export const DeleteConfirmationDialog = ({
 							className='font-medium text-xs h-8'>
 							Cancel
 						</Button>
-				<DangerButton
-					onClick={handleConfirm}
-					disabled={isLoading}
-					className='font-medium text-xs h-8'>
-					{isLoading ? (
-						<span className='flex items-center gap-1.5'>
-							<div className='w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin' />
-							Deleting
-						</span>
-					) : (
-						'Delete'
-					)}
-				</DangerButton>
+						<DangerButton
+							onClick={handleConfirm}
+							disabled={isLoading}
+							className='font-medium text-xs h-8'>
+							{isLoading ? (
+								<span className='flex items-center gap-1.5'>
+									<div className='w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin' />
+									Deleting
+								</span>
+							) : (
+								'Delete'
+							)}
+						</DangerButton>
 					</div>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
 };
-
