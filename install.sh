@@ -16,10 +16,30 @@ if ! command -v python3 &> /dev/null; then
     echo -e "${GREEN}✅ Python 3 installed${NC}"
 fi
 
+# Install CUPS for printing functionality
+echo -e "${YELLOW}Installing CUPS (Common Unix Printing System)...${NC}"
+if ! command -v lpstat &> /dev/null; then
+    sudo apt update
+    sudo apt install -y cups cups-client python3-cups
+    sudo systemctl start cups
+    sudo systemctl enable cups
+    echo -e "${GREEN}✅ CUPS installed and enabled${NC}"
+else
+    echo -e "${GREEN}✅ CUPS already installed${NC}"
+    # Ensure Python3 CUPS bindings are installed
+    if ! dpkg -l | grep -q python3-cups; then
+        echo -e "${YELLOW}Installing Python3 CUPS bindings...${NC}"
+        sudo apt update
+        sudo apt install -y python3-cups
+        echo -e "${GREEN}✅ Python3 CUPS bindings installed${NC}"
+    fi
+fi
+
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}Creating Python virtual environment...${NC}"
-    python3 -m venv venv
+    # Use --system-site-packages to allow access to system-installed packages like python3-cups
+    python3 -m venv --system-site-packages venv
 fi
 
 # Activate virtual environment

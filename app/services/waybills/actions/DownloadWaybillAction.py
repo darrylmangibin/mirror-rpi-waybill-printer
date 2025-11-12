@@ -1,6 +1,8 @@
 from app.utils.loggers import get_logger
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.services.WaybillDownloadService import WaybillDownloadService
+from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
+from app.database import db
 
 logger = get_logger(__name__)
 
@@ -21,6 +23,7 @@ class DownloadWaybillAction:
     def __call__(self, waybill_print: WaybillPrint) -> dict:
         """
         Download and save a waybill file to local storage.
+        Sets status to DOWNLOADING immediately, then delegates to service.
         All database updates handled by the service.
         
         Args:
@@ -33,17 +36,27 @@ class DownloadWaybillAction:
             invoice_number = waybill_print.invoice_number
             waybill_url = waybill_print.waybill_url
             
-            logger.info(f"DownloadWaybillAction executing - Invoice: {invoice_number}")
-            
             # Validate URL
             if not waybill_url:
                 raise ValueError("Waybill URL is missing")
             
-            # Delegate to service - handles download, database updates, and error handling
+            # Step 1: Set status to DOWNLOADING immediately
+            waybill_print.status = WaybillPrintStatuses.DOWNLOADING.value
+            db.session.commit()
+            
+            # Step 2: Delegate to service - handles download, database updates, and error handling
             return self.download_service.download(waybill_print, waybill_url, invoice_number)
         
         except Exception as e:
             logger.error(f"Error in DownloadWaybillAction: {str(e)}", exc_info=True)
+            # Try to set status to ERROR if commit fails
+            try:
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
+                waybill_print.error_message = str(e)
+                db.session.commit()
+            except Exception as db_error:
+                logger.error(f"Failed to update waybill status to ERROR: {str(db_error)}", exc_info=True)
+            
             return {
                 "status": "error",
                 "message": str(e),

@@ -1,5 +1,9 @@
 from app.database import db
 from datetime import datetime
+from sqlalchemy import event
+from app.utils.loggers import get_logger
+
+logger = get_logger(__name__)
 
 
 class WaybillPrint(db.Model):
@@ -41,3 +45,18 @@ class WaybillPrint(db.Model):
             'error_message': self.error_message,
             'downloaded_at': self.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') if self.downloaded_at else None,
         }
+
+
+@event.listens_for(WaybillPrint, 'after_insert', propagate=True)
+def auto_queue_download(mapper, connection, target):
+    """
+    Automatically queue download when new WaybillPrint is created.
+    Non-blocking: returns immediately, background worker processes download.
+    """
+    if target.waybill_url and target.invoice_number:
+        try:
+            from app.services.waybills.jobs.download_waybill_job import queue_download
+            queue_download(target.id)
+            logger.info(f"[EVENT] Download queued for Invoice: {target.invoice_number} (ID: {target.id})")
+        except Exception as e:
+            logger.error(f"Failed to queue download for Invoice {target.invoice_number}: {str(e)}", exc_info=True)

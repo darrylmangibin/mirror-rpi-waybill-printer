@@ -7,7 +7,11 @@ import {
 	DialogFooter,
 	DialogTrigger,
 } from '@/components/ui/dialog';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+	Tooltip,
+	TooltipTrigger,
+	TooltipContent,
+} from '@/components/ui/tooltip';
 import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 import { useGetPrintJobQREndPoint } from '@/modules/Home/hooks';
@@ -33,15 +37,20 @@ export const ScanPrintJobDialog = () => {
 						<TooltipTrigger asChild>
 							<div>
 								<PrimaryButton
+									size='sm'
+									type='button'
 									onClick={() => {}}
 									className='gap-2'>
 									<QrCode className='w-4 h-4' />
-									<span>Create Print Job</span>
+									<span>QR Code</span>
 								</PrimaryButton>
 							</div>
 						</TooltipTrigger>
 						<TooltipContent className='bg-gray-900 text-white border-0 max-w-xs'>
-							<p className='text-xs'>Click to show the dialog containing the QR code for printing waybills on your mobile device</p>
+							<p className='text-xs'>
+								Click to show the dialog containing the QR code for printing
+								waybills on your mobile device
+							</p>
 						</TooltipContent>
 					</Tooltip>
 				</div>
@@ -72,20 +81,20 @@ export const ScanPrintJobDialog = () => {
 					)}
 
 					{networkInfo && !loading && (
-						<div className='space-y-2 flex flex-col items-center'>
-							<div className='flex justify-center bg-white rounded-lg w-full'>
+						<div className='space-y-4 flex flex-col items-center'>
+							<div className='flex justify-center bg-white w-full'>
 								<QRCodeSVG
 									value={`${networkInfo.api_url}/api/waybills/prints`}
 									size={200}
 									level='H'
 									includeMargin={true}
-									className='rounded'
+									className='rounded shadow-sm'
 								/>
 							</div>
 
-							<div className='text-sm font-mono text-gray-900 break-all max-w-sm text-center mb-8'>
-								{/* {`${networkInfo.api_url}/api/waybills/prints`} */}
-							</div>
+							<p className='text-xs font-mono break-all max-w-sm text-center mb-8 bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600 shadow-sm'>
+								{`${networkInfo.api_url}/api/waybills/prints`}
+							</p>
 						</div>
 					)}
 				</div>

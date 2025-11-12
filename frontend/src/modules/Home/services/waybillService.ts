@@ -7,7 +7,7 @@ export interface WaybillPrint {
   updated_at: string;
   invoice_number: string | null;
   waybill_url: string | null;
-  status: 'pending' | 'downloaded' | 'failed';
+  status: 'pending' | 'downloading' | 'downloaded' | 'for printing' | 'completed' | 'error';
   local_file_path: string | null;
   error_message: string | null;
   downloaded_at: string | null;
@@ -55,6 +55,71 @@ const waybillService = {
     } catch (error) {
       throw new Error(
         `Failed to fetch waybill prints: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
+   * Create a new waybill print
+   * @param invoiceNumber - Invoice number for the waybill
+   * @param waybillUrl - URL of the waybill to print
+   * @returns Promise with created waybill print
+   */
+  async createWaybillPrint(
+    invoiceNumber: string,
+    waybillUrl: string
+  ): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(WAYBILL_ENDPOINTS.CREATE_PRINT, {
+        invoice_number: invoiceNumber,
+        waybill_url: waybillUrl,
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to create waybill print: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
+   * Download a waybill file from URL and save to local storage
+   * @param waybillId - ID of the waybill to download
+   * @returns Promise with download result
+   */
+  async downloadWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.DOWNLOAD_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to download waybill: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
+   * Print a waybill file
+   * @param waybillId - ID of the waybill to print
+   * @returns Promise with print result
+   */
+  async printWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.PRINT_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to print waybill: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
       );

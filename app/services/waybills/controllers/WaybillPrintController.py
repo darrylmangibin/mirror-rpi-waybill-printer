@@ -57,7 +57,7 @@ class WaybillPrintController:
                     from_date = datetime.strptime(created_at_from, '%Y-%m-%d')
                     query = query.filter(WaybillPrint.created_at >= from_date)
                 except ValueError:
-                    logger.warning(f"Invalid created_at_from format: {created_at_from}")
+                    pass
             else:
                 # Default: from first day of current year
                 today = datetime.now()
@@ -70,7 +70,7 @@ class WaybillPrintController:
                     to_date = datetime.strptime(created_at_to, '%Y-%m-%d') + timedelta(days=1)
                     query = query.filter(WaybillPrint.created_at < to_date)
                 except ValueError:
-                    logger.warning(f"Invalid created_at_to format: {created_at_to}")
+                    pass
             else:
                 # Default: up to today (end of current day)
                 today = datetime.now()
@@ -147,6 +147,39 @@ class WaybillPrintController:
             
         except Exception as e:
             logger.error(f"Error deleting waybill: {str(e)}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
+    def change_status(self, waybill_print: WaybillPrint, status: str) -> dict:
+        """
+        Change the status of a waybill print.
+        
+        Args:
+            waybill_print: WaybillPrint model instance to update
+            status: New status value ('pending', 'downloaded', 'failed')
+            
+        Returns:
+            dict: Response with status and updated waybill data
+        """
+        try:
+            # Call service method to change status
+            updated_waybill = WaybillPrintService.change_status(waybill_print, status)
+            
+            return {
+                "status": "success",
+                "message": f"Waybill status updated to '{status}' successfully",
+                "data": updated_waybill.to_dict()
+            }
+            
+        except ValueError as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+        except Exception as e:
+            logger.error(f"Error updating waybill status: {str(e)}", exc_info=True)
             return {
                 "status": "error",
                 "message": str(e)

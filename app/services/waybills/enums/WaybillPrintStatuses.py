@@ -8,9 +8,14 @@ class WaybillPrintStatuses(Enum):
     """
     
     PENDING = "pending"
-    FOR_PRINTING = "for printing"
-    PRINTED = "printed"
-    FAILED = "failed"
+
+    DOWNLOADING = "downloading"
+    DOWNLOADED = "downloaded"
+
+    PRINTING = "printing"
+    
+    COMPLETED = "completed"
+    ERROR = "error"
     
     def __str__(self):
         """Return the string value of the enum."""

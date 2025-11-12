@@ -21,9 +21,6 @@ export interface PaginationProps<TData> {
 }
 
 export function Pagination<TData>({ table, className, currentPage: externalCurrentPage, totalPages: externalTotalPages, onPageChange, isLoading }: PaginationProps<TData>) {
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length
-  const totalCount = table.getRowModel().rows.length
-  
   // Use external pagination if provided, otherwise use table's internal pagination
   const pageCount = externalTotalPages ?? table.getPageCount()
   const currentPage = externalCurrentPage ?? (table.getState().pagination.pageIndex + 1)
@@ -145,7 +142,7 @@ export function Pagination<TData>({ table, className, currentPage: externalCurre
 											className={cn(
 												'w-7 h-7 rounded-full transition-all duration-200 font-medium p-0',
 												currentPage === page
-													? 'bg-linear-to-br from-purple-900 via-purple-700 to-purple-500 hover:from-purple-950 hover:via-purple-750 hover:to-purple-550 border border-purple-700 text-white transform -translate-y-1 shadow-lg'
+													? 'bg-linear-to-br from-purple-900 via-purple-700 to-purple-500 hover:from-purple-950 hover:via-purple-750 hover:to-purple-550 border border-purple-700 text-white hover:text-white transform -translate-y-1 shadow-lg'
 													: 'border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 transform hover:-translate-y-0.5'
 											)}>
 											{page}
