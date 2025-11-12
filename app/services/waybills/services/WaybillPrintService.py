@@ -64,7 +64,6 @@ class WaybillPrintService:
             if waybill_print.local_file_path and os.path.exists(waybill_print.local_file_path):
                 try:
                     os.remove(waybill_print.local_file_path)
-                    logger.info(f"Deleted local file: {waybill_print.local_file_path}")
                 except Exception as e:
                     logger.warning(f"Failed to delete local file {waybill_print.local_file_path}: {str(e)}")
             
