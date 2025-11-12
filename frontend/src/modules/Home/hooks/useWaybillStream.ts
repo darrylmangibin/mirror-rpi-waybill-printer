@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { WAYBILL_QUERY_KEYS } from '@/modules/Home/constants';
+import { API_BASE_URL } from '@/config';
 
 /**
  * Hook to establish Server-Sent Events (SSE) connection for real-time waybill updates.
@@ -30,9 +31,10 @@ export const useWaybillStream = () => {
 
     const connect = () => {
       try {
-        // Establish SSE connection
-        console.log('🔌 Attempting to connect to SSE stream...');
-        eventSource = new EventSource('/api/waybills/prints/stream');
+        // Establish SSE connection using full URL (important for IP-based access)
+        const sseUrl = `${API_BASE_URL}/api/waybills/prints/stream`;
+        console.log('🔌 Attempting to connect to SSE stream at:', sseUrl);
+        eventSource = new EventSource(sseUrl);
 
         // Handle connection opened
         eventSource.addEventListener('open', () => {
