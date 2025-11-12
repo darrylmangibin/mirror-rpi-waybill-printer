@@ -1,10 +1,16 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from flask_sieve import validate
 from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction
 from app.utils.decorators import get_model
+from app.utils.loggers import get_logger
+import json
+import time
+from datetime import datetime
+
+logger = get_logger(__name__)
 
 # Create a Blueprint for waybill routes
 waybills_bp = Blueprint('waybills', __name__, url_prefix='/api/waybills')
@@ -73,3 +79,64 @@ def change_status(waybill_print):
     result = change_action(waybill_print, status)
     status_code = 200 if result.get('status') == 'success' else 400
     return jsonify(result), status_code
+
+
+@waybills_bp.route('/prints/stream', methods=['GET'])
+def stream_waybills():
+    """
+    Server-Sent Events endpoint for real-time waybill updates.
+    Sends events whenever waybill data is created, updated, or deleted.
+    
+    The frontend maintains a persistent EventSource connection to this endpoint.
+    When changes are detected, the server sends an SSE event which triggers
+    a cache invalidation on the client side, causing React Query to refetch.
+    """
+    def event_generator():
+        last_sync = datetime.now()
+        consecutive_errors = 0
+        max_consecutive_errors = 10
+        
+        while consecutive_errors < max_consecutive_errors:
+            try:
+                # Check for updates every 500ms
+                time.sleep(0.5)
+                
+                # Query for waybills updated since last check
+                recent_waybills = WaybillPrint.query.filter(
+                    WaybillPrint.updated_at > last_sync
+                ).all()
+                
+                if recent_waybills:
+                    # Send SSE event with update notification
+                    data = {
+                        'type': 'waybill_updated',
+                        'timestamp': datetime.now().isoformat(),
+                        'count': len(recent_waybills),
+                        'message': f'{len(recent_waybills)} waybill(s) updated'
+                    }
+                    yield f"data: {json.dumps(data)}\n\n"
+                    last_sync = datetime.now()
+                    consecutive_errors = 0  # Reset error counter on success
+                    
+            except GeneratorExit:
+                logger.info('Client closed SSE connection')
+                break
+            except Exception as e:
+                consecutive_errors += 1
+                logger.error(f"Error in SSE stream (attempt {consecutive_errors}/{max_consecutive_errors}): {str(e)}")
+                if consecutive_errors >= max_consecutive_errors:
+                    logger.error('Max consecutive errors in SSE stream, closing connection')
+                    break
+                # Continue trying even with errors
+                continue
+    
+    return Response(
+        event_generator(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',  # Important for Nginx reverse proxy
+            'Content-Type': 'text/event-stream; charset=utf-8'
+        }
+    )

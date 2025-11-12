@@ -3,7 +3,7 @@ import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { getWaybillColumns, type WaybillPrint } from '@/modules/Home/components/WaybillColumns';
-import { useGetWaybillPrints, usePrintWaybill } from '@/modules/Home/hooks';
+import { useGetWaybillPrints, usePrintWaybill, useWaybillStream } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
@@ -15,13 +15,18 @@ const Home = () => {
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
 	
+	// Initialize Server-Sent Events stream for real-time updates
+	useWaybillStream();
+	
 	// Smart polling: track active downloads for dynamic intervals
 	const [activeDownloads, setActiveDownloads] = React.useState<Set<string>>(new Set());
 	const [isPolling, setIsPolling] = React.useState(false);
 	
 	// Determine polling interval based on active downloads
-	// 1000ms (1s) when downloading, 5000ms (5s) otherwise for RPi efficiency
-	const pollingInterval = activeDownloads.size > 0 ? 1000 : 5000;
+	// With SSE providing real-time updates, we can use longer intervals for RPi efficiency
+	// 2000ms (2s) when downloading, 10000ms (10s) otherwise
+	// SSE will trigger immediate cache invalidation on changes
+	const pollingInterval = activeDownloads.size > 0 ? 2000 : 10000;
 	
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, pollingInterval);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
@@ -121,11 +126,11 @@ const Home = () => {
 				{/* Create Print Jobs */}
 				<div className='flex gap-2'>
 					<ManualCreatePrintJobDialog 
-						onSubmit={(invoiceNumber, url) => {
+						onSubmit={async () => {
 							// Enable polling to watch the auto-download
 							setIsPolling(true);
 							// The waybill will be in the list after creation
-							// Auto-download happens via event listener
+							// SSE will notify of the new waybill immediately
 						}}
 					/>
 					<ScanPrintJobDialog />
