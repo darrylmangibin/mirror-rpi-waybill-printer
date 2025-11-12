@@ -92,6 +92,9 @@ def stream_waybills():
     When changes are detected, the server sends an SSE event which triggers
     a cache invalidation on the client side, causing React Query to refetch.
     """
+    # Capture app reference here (in request context) for use in generator
+    app = current_app._get_current_object()
+    
     def event_generator():
         last_sync = datetime.now()
         consecutive_errors = 0
@@ -102,8 +105,8 @@ def stream_waybills():
                 # Check for updates every 500ms
                 time.sleep(0.5)
                 
-                # Use app context for database access
-                with current_app.app_context():
+                # Use app context for database access (generator runs outside request context)
+                with app.app_context():
                     # Query for waybills updated since last check
                     recent_waybills = WaybillPrint.query.filter(
                         WaybillPrint.updated_at > last_sync
