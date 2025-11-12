@@ -1,4 +1,9 @@
-import { MoreHorizontalIcon, DownloadIcon, PrinterIcon, TrashIcon } from 'lucide-react';
+import {
+	MoreHorizontalIcon,
+	DownloadIcon,
+	PrinterIcon,
+	TrashIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
 	DropdownMenu,
@@ -35,25 +40,28 @@ export const WaybillPrintActions = ({
 			<DropdownMenuContent
 				align='end'
 				className='bg-white border-gray-200'>
-			<DropdownMenuItem
-				onClick={() => onDownloadClick(waybill)}
-				disabled={!!waybill.local_file_path || waybill.status === WaybillPrintStatuses.DOWNLOADING}
-				className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed'>
-				<Button
-					asChild
-					type='button'
-					variant='ghost'
-					size='sm'
-					className='hover:bg-transparent w-full'>
-					<div className='flex items-center justify-start gap-2'>
-						<DownloadIcon className='h-4 w-4' />
-						<span className='text-xs'>Download</span>
-					</div>
-				</Button>
+				<DropdownMenuItem
+					onClick={() => onDownloadClick(waybill)}
+					disabled={
+						!!waybill.local_file_path ||
+						waybill.status === WaybillPrintStatuses.DOWNLOADING
+					}
+					className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
+					<Button
+						asChild
+						type='button'
+						variant='ghost'
+						size='sm'
+						className='hover:bg-transparent w-full'>
+						<div className='flex items-center justify-start gap-2'>
+							<DownloadIcon className='h-4 w-4' />
+							<span className='text-xs'>Download</span>
+						</div>
+					</Button>
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => onPrintClick(waybill)}
-					className='text-gray-900 hover:bg-gray-100 p-0!'>
+					className='text-gray-900 hover:bg-gray-100 p-0! transition-colors'>
 					<Button
 						asChild
 						type='button'
@@ -68,16 +76,16 @@ export const WaybillPrintActions = ({
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => onDeleteClick(waybill)}
-					className='text-red-600 hover:bg-red-50 p-0!'>
+					className='p-0! transition-colors'>
 					<Button
 						asChild
 						type='button'
 						variant='ghost'
 						size='sm'
-						className='hover:bg-transparent w-full'>
+						className='w-full hover:bg-red-50'>
 						<div className='flex items-center justify-start gap-2'>
-							<TrashIcon className='h-4 w-4' />
-							<span className='text-xs'>Delete</span>
+							<TrashIcon className='h-4 w-4 text-red-600' />
+							<span className='text-xs text-red-600'>Delete</span>
 						</div>
 					</Button>
 				</DropdownMenuItem>
@@ -85,4 +93,3 @@ export const WaybillPrintActions = ({
 		</DropdownMenu>
 	);
 };
-
