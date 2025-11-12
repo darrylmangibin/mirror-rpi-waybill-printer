@@ -33,58 +33,40 @@ export const useWaybillStream = () => {
       try {
         // Establish SSE connection using full URL (important for IP-based access)
         const sseUrl = `${API_BASE_URL}/api/waybills/prints/stream`;
-        console.log('🔌 Attempting to connect to SSE stream at:', sseUrl);
         eventSource = new EventSource(sseUrl);
 
         // Handle connection opened
         eventSource.addEventListener('open', () => {
-          console.log('✅ Connected to waybill SSE stream');
+          console.log('✅ SSE Connected');
           reconnectAttempts = 0;
         });
 
         // Handle incoming messages
         eventSource.addEventListener('message', (event) => {
           try {
-            console.log('📨 Raw SSE message received:', event.data);
             const message = JSON.parse(event.data);
-            console.log('✨ Parsed message:', message);
 
             if (message.type === 'waybill_updated') {
-              console.log(
-                `📡 SSE: Waybill update received - ${message.message}`,
-                message
-              );
-              console.log('📝 Updated waybills:', message.waybill_ids);
-              console.log('📊 New statuses:', message.statuses);
-
               // Invalidate query to trigger refetch
-              // This causes React Query to refetch the waybill list
-              console.log('🔄 Invalidating React Query cache for waybills...');
               queryClient.invalidateQueries({
                 queryKey: [WAYBILL_QUERY_KEYS.waybills],
-                // Use exact match to ensure this specific query is invalidated
               });
               
-              // Force immediate refetch (don't wait for stale time)
-              console.log('🔄 Force refetching waybills immediately...');
+              // Force immediate refetch
               queryClient.refetchQueries({
                 queryKey: [WAYBILL_QUERY_KEYS.waybills],
               });
-              
-              console.log('✅ Cache invalidated and refetch triggered');
 
               // Reset reconnect counter on successful message
               reconnectAttempts = 0;
             }
           } catch (error) {
-            console.error('Failed to parse SSE message:', error);
+            console.error('SSE parse error:', error);
           }
         });
 
         // Handle connection errors
-        eventSource.addEventListener('error', (error) => {
-          console.warn('⚠️ SSE connection error:', error);
-
+        eventSource.addEventListener('error', () => {
           if (eventSource) {
             eventSource.close();
             eventSource = null;
@@ -94,22 +76,16 @@ export const useWaybillStream = () => {
           if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 10000);
-            console.log(
-              `🔄 Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts}) in ${backoffDelay}ms...`
-            );
+            console.log(`⚠️ SSE reconnecting (${reconnectAttempts}/${maxReconnectAttempts})...`);
             setTimeout(() => {
               connect();
             }, backoffDelay);
           } else {
-            console.error(
-              '❌ Max reconnect attempts reached. SSE connection failed permanently.'
-            );
+            console.error('❌ SSE connection failed permanently');
           }
         });
-
-        console.log('✅ Connected to waybill SSE stream');
       } catch (error) {
-        console.error('Failed to create EventSource:', error);
+        console.error('SSE error:', error);
       }
     };
 
@@ -120,7 +96,6 @@ export const useWaybillStream = () => {
     return () => {
       if (eventSource) {
         eventSource.close();
-        console.log('✅ Disconnected from waybill SSE stream');
       }
     };
   }, [queryClient]);
