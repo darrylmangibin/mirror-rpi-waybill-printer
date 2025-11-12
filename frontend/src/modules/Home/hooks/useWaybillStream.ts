@@ -54,14 +54,24 @@ export const useWaybillStream = () => {
                 `📡 SSE: Waybill update received - ${message.message}`,
                 message
               );
+              console.log('📝 Updated waybills:', message.waybill_ids);
+              console.log('📊 New statuses:', message.statuses);
 
               // Invalidate query to trigger refetch
               // This causes React Query to refetch the waybill list
               console.log('🔄 Invalidating React Query cache for waybills...');
               queryClient.invalidateQueries({
                 queryKey: [WAYBILL_QUERY_KEYS.waybills],
+                // Use exact match to ensure this specific query is invalidated
               });
-              console.log('✅ Cache invalidated, data should refetch now');
+              
+              // Force immediate refetch (don't wait for stale time)
+              console.log('🔄 Force refetching waybills immediately...');
+              queryClient.refetchQueries({
+                queryKey: [WAYBILL_QUERY_KEYS.waybills],
+              });
+              
+              console.log('✅ Cache invalidated and refetch triggered');
 
               // Reset reconnect counter on successful message
               reconnectAttempts = 0;

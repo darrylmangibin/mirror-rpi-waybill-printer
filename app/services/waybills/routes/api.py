@@ -113,14 +113,19 @@ def stream_waybills():
                     ).all()
                     
                     if recent_waybills:
-                        # Send SSE event with update notification
+                        # Send SSE event with detailed update information
+                        waybill_ids = [w.id for w in recent_waybills]
+                        statuses = {w.id: w.status for w in recent_waybills}
                         data = {
                             'type': 'waybill_updated',
                             'timestamp': datetime.now().isoformat(),
                             'count': len(recent_waybills),
+                            'waybill_ids': waybill_ids,
+                            'statuses': statuses,
                             'message': f'{len(recent_waybills)} waybill(s) updated'
                         }
                         yield f"data: {json.dumps(data)}\n\n"
+                        logger.info(f"SSE: Sent update for waybills {waybill_ids} with statuses {statuses}")
                         last_sync = datetime.now()
                         consecutive_errors = 0  # Reset error counter on success
                     
