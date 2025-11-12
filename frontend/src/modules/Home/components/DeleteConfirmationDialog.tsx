@@ -33,21 +33,29 @@ export const DeleteConfirmationDialog = ({
 			<DialogContent
 				className='sm:max-w-md p-0 gap-0'
 				showCloseButton={false}>
-				<DialogHeaderComponent
-					icon={
-						<AlertTriangleIcon
-							strokeWidth={2}
-							className='w-5 h-5 text-red-600'
-						/>
-					}
-					title='Delete Waybill?'
-					description={`Are you sure you want to delete waybill ${
-						waybill.invoice_number || `#${waybill.id}`
-					}? This action cannot be undone.`}
-					variant='danger'
-				/>
+			<DialogHeaderComponent
+				icon={
+					<AlertTriangleIcon
+						strokeWidth={2}
+						className='w-5 h-5 text-red-600'
+					/>
+				}
+        description='This action cannot be undone.'
+				title='Delete Waybill?'
+				variant='danger'
+			/>
 
-				<DialogFooter>
+		<div className='px-5 py-4 mb-8'>
+			<p className='text-sm text-gray-600 text-center'>
+				Are you sure you want to delete waybill{' '}
+				<span className='font-semibold text-gray-900'>
+					{waybill.invoice_number || `#${waybill.id}`}
+				</span>
+				?
+			</p>
+		</div>
+
+			<DialogFooter>
 					<div className='flex items-center justify-end gap-2 w-full bg-gray-50 border-t border-gray-200 py-3 px-5 rounded-b-lg'>
 						<Button
 							type='button'
