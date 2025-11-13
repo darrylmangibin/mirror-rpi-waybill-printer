@@ -12,6 +12,7 @@ logger = get_logger(__name__)
 DEFAULT_LABEL_WIDTH = AWB_WIDTH_MM      # 102mm = 4 inches
 DEFAULT_LABEL_HEIGHT = AWB_HEIGHT_MM    # 127mm = 5 inches
 DEFAULT_SCALING = 100                   # No scaling by default
+DEFAULT_PRINTER_NAME = os.getenv('PRINTER_NAME', None)  # Get from env or None to use system default
 
 
 class PrintWaybillService:
@@ -26,12 +27,12 @@ class PrintWaybillService:
         Initialize the service with optional printer name and print settings.
         
         Args:
-            printer_name (str, optional): Name of the printer to use. Defaults to system default printer.
-            label_width (int, optional): Label width in mm. Defaults to 100mm for XPrinter thermal labels.
-            label_height (int, optional): Label height in mm. Defaults to 150mm for XPrinter thermal labels.
+            printer_name (str, optional): Name of the printer to use. Defaults to PRINTER_NAME env var or system default printer.
+            label_width (int, optional): Label width in mm. Defaults to 102mm for AWB labels (IATA Resolution 606).
+            label_height (int, optional): Label height in mm. Defaults to 127mm for AWB labels (IATA Resolution 606).
             scaling (int, optional): Print scaling percentage. Defaults to 100 (no scaling).
         """
-        self.printer_name = printer_name
+        self.printer_name = printer_name or DEFAULT_PRINTER_NAME
         self.label_width = label_width or DEFAULT_LABEL_WIDTH
         self.label_height = label_height or DEFAULT_LABEL_HEIGHT
         self.scaling = scaling or DEFAULT_SCALING

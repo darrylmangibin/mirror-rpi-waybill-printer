@@ -56,6 +56,18 @@ export FLASK_APP=run:app
 # Create app/instance directory for database
 mkdir -p app/instance
 
+# Setup environment configuration
+echo -e "${YELLOW}Setting up environment configuration...${NC}"
+if [ ! -f "app/.env" ]; then
+    if [ -f "app/.env.example" ]; then
+        cp app/.env.example app/.env
+        echo -e "${GREEN}✅ Created app/.env from app/.env.example${NC}"
+        echo -e "${YELLOW}⚠️  Please edit app/.env and set your PRINTER_NAME${NC}"
+    fi
+else
+    echo -e "${GREEN}✅ app/.env already exists${NC}"
+fi
+
 # Only run flask db init if migrations directory doesn't exist
 if [ ! -d "app/migrations" ]; then
     flask db init
