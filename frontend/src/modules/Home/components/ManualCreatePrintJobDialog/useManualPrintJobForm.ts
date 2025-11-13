@@ -12,8 +12,18 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const DEFAULT_WAYBILL_URL =
-	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/68f0d71c4179b1760614172.png';
+const WAYBILL_URLS = [
+	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/68f0d71c4179b1760614172.png',
+	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/6913f02bc1ff01762914347.png',
+	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/5749047-waybill.pdf',
+];
+
+const getRandomWaybillUrl = () => {
+	const randomIndex = Math.floor(Math.random() * WAYBILL_URLS.length);
+	return WAYBILL_URLS[randomIndex];
+};
+
+const DEFAULT_WAYBILL_URL = getRandomWaybillUrl();
 
 interface UseManualPrintJobFormOptions {
 	onSuccess?: (invoiceNumber: string, url: string) => Promise<void>;
