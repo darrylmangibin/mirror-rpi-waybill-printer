@@ -3,6 +3,8 @@ import pathlib
 import requests
 from datetime import datetime
 from urllib.parse import urlparse
+from pdf2image import convert_from_path
+from PIL import Image
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
@@ -81,6 +83,60 @@ class WaybillDownloadService:
         base_type = content_type.split(';')[0].strip().lower()
         return content_type_map.get(base_type)
     
+    def _convert_pdf_to_png(self, pdf_path: str) -> str:
+        """
+        Convert PDF file to PNG image for thermal printer compatibility.
+        Called at download time to reduce processing load on Raspberry Pi during printing.
+        
+        Args:
+            pdf_path (str): Path to the PDF file
+            
+        Returns:
+            str: Path to the converted PNG file (original PDF is deleted)
+            
+        Raises:
+            Exception: If conversion fails
+        """
+        try:
+            logger.info(f"Converting PDF to PNG at download time: {pdf_path}")
+            
+            # Convert first page of PDF to image
+            images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=203)  # 203 DPI for thermal printer
+            
+            if not images:
+                raise ValueError("PDF conversion resulted in no images")
+            
+            # Get the first (and only) image
+            image = images[0]
+            
+            # Convert RGBA to RGB if necessary (thermal printers need RGB)
+            if image.mode == 'RGBA':
+                rgb_image = Image.new('RGB', image.size, (255, 255, 255))
+                rgb_image.paste(image, mask=image.split()[3] if len(image.split()) == 4 else None)
+                image = rgb_image
+            elif image.mode != 'RGB':
+                image = image.convert('RGB')
+            
+            # Create PNG path (replace .pdf with .png)
+            png_path = pdf_path.replace('.pdf', '.png')
+            
+            # Save as PNG
+            image.save(png_path, 'PNG')
+            logger.info(f"PDF converted to PNG: {png_path}")
+            
+            # Delete original PDF to save storage
+            try:
+                os.remove(pdf_path)
+                logger.info(f"Deleted original PDF: {pdf_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete original PDF {pdf_path}: {str(e)}")
+            
+            return png_path
+        
+        except Exception as e:
+            logger.error(f"Failed to convert PDF to PNG: {str(e)}", exc_info=True)
+            raise Exception(f"PDF conversion failed: {str(e)}")
+    
     def download(self, waybill_print, waybill_url: str, invoice_number: str) -> dict:
         """
         Download a waybill file from URL and save to local storage.
@@ -142,6 +198,18 @@ class WaybillDownloadService:
             if not os.path.exists(filepath):
                 raise IOError(f"File was not saved successfully: {filepath}")
             
+            # Convert PDF to PNG at download time for faster printing
+            # This reduces CPU load on Raspberry Pi during printing
+            if filepath.lower().endswith('.pdf'):
+                logger.info(f"PDF detected at download time, converting to PNG - Invoice: {invoice_number}")
+                try:
+                    filepath = self._convert_pdf_to_png(filepath)
+                    logger.info(f"PDF conversion successful at download time - Invoice: {invoice_number}, PNG: {filepath}")
+                except Exception as convert_error:
+                    # Log error but don't fail - file is still usable as PDF
+                    logger.error(f"Warning: PDF to PNG conversion failed at download time - Invoice: {invoice_number}: {str(convert_error)}", exc_info=True)
+                    # Continue with original PDF filepath
+            
             file_size = os.path.getsize(filepath)
             
             # Update database record with download status
@@ -150,6 +218,8 @@ class WaybillDownloadService:
             waybill_print.downloaded_at = datetime.now().replace(microsecond=0)
             db.session.commit()
             
+            final_filename = os.path.basename(filepath)
+            
             return {
                 'status': 'success',
                 'message': 'Waybill downloaded and saved successfully',
@@ -157,7 +227,7 @@ class WaybillDownloadService:
                     'waybill_id': waybill_print.id,
                     'invoice_number': invoice_number,
                     'filepath': filepath,
-                    'filename': filename,
+                    'filename': final_filename,
                     'file_size': file_size
                 }
             }

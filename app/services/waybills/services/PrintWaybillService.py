@@ -1,6 +1,9 @@
 import os
 import cups
 from datetime import datetime
+from pathlib import Path
+from pdf2image import convert_from_path
+from PIL import Image
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
@@ -36,6 +39,52 @@ class PrintWaybillService:
         self.label_width = label_width or DEFAULT_LABEL_WIDTH
         self.label_height = label_height or DEFAULT_LABEL_HEIGHT
         self.scaling = scaling or DEFAULT_SCALING
+    
+    def _convert_pdf_to_png(self, pdf_path: str) -> str:
+        """
+        Convert PDF file to PNG image for thermal printer compatibility.
+        
+        Args:
+            pdf_path (str): Path to the PDF file
+            
+        Returns:
+            str: Path to the converted PNG file
+            
+        Raises:
+            Exception: If conversion fails
+        """
+        try:
+            # Convert first page of PDF to image
+            logger.info(f"Converting PDF to PNG: {pdf_path}")
+            images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=203)  # 203 DPI for thermal printer
+            
+            if not images:
+                raise ValueError("PDF conversion resulted in no images")
+            
+            # Get the first (and only) image
+            image = images[0]
+            
+            # Convert RGBA to RGB if necessary (thermal printers need RGB or grayscale)
+            if image.mode == 'RGBA':
+                rgb_image = Image.new('RGB', image.size, (255, 255, 255))
+                rgb_image.paste(image, mask=image.split()[3] if len(image.split()) == 4 else None)
+                image = rgb_image
+            elif image.mode != 'RGB':
+                image = image.convert('RGB')
+            
+            # Create PNG path
+            pdf_filename = Path(pdf_path).stem
+            png_path = pdf_path.replace('.pdf', '.png')
+            
+            # Save as PNG
+            image.save(png_path, 'PNG')
+            logger.info(f"PDF converted to PNG: {png_path}")
+            
+            return png_path
+        
+        except Exception as e:
+            logger.error(f"Failed to convert PDF to PNG: {str(e)}", exc_info=True)
+            raise Exception(f"PDF conversion failed: {str(e)}")
     
     def _get_cups_connection(self):
         """
@@ -119,6 +168,17 @@ class PrintWaybillService:
             # Log the file path and print settings for debugging
             logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}, Label size: {width}x{height}mm, Scaling: {scale}%")
             
+            # Check file format - PNG files are ready for printing, PDFs need conversion
+            print_file_path = local_file_path
+            if local_file_path.lower().endswith('.pdf'):
+                logger.info(f"PDF detected, converting to PNG for thermal printer - Invoice: {invoice_number}")
+                print_file_path = self._convert_pdf_to_png(local_file_path)
+                logger.info(f"PDF conversion complete - PNG path: {print_file_path}")
+            elif local_file_path.lower().endswith('.png'):
+                logger.info(f"PNG file ready for printing - Invoice: {invoice_number}")
+            else:
+                logger.warning(f"Unknown file format, attempting to print as-is - Invoice: {invoice_number}")
+            
             # Get CUPS connection and printer
             conn, printer_name = self._get_cups_connection()
             
@@ -131,7 +191,7 @@ class PrintWaybillService:
             
             # Submit print job to CUPS
             job_title = f"Waybill-{invoice_number}"
-            job_id = conn.printFile(printer_name, local_file_path, job_title, print_options)
+            job_id = conn.printFile(printer_name, print_file_path, job_title, print_options)
             
             label_size = f"{width}x{height}mm"
             logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}, Label size: {label_size}, Scaling: {scale}%")
