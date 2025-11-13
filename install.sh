@@ -4,6 +4,7 @@
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Installing RPI Waybill Printer (Backend + Frontend)${NC}\n"
@@ -34,11 +35,21 @@ if [ ! -d "venv" ]; then
 fi
 
 # Activate virtual environment
+echo -e "${YELLOW}Activating Python virtual environment...${NC}"
 source venv/bin/activate
+
+# Upgrade pip to latest version
+echo -e "${YELLOW}Upgrading pip...${NC}"
+pip install --upgrade pip setuptools wheel
 
 # Install Python dependencies
 echo -e "${YELLOW}Installing Python dependencies...${NC}"
-pip3 install -r requirements.txt
+pip install -r requirements.txt
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Failed to install Python dependencies${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ Python dependencies installed${NC}"
 
 # Initialize database migrations (one-time setup)
 echo -e "${YELLOW}Initializing database migrations...${NC}"
