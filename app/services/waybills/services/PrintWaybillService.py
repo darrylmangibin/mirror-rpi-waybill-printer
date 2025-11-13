@@ -4,13 +4,14 @@ from datetime import datetime
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
+from app.services.waybills.constants.AwbPaperSize import AWB_WIDTH_MM, AWB_HEIGHT_MM
 
 logger = get_logger(__name__)
 
-# XPrinter thermal printer default dimensions (in mm)
-DEFAULT_LABEL_WIDTH = 100  # Standard thermal label width
-DEFAULT_LABEL_HEIGHT = 150  # Standard thermal label height
-DEFAULT_SCALING = 100  # No scaling by default
+# Default AWB paper size (IATA Resolution 606: 102mm × 127mm = 4" × 5")
+DEFAULT_LABEL_WIDTH = AWB_WIDTH_MM      # 102mm = 4 inches
+DEFAULT_LABEL_HEIGHT = AWB_HEIGHT_MM    # 127mm = 5 inches
+DEFAULT_SCALING = 100                   # No scaling by default
 
 
 class PrintWaybillService:
