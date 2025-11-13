@@ -18,13 +18,6 @@ const WAYBILL_URLS = [
 	'https://s3.ap-southeast-1.amazonaws.com/fusion.dig.sg/5749047-waybill.pdf',
 ];
 
-const getRandomWaybillUrl = () => {
-	const randomIndex = Math.floor(Math.random() * WAYBILL_URLS.length);
-	return WAYBILL_URLS[randomIndex];
-};
-
-const DEFAULT_WAYBILL_URL = getRandomWaybillUrl();
-
 interface UseManualPrintJobFormOptions {
 	onSuccess?: (invoiceNumber: string, url: string) => Promise<void>;
 }
@@ -37,13 +30,19 @@ export const useManualPrintJobForm = ({ onSuccess }: UseManualPrintJobFormOption
 	const [open, setOpen] = useState(false);
 	const { mutateAsync, isPending } = useCreateWaybillPrint();
 
+	const getRandomWaybillUrl = () => {
+		const randomIndex = Math.floor(Math.random() * WAYBILL_URLS.length);
+		return WAYBILL_URLS[randomIndex];
+	};
+
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			invoiceNumber: 'INV-001',
-			url: DEFAULT_WAYBILL_URL,
+			url: getRandomWaybillUrl(),
 		},
 	});
+
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen);
