@@ -8,14 +8,9 @@ from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.services.waybills.constants.AwbPaperSize import AWB_WIDTH_MM, AWB_HEIGHT_MM
+from app.services.waybills.constants.PrinterConfig import PrinterConfig
 
 logger = get_logger(__name__)
-
-# Default AWB paper size (IATA Resolution 606: 102mm × 127mm = 4" × 5")
-DEFAULT_LABEL_WIDTH = AWB_WIDTH_MM      # 102mm = 4 inches
-DEFAULT_LABEL_HEIGHT = AWB_HEIGHT_MM    # 127mm = 5 inches
-DEFAULT_SCALING = 100                   # No scaling by default
-DEFAULT_PRINTER_NAME = os.getenv('PRINTER_NAME', None)  # Get from env or None to use system default
 
 
 class PrintWaybillService:
@@ -28,6 +23,7 @@ class PrintWaybillService:
     def __init__(self, printer_name=None, label_width=None, label_height=None, scaling=None):
         """
         Initialize the service with optional printer name and print settings.
+        Uses PrinterConfig for centralized configuration management.
         
         Args:
             printer_name (str, optional): Name of the printer to use. Defaults to PRINTER_NAME env var or system default printer.
@@ -35,14 +31,17 @@ class PrintWaybillService:
             label_height (int, optional): Label height in mm. Defaults to 127mm for AWB labels (IATA Resolution 606).
             scaling (int, optional): Print scaling percentage. Defaults to 100 (no scaling).
         """
-        self.printer_name = printer_name or DEFAULT_PRINTER_NAME
-        self.label_width = label_width or DEFAULT_LABEL_WIDTH
-        self.label_height = label_height or DEFAULT_LABEL_HEIGHT
-        self.scaling = scaling or DEFAULT_SCALING
+        self.printer_name = printer_name or PrinterConfig.PRINTER_NAME
+        self.label_width = label_width or PrinterConfig.LABEL_WIDTH_MM
+        self.label_height = label_height or PrinterConfig.LABEL_HEIGHT_MM
+        self.scaling = scaling or PrinterConfig.SCALING
+        
+        logger.info(f"PrintWaybillService initialized - {PrinterConfig.get_summary()}")
     
     def _convert_pdf_to_png(self, pdf_path: str) -> str:
         """
         Convert PDF file to PNG image for thermal printer compatibility.
+        Uses DPI from PrinterConfig (default 203 for thermal printers).
         
         Args:
             pdf_path (str): Path to the PDF file
@@ -55,8 +54,8 @@ class PrintWaybillService:
         """
         try:
             # Convert first page of PDF to image
-            logger.info(f"Converting PDF to PNG: {pdf_path}")
-            images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=203)  # 203 DPI for thermal printer
+            logger.info(f"Converting PDF to PNG (DPI: {PrinterConfig.PRINTER_DPI}): {pdf_path}")
+            images = convert_from_path(pdf_path, first_page=1, last_page=1, dpi=PrinterConfig.PRINTER_DPI)
             
             if not images:
                 raise ValueError("PDF conversion resulted in no images")
@@ -64,13 +63,14 @@ class PrintWaybillService:
             # Get the first (and only) image
             image = images[0]
             
-            # Convert RGBA to RGB if necessary (thermal printers need RGB or grayscale)
-            if image.mode == 'RGBA':
-                rgb_image = Image.new('RGB', image.size, (255, 255, 255))
-                rgb_image.paste(image, mask=image.split()[3] if len(image.split()) == 4 else None)
-                image = rgb_image
-            elif image.mode != 'RGB':
-                image = image.convert('RGB')
+            # Convert color mode if necessary (thermal printers need RGB or grayscale)
+            if PrinterConfig.CONVERT_COLOR_MODE:
+                if image.mode == 'RGBA':
+                    rgb_image = Image.new('RGB', image.size, (255, 255, 255))
+                    rgb_image.paste(image, mask=image.split()[3] if len(image.split()) == 4 else None)
+                    image = rgb_image
+                elif image.mode != 'RGB':
+                    image = image.convert('RGB')
             
             # Create PNG path
             pdf_filename = Path(pdf_path).stem
@@ -168,9 +168,9 @@ class PrintWaybillService:
             # Log the file path and print settings for debugging
             logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}, Label size: {width}x{height}mm, Scaling: {scale}%")
             
-            # Check file format - PNG files are ready for printing, PDFs need conversion
+            # Check file format and convert if necessary
             print_file_path = local_file_path
-            if local_file_path.lower().endswith('.pdf'):
+            if PrinterConfig.should_convert_pdf_to_png(local_file_path):
                 logger.info(f"PDF detected, converting to PNG for thermal printer - Invoice: {invoice_number}")
                 print_file_path = self._convert_pdf_to_png(local_file_path)
                 logger.info(f"PDF conversion complete - PNG path: {print_file_path}")
@@ -182,12 +182,9 @@ class PrintWaybillService:
             # Get CUPS connection and printer
             conn, printer_name = self._get_cups_connection()
             
-            # Create print options dictionary for XPrinter thermal printer
-            print_options = {
-                "media": f"Custom.{width}x{height}mm",  # Custom label size for XPrinter
-                "scaling": str(scale),  # Scaling percentage
-                "fit-to-page": "true"  # Ensure content fits the label
-            }
+            # Create print options using centralized configuration
+            print_options = PrinterConfig.get_print_options(width, height, scale)
+            logger.info(f"Print options generated - {print_options}")
             
             # Submit print job to CUPS
             job_title = f"Waybill-{invoice_number}"
