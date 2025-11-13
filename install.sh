@@ -16,24 +16,15 @@ if ! command -v python3 &> /dev/null; then
     echo -e "${GREEN}✅ Python 3 installed${NC}"
 fi
 
-# Install CUPS for printing functionality
-echo -e "${YELLOW}Installing CUPS (Common Unix Printing System)...${NC}"
-if ! command -v lpstat &> /dev/null; then
-    sudo apt update
-    sudo apt install -y cups cups-client python3-cups
-    sudo systemctl start cups
-    sudo systemctl enable cups
-    echo -e "${GREEN}✅ CUPS installed and enabled${NC}"
-else
-    echo -e "${GREEN}✅ CUPS already installed${NC}"
-    # Ensure Python3 CUPS bindings are installed
-    if ! dpkg -l | grep -q python3-cups; then
-        echo -e "${YELLOW}Installing Python3 CUPS bindings...${NC}"
-        sudo apt update
-        sudo apt install -y python3-cups
-        echo -e "${GREEN}✅ Python3 CUPS bindings installed${NC}"
-    fi
-fi
+# Install system dependencies for PDF processing and printing
+echo -e "${YELLOW}Installing system dependencies (CUPS, Ghostscript for PDF conversion)...${NC}"
+sudo apt update
+sudo apt install -y cups cups-client python3-cups ghostscript poppler-utils
+
+# Start and enable CUPS
+sudo systemctl start cups
+sudo systemctl enable cups
+echo -e "${GREEN}✅ System dependencies installed${NC}"
 
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
