@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -6,6 +7,10 @@ from flask_sieve import Sieve
 from app.database import db
 from app.utils.network import get_local_ip
 from app.services.waybills.jobs.download_waybill_job import start_workers
+
+# Load environment variables from app/.env
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(env_path)
 
 def create_app():
     # Set custom instance path to keep database inside app directory
