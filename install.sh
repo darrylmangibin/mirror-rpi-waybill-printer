@@ -20,12 +20,47 @@ fi
 # Install system dependencies for PDF processing and printing
 echo -e "${YELLOW}Installing system dependencies (CUPS, Ghostscript for PDF conversion)...${NC}"
 sudo apt update
-sudo apt install -y cups cups-client python3-cups ghostscript poppler-utils
+sudo apt install -y cups cups-client python3-cups ghostscript poppler-utils printer-driver-all
 
 # Start and enable CUPS
 sudo systemctl start cups
 sudo systemctl enable cups
 echo -e "${GREEN}✅ System dependencies installed${NC}"
+
+# Configure CUPS and detect printers
+echo -e "${YELLOW}Configuring CUPS for thermal printer...${NC}"
+# Give current user access to CUPS without sudo
+sudo usermod -a -G lpadmin pi
+echo -e "${GREEN}✅ User added to lpadmin group${NC}"
+
+# Setup printer (XPrinter XP-410B thermal printer)
+echo -e "${YELLOW}Setting up XPrinter XP-410B thermal printer...${NC}"
+# Wait for printer to be detected
+sleep 2
+
+# Remove any existing XPrinter configuration
+sudo lpadmin -x XP-410B 2>/dev/null || true
+
+# Add XPrinter using raw USB connection
+# The printer should be auto-detected by CUPS
+PRINTER_DEVICE=$(lpinfo -v 2>/dev/null | grep -i xprinter | grep usb | head -1 | awk '{print $2}')
+
+if [ -z "$PRINTER_DEVICE" ]; then
+    echo -e "${YELLOW}⚠️  XPrinter not auto-detected. Please connect the printer and run:${NC}"
+    echo -e "${BLUE}   sudo lpinfo -v | grep -i xprinter${NC}"
+    echo -e "${BLUE}   Then add it with: sudo lpadmin -p XP-410B -v <device_uri> -E${NC}"
+else
+    echo -e "${YELLOW}Found XPrinter at: $PRINTER_DEVICE${NC}"
+    # Add printer with generic driver
+    sudo lpadmin -p XP-410B -v "$PRINTER_DEVICE" -E -m drv:///sample.drv/generic.ppd
+    # Set as default
+    sudo lpadmin -d XP-410B
+    echo -e "${GREEN}✅ XPrinter XP-410B configured${NC}"
+fi
+
+# Verify printer setup
+echo -e "${YELLOW}Printer status:${NC}"
+lpstat -p -d
 
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
