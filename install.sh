@@ -127,8 +127,8 @@ if [ -z "$EXISTING_PRINTER" ]; then
     read -p "Do you want to configure your thermal printer now? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        read -p "Enter printer name (default: XPrinter-410B): " PRINTER_NAME
-        PRINTER_NAME=${PRINTER_NAME:-XPrinter-410B}
+        read -p "Enter printer name (default: XP410B): " PRINTER_NAME
+        PRINTER_NAME=${PRINTER_NAME:-XP410B}
         
         read -p "Enter printer USB URI (e.g., usb://Xprinter/XP-410B?serial=410BBE235170626): " PRINTER_URI
         
