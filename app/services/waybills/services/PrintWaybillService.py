@@ -22,19 +22,19 @@ class PrintWaybillService:
     
     def __init__(self, printer_name=None, label_width=None, label_height=None, scaling=None):
         """
-        Initialize the service with optional printer name and print settings.
-        Uses PrinterConfig for centralized configuration management.
+        Initialize the service with static printer settings.
         
         Args:
-            printer_name (str, optional): Name of the printer to use. Defaults to PRINTER_NAME env var or system default printer.
-            label_width (int, optional): Label width in mm. Defaults to 102mm for AWB labels (IATA Resolution 606).
-            label_height (int, optional): Label height in mm. Defaults to 127mm for AWB labels (IATA Resolution 606).
-            scaling (int, optional): Print scaling percentage. Defaults to 100 (no scaling).
+            printer_name (str, optional): Ignored - uses static value "Xprinter-XP410B"
+            label_width (int, optional): Ignored - uses static value 102mm
+            label_height (int, optional): Ignored - uses static value 127mm
+            scaling (int, optional): Ignored - uses static value 100
         """
-        self.printer_name = printer_name or PrinterConfig.PRINTER_NAME
-        self.label_width = label_width or PrinterConfig.LABEL_WIDTH_MM
-        self.label_height = label_height or PrinterConfig.LABEL_HEIGHT_MM
-        self.scaling = scaling or PrinterConfig.SCALING
+        # Use static values from PrinterConfig - no optional overrides
+        self.printer_name = "XP-410B"
+        self.label_width = 102
+        self.label_height = 127
+        self.scaling = 100
         
         logger.info(f"PrintWaybillService initialized - {PrinterConfig.get_summary()}")
     
@@ -122,16 +122,16 @@ class PrintWaybillService:
     
     def print_waybill(self, waybill_print, label_width=None, label_height=None, scaling=None) -> dict:
         """
-        Print a waybill file using CUPS with proper sizing for XPrinter thermal printer.
+        Print a waybill file using CUPS with static settings for XPrinter thermal printer.
         
         Validates local file path exists before processing.
         Updates status to "printing" when job is successfully submitted to CUPS.
         
         Args:
             waybill_print: WaybillPrint model instance
-            label_width (int, optional): Label width in mm. Uses instance default if not specified.
-            label_height (int, optional): Label height in mm. Uses instance default if not specified.
-            scaling (int, optional): Print scaling percentage. Uses instance default if not specified.
+            label_width (int, optional): Ignored - uses static 102mm
+            label_height (int, optional): Ignored - uses static 127mm
+            scaling (int, optional): Ignored - uses static 100
         
         Returns:
             dict: {
@@ -152,10 +152,10 @@ class PrintWaybillService:
             invoice_number = waybill_print.invoice_number
             local_file_path = waybill_print.local_file_path
             
-            # Use provided values or fall back to instance defaults
-            width = label_width or self.label_width
-            height = label_height or self.label_height
-            scale = scaling or self.scaling
+            # Use static values - ignore optional parameters
+            width = 102
+            height = 127
+            scale = 100
             
             # Validate local file path exists
             if not local_file_path:
