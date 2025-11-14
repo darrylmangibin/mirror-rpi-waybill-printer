@@ -81,6 +81,23 @@ class WaybillDownloadService:
         base_type = content_type.split(';')[0].strip().lower()
         return content_type_map.get(base_type)
     
+    def _get_waybill_from_third_party(self, waybill_print, invoice_number: str) -> str:
+        """
+        Generate fallback waybill URL from third-party API (Railway).
+        Used when no waybill_url is provided from the initial response.
+        
+        Args:
+            waybill_print: WaybillPrint model instance (contains tenant_id)
+            invoice_number (str): Invoice number for the waybill
+        
+        Returns:
+            str: Fallback waybill URL
+        """
+        tenant_id = waybill_print.tenant_id
+        fallback_url = f"https://fusion-production-api-{tenant_id}.up.railway.app/api/waybills/{invoice_number}/print-waybill"
+        logger.info(f"Using fallback third-party URL for invoice {invoice_number} (tenant: {tenant_id})")
+        return fallback_url
+    
     def download(self, waybill_print, waybill_url: str, invoice_number: str) -> dict:
         """
         Download a waybill file from URL and save to local storage.
@@ -106,12 +123,22 @@ class WaybillDownloadService:
             }
         """
         try:
+            # Use fallback URL if no waybill_url provided
+            is_fallback_url = False
+            if not waybill_url:
+                waybill_url = self._get_waybill_from_third_party(waybill_print, invoice_number)
+                is_fallback_url = True
+            
             # Download file with timeout and streaming
             response = requests.get(waybill_url, timeout=30, stream=True)
             response.raise_for_status()
             
+            # Log response details for debugging
+            content_type = response.headers.get('Content-Type', 'Not specified')
+            logger.info(f"Download response - Invoice: {invoice_number}, Content-Type: {content_type}, Fallback: {is_fallback_url}, Status: {response.status_code}")
+            
             # PRIORITY 1: Check Content-Type header from server (authoritative source)
-            extension = self._get_extension_from_content_type(response.headers.get('Content-Type'))
+            extension = self._get_extension_from_content_type(content_type)
             
             # PRIORITY 2: Fallback to URL filename extension if Content-Type not recognized
             if not extension:
@@ -143,6 +170,9 @@ class WaybillDownloadService:
                 raise IOError(f"File was not saved successfully: {filepath}")
             
             file_size = os.path.getsize(filepath)
+            
+            # Log successful download
+            logger.info(f"Waybill saved successfully - Invoice: {invoice_number}, File: {filename}, Size: {file_size} bytes, Fallback: {is_fallback_url}")
             
             # Update database record with download status
             waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value

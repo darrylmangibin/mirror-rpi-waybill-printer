@@ -36,23 +36,15 @@ class DownloadWaybillAction:
             invoice_number = waybill_print.invoice_number
             waybill_url = waybill_print.waybill_url
             
-            # Check if URL exists
-            if not waybill_url:
-                logger.warning(f"No waybill URL provided for Invoice: {invoice_number} (ID: {waybill_print.id}) - Fallback will be used")
-                return {
-                    "status": "pending",
-                    "message": "Waybill created without URL - waiting for fallback processing",
-                    "data": {
-                        "waybill_id": waybill_print.id,
-                        "invoice_number": invoice_number
-                    }
-                }
-            
             # Step 1: Set status to DOWNLOADING immediately
             waybill_print.status = WaybillPrintStatuses.DOWNLOADING.value
             db.session.commit()
             
-            # Step 2: Delegate to service - handles download, database updates, and error handling
+            # Log if using fallback URL
+            if not waybill_url:
+                logger.warning(f"No waybill URL provided for Invoice: {invoice_number} (ID: {waybill_print.id}) - Fallback will be used")
+            
+            # Step 2: Delegate to service - handles download (with fallback if URL is None), database updates, and error handling
             return self.download_service.download(waybill_print, waybill_url, invoice_number)
         
         except Exception as e:
