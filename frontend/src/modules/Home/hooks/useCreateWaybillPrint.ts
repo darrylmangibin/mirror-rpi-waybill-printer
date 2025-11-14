@@ -21,7 +21,7 @@ export const useCreateWaybillPrint = () => {
   } = useMutation<
     WaybillsResponse,
     Error,
-    { invoiceNumber: string; waybillUrl: string }
+    { invoiceNumber: string; waybillUrl: string | null | undefined }
   >({
     mutationFn: ({ invoiceNumber, waybillUrl }) =>
       waybillService.createWaybillPrint(invoiceNumber, waybillUrl),

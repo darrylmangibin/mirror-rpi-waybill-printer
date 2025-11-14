@@ -56,7 +56,7 @@ export const ManualCreatePrintJobDialog = ({
 						</TooltipTrigger>
 						<TooltipContent className='bg-gray-900 text-white border-0 max-w-xs'>
 							<p className='text-xs'>
-								Click to manually create a print job with invoice number and URL
+								Click to manually create a print job with invoice number and optional URL
 							</p>
 						</TooltipContent>
 					</Tooltip>
@@ -73,7 +73,7 @@ export const ManualCreatePrintJobDialog = ({
 						/>
 					}
 					title='Create Print Job'
-					description='Enter invoice number and URL to create a print job'
+					description='Enter invoice number and optionally a URL to create a print job'
 				/>
 
 				<div className='px-4 py-4 space-y-4'>
@@ -104,11 +104,11 @@ export const ManualCreatePrintJobDialog = ({
 								name='url'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>URL</FormLabel>
+										<FormLabel>URL <span className='text-gray-500 text-xs font-normal'>(Optional)</span></FormLabel>
 										<FormControl>
 											<Input
 												type='url'
-												placeholder='Enter URL to print'
+												placeholder='Enter URL to print (leave empty to skip)'
 												disabled={isPending}
 												{...field}
 											/>

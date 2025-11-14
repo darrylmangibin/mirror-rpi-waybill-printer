@@ -3,6 +3,7 @@ import { WAYBILL_ENDPOINTS, NETWORK_ENDPOINTS } from '@/modules/Home/services/en
 
 export interface WaybillPrint {
   id: number;
+  tenant_id: number;
   created_at: string;
   updated_at: string;
   invoice_number: string | null;
@@ -64,18 +65,24 @@ const waybillService = {
   /**
    * Create a new waybill print
    * @param invoiceNumber - Invoice number for the waybill
-   * @param waybillUrl - URL of the waybill to print
+   * @param waybillUrl - URL of the waybill to print (optional)
    * @returns Promise with created waybill print
    */
   async createWaybillPrint(
     invoiceNumber: string,
-    waybillUrl: string
+    waybillUrl?: string | null
   ): Promise<WaybillsResponse> {
     try {
-      const response = await api.post<WaybillsResponse>(WAYBILL_ENDPOINTS.CREATE_PRINT, {
+      const payload: Record<string, any> = {
         invoice_number: invoiceNumber,
-        waybill_url: waybillUrl,
-      });
+      };
+      
+      // Only include waybill_url if it's provided
+      if (waybillUrl) {
+        payload.waybill_url = waybillUrl;
+      }
+      
+      const response = await api.post<WaybillsResponse>(WAYBILL_ENDPOINTS.CREATE_PRINT, payload);
       return response.data;
     } catch (error) {
       throw new Error(
