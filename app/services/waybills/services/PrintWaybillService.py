@@ -18,6 +18,8 @@ class PrintWaybillService:
     Service for printing waybill files using CUPS.
     Similar to Laravel Service pattern for business logic separation.
     Handles file validation, status management, and printing process.
+    
+    Note: Printer model is Generic Text-Only Printer (XP-410B)
     """
     
     def __init__(self, printer_name=None, label_width=None, label_height=None, scaling=None):
