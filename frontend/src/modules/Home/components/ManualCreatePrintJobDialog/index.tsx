@@ -83,13 +83,13 @@ export const ManualCreatePrintJobDialog = ({
 							className='space-y-4'>
 							<FormField
 								control={form.control}
-								name='invoiceNumber'
+								name='tenantId'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Invoice Number</FormLabel>
+										<FormLabel>Tenant ID</FormLabel>
 										<FormControl>
 											<Input
-												placeholder='Enter invoice number'
+												placeholder='Enter tenant ID'
 												disabled={isPending}
 												{...field}
 											/>
@@ -101,13 +101,13 @@ export const ManualCreatePrintJobDialog = ({
 
 							<FormField
 								control={form.control}
-								name='tenantId'
+								name='invoiceNumber'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Tenant ID</FormLabel>
+										<FormLabel>Invoice Number</FormLabel>
 										<FormControl>
 											<Input
-												placeholder='Enter tenant ID'
+												placeholder='Enter invoice number'
 												disabled={isPending}
 												{...field}
 											/>
