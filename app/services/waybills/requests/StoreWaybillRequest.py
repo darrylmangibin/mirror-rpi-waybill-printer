@@ -16,7 +16,7 @@ class StoreWaybillRequest(FormRequest):
         """
         return {
             'invoice_number': ['required', 'string'],
-            'waybill_url': ['string'],
+            'waybill_url': ['nullable', 'string'],
             'tenant_id': ['required', 'string']
         }
     
