@@ -4,6 +4,7 @@ from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequ
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction
+from app.services.waybills.actions.PrintWaybillThermalAction import PrintWaybillThermalAction
 from app.utils.decorators import get_model
 from app.utils.loggers import get_logger
 from app.database import db
@@ -61,8 +62,9 @@ def download(waybill_print):
 @waybills_bp.route('/prints/<int:waybill_print>/print', methods=['POST'])
 @get_model(WaybillPrint)
 def print_waybill(waybill_print):
-    """Print a waybill."""
-    print_action = PrintWaybillAction()
+    """Print a waybill using thermal printer (ESC/POS)."""
+    # Use thermal printer action for direct USB printing
+    print_action = PrintWaybillThermalAction()
     result = print_action(waybill_print)
     status_code = 200 if result.get('status') == 'success' else 400
     return jsonify(result), status_code
