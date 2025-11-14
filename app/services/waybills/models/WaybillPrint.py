@@ -19,6 +19,9 @@ class WaybillPrint(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now().replace(microsecond=0))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now().replace(microsecond=0), onupdate=lambda: datetime.now().replace(microsecond=0))
     
+    # Tenant relationship
+    tenant_id = db.Column(db.Integer, nullable=False)
+    
     # Fields
     invoice_number = db.Column(db.String, nullable=True)
     waybill_url = db.Column(db.Text, nullable=True)
@@ -36,6 +39,7 @@ class WaybillPrint(db.Model):
         """Convert model to dictionary for JSON responses."""
         return {
             'id': self.id,
+            'tenant_id': self.tenant_id,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
             'invoice_number': self.invoice_number,

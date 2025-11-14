@@ -22,6 +22,7 @@ class WaybillPrintService:
             data (dict): Dictionary containing:
                 - invoice_number (str): Invoice number for the waybill
                 - waybill_url (str): URL of the waybill to print
+                - tenant_id (int): Tenant ID for the waybill
         
         Returns:
             WaybillPrint: The created model instance
@@ -30,7 +31,7 @@ class WaybillPrintService:
             Exception: If database save fails
             
         Example:
-            >>> data = {'invoice_number': 'INV-001', 'waybill_url': 'https://...'}
+            >>> data = {'invoice_number': 'INV-001', 'waybill_url': 'https://...', 'tenant_id': 1}
             >>> waybill = WaybillPrintService.create(data)
             >>> print(waybill.id)
         """
@@ -38,11 +39,13 @@ class WaybillPrintService:
             # Extract data with defaults
             invoice_number = data.get('invoice_number')
             waybill_url = data.get('waybill_url')
+            tenant_id = data.get('tenant_id')
             
             # Create model instance
             waybill_print = WaybillPrint(
                 invoice_number=invoice_number,
-                waybill_url=waybill_url
+                waybill_url=waybill_url,
+                tenant_id=tenant_id
             )
             
             # Save to database
