@@ -60,11 +60,7 @@ class PrinterConfig:
         scale = scaling or 100
         
         # Static options for thermal printer compatibility
-        options = {
-            "media": f"Custom.{width}x{height}mm",
-            "scaling": str(scale),
-            "fit-to-page": "true",
-        }
+        options = {}  # No options - let printer handle it
         
         return options
     
