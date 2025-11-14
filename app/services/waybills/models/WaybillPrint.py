@@ -25,6 +25,7 @@ class WaybillPrint(db.Model):
     # Fields
     invoice_number = db.Column(db.String, nullable=True)
     waybill_url = db.Column(db.Text, nullable=True)
+    marketplace = db.Column(db.String, nullable=True)  # Marketplace name/identifier
     
     # Download Management
     status = db.Column(db.String, default='pending')  # 'pending', 'downloaded', 'failed'
@@ -44,6 +45,7 @@ class WaybillPrint(db.Model):
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
             'invoice_number': self.invoice_number,
             'waybill_url': self.waybill_url,
+            'marketplace': self.marketplace,
             'status': self.status,
             'local_file_path': self.local_file_path,
             'error_message': self.error_message,
