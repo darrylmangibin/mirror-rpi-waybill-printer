@@ -51,6 +51,18 @@ export const getWaybillColumns = (
 		),
 	},
 	{
+		accessorKey: 'marketplace',
+		header: 'Marketplace',
+		cell: ({ row }) => {
+			const marketplace = row.getValue('marketplace') as string | null;
+			return (
+				<div className='text-gray-900 text-xs'>
+					{marketplace || '-'}
+				</div>
+			);
+		},
+	},
+	{
 		accessorKey: 'tenant_id',
 		header: 'Tenant ID',
 		cell: ({ row }) => (
