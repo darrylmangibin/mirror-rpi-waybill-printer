@@ -117,37 +117,55 @@ echo -e "${BLUE}Available printer URIs:${NC}"
 lpinfo -v
 echo ""
 
-# Ask user for printer setup
-read -p "Do you want to configure your Zebra printer now? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    read -p "Enter printer name (default: XB-410B): " PRINTER_NAME
-    PRINTER_NAME=${PRINTER_NAME:-XB-410B}
-    
-    read -p "Enter printer USB URI (e.g., usb:///dev/usb/lp0): " PRINTER_URI
-    
-    if [ -z "$PRINTER_URI" ]; then
-        echo -e "${RED}❌ Printer URI cannot be empty${NC}"
-        echo -e "${YELLOW}Run 'lpinfo -v' manually to find your printer URI${NC}"
-    else
-        echo -e "${YELLOW}Adding Zebra printer: $PRINTER_NAME at $PRINTER_URI${NC}"
+# Check if printer is already configured
+echo -e "${YELLOW}Checking for existing printer configuration...${NC}"
+EXISTING_PRINTER=$(lpstat -p -d 2>/dev/null | grep -oP 'printer \K[^ ]+' | head -1)
+
+if [ -z "$EXISTING_PRINTER" ]; then
+    # No printer found, ask to configure one
+    echo -e "${YELLOW}No printer currently configured.${NC}"
+    read -p "Do you want to configure your thermal printer now? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        read -p "Enter printer name (default: XPrinter-410B): " PRINTER_NAME
+        PRINTER_NAME=${PRINTER_NAME:-XPrinter-410B}
         
-        # Add printer with Zebra PPD driver at admin level
-        lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd
+        read -p "Enter printer USB URI (e.g., usb://Xprinter/XP-410B?serial=410BBE235170626): " PRINTER_URI
         
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✅ Zebra printer added successfully${NC}"
-            # Set as default
-            lpadmin -d "$PRINTER_NAME"
-            echo -e "${GREEN}✅ Printer set as default${NC}"
-            echo -e "${BLUE}Current printer status:${NC}"
-            lpstat -p -d
+        if [ -z "$PRINTER_URI" ]; then
+            echo -e "${RED}❌ Printer URI cannot be empty${NC}"
+            echo -e "${YELLOW}Run 'lpinfo -v' manually to find your printer URI${NC}"
         else
-            echo -e "${RED}❌ Failed to add printer${NC}"
-            echo -e "${YELLOW}Try running manually with admin access:${NC}"
-            echo -e "${BLUE}  sudo lpadmin -p $PRINTER_NAME -E -v '$PRINTER_URI' -m drv:///sample.drv/zebra.ppd${NC}"
+            echo -e "${YELLOW}Adding thermal printer: $PRINTER_NAME at $PRINTER_URI${NC}"
+            
+            # Show the command being used so user can copy-paste if needed
+            echo -e "${BLUE}Command: lpadmin -p $PRINTER_NAME -E -v '$PRINTER_URI' -m drv:///sample.drv/zebra.ppd${NC}"
+            echo -e "${YELLOW}PPD Driver Flag: -m drv:///sample.drv/zebra.ppd${NC}"
+            echo ""
+            
+            # Add printer with Zebra PPD driver (compatible with XPrinter thermal printers)
+            lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd
+            
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}✅ Thermal printer added successfully${NC}"
+                # Set as default
+                lpadmin -d "$PRINTER_NAME"
+                echo -e "${GREEN}✅ Printer set as default${NC}"
+                echo -e "${BLUE}Current printer status:${NC}"
+                lpstat -p -d
+            else
+                echo -e "${RED}❌ Failed to add printer${NC}"
+                echo -e "${YELLOW}Try running manually with admin access:${NC}"
+                echo -e "${BLUE}  sudo lpadmin -p $PRINTER_NAME -E -v '$PRINTER_URI' -m drv:///sample.drv/zebra.ppd${NC}"
+            fi
         fi
     fi
+else
+    # Printer already configured
+    echo -e "${GREEN}✅ Printer already configured: $EXISTING_PRINTER${NC}"
+    echo -e "${BLUE}Current printer configuration:${NC}"
+    lpstat -p -d
+    echo -e "${YELLOW}⏭️  Skipping printer setup (already installed)${NC}"
 fi
 
 # Install additional printer drivers and utilities
@@ -220,17 +238,18 @@ echo -e "\n${GREEN}✅ Installation complete!${NC}"
 echo -e "${BLUE}Backend dependencies: Installed${NC}"
 echo -e "${BLUE}Frontend dependencies: Installed${NC}"
 echo -e "${BLUE}Database: Initialized${NC}"
-echo -e "${BLUE}CUPS: Configured with admin-level Zebra printer support${NC}"
-echo -e "\n${YELLOW}CUPS & Zebra Printer Configuration (Admin Level):${NC}"
+echo -e "${BLUE}CUPS: Configured with thermal printer support${NC}"
+echo -e "\n${YELLOW}CUPS & Thermal Printer Configuration (Admin Level):${NC}"
 echo -e "${BLUE}• $ACTUAL_USER has admin access to lpadmin group${NC}"
-echo -e "${BLUE}• Zebra printer drivers installed${NC}"
+echo -e "${BLUE}• Thermal printer drivers installed (Zebra PPD compatible)${NC}"
 echo -e "${BLUE}• CUPS configured for admin-level printer management${NC}"
 echo -e "${BLUE}• CUPS web interface: http://localhost:631${NC}"
+echo -e "${BLUE}• PNG-to-PDF conversion enabled for printing${NC}"
 echo -e "\n${YELLOW}View configured printers:${NC}"
 echo -e "${BLUE}  lpstat -p -d${NC}"
-echo -e "\n${YELLOW}To manually add/configure Zebra printer with admin access:${NC}"
+echo -e "\n${YELLOW}To manually add/configure thermal printer (XPrinter) with admin access:${NC}"
 echo -e "${BLUE}  1. Run: lpinfo -v  (to find USB URI)${NC}"
-echo -e "${BLUE}  2. Run: sudo lpadmin -p PRINTER_NAME -E -v '<USB_URI>' -m drv:///sample.drv/zebra.ppd${NC}"
+echo -e "${BLUE}  2. Run: sudo lpadmin -p PRINTER_NAME -E -v 'usb://Xprinter/XP-410B?serial=XXX' -m drv:///sample.drv/zebra.ppd${NC}"
 echo -e "${BLUE}  3. Set default: sudo lpadmin -d PRINTER_NAME${NC}"
 echo -e "\n${YELLOW}Important - Log out and log back in for group changes:${NC}"
 echo -e "${BLUE}  Or run: newgrp lpadmin${NC}"
