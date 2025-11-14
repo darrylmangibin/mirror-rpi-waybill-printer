@@ -17,7 +17,7 @@ class StoreWaybillRequest(FormRequest):
         return {
             'invoice_number': ['required', 'string'],
             'waybill_url': ['string'],
-            'tenant_id': ['required', 'integer']
+            'tenant_id': ['required', 'string']
         }
     
     def messages(self):
@@ -32,5 +32,5 @@ class StoreWaybillRequest(FormRequest):
             'invoice_number.string': 'Invoice number must be a string',
             'waybill_url.string': 'Waybill URL must be a string',
             'tenant_id.required': 'Tenant ID is required',
-            'tenant_id.integer': 'Tenant ID must be an integer'
+            'tenant_id.string': 'Tenant ID must be a string'
         }
