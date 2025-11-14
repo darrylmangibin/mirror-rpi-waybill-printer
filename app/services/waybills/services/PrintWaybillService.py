@@ -1,6 +1,7 @@
 import os
 import cups
 from datetime import datetime
+from PIL import Image
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
@@ -34,6 +35,51 @@ class PrintWaybillService:
         self.label_width = label_width or DEFAULT_LABEL_WIDTH
         self.label_height = label_height or DEFAULT_LABEL_HEIGHT
         self.scaling = scaling or DEFAULT_SCALING
+    
+    def _convert_png_to_pdf(self, png_path: str) -> str:
+        """
+        Convert PNG image to PDF format for thermal printer compatibility.
+        
+        XPrinter thermal printers don't support PNG format through CUPS,
+        so we convert PNG images to PDF before printing.
+        
+        Args:
+            png_path (str): Path to PNG file
+        
+        Returns:
+            str: Path to converted PDF file
+        
+        Raises:
+            Exception: If conversion fails
+        """
+        try:
+            logger.info(f"Converting PNG to PDF: {png_path}")
+            
+            # Open PNG image
+            image = Image.open(png_path)
+            
+            # Convert RGBA/LA/P modes to RGB (PDF handles RGB better)
+            if image.mode in ('RGBA', 'LA', 'P'):
+                logger.info(f"Converting image mode from {image.mode} to RGB")
+                rgb_image = Image.new('RGB', image.size, (255, 255, 255))
+                if image.mode == 'RGBA':
+                    rgb_image.paste(image, mask=image.split()[-1])
+                elif image.mode == 'LA':
+                    rgb_image.paste(image, mask=image.split()[-1])
+                else:
+                    rgb_image.paste(image)
+                image = rgb_image
+            
+            # Save as PDF
+            pdf_path = png_path.replace('.png', '.pdf')
+            image.save(pdf_path, 'PDF', quality=95)
+            
+            logger.info(f"Successfully converted PNG to PDF: {png_path} → {pdf_path}")
+            return pdf_path
+        
+        except Exception as e:
+            logger.error(f"Failed to convert PNG to PDF: {str(e)}", exc_info=True)
+            raise Exception(f"PNG to PDF conversion failed: {str(e)}")
     
     def _get_cups_connection(self):
         """
@@ -116,6 +162,12 @@ class PrintWaybillService:
             
             # Log the file path and print settings for debugging
             logger.info(f"PrintWaybillService validating - Invoice: {invoice_number}, File: {local_file_path}, Label size: {width}x{height}mm, Scaling: {scale}%")
+            
+            # Check if file is PNG and convert to PDF for printer compatibility
+            if local_file_path.lower().endswith('.png'):
+                logger.info(f"Detected PNG file, converting to PDF for printer compatibility: {local_file_path}")
+                local_file_path = self._convert_png_to_pdf(local_file_path)
+                logger.info(f"Using converted PDF file for printing: {local_file_path}")
             
             # Get CUPS connection and printer
             conn, printer_name = self._get_cups_connection()
