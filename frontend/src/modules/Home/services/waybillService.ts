@@ -8,6 +8,7 @@ export interface WaybillPrint {
   updated_at: string;
   invoice_number: string | null;
   waybill_url: string | null;
+  marketplace: string | null;
   status: 'pending' | 'downloading' | 'downloaded' | 'for printing' | 'completed' | 'error';
   local_file_path: string | null;
   error_message: string | null;
@@ -67,12 +68,14 @@ const waybillService = {
    * @param invoiceNumber - Invoice number for the waybill
    * @param tenantId - Tenant ID for the waybill (as string)
    * @param waybillUrl - URL of the waybill to print (optional)
+   * @param marketplace - Marketplace identifier (optional)
    * @returns Promise with created waybill print
    */
   async createWaybillPrint(
     invoiceNumber: string,
     tenantId: string,
-    waybillUrl?: string | null
+    waybillUrl?: string | null,
+    marketplace?: string | null
   ): Promise<WaybillsResponse> {
     try {
       const payload: Record<string, any> = {
@@ -83,6 +86,11 @@ const waybillService = {
       // Only include waybill_url if it's provided
       if (waybillUrl) {
         payload.waybill_url = waybillUrl;
+      }
+      
+      // Only include marketplace if it's provided
+      if (marketplace) {
+        payload.marketplace = marketplace;
       }
       
       const response = await api.post<WaybillsResponse>(WAYBILL_ENDPOINTS.CREATE_PRINT, payload);

@@ -3,6 +3,7 @@ import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/compon
 import { FilePath } from '@/modules/Home/components/WaybillColumns/components/FilePath';
 import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
 import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
+import { ErrorColumn } from '@/modules/Home/components/WaybillColumns/components/ErrorColumn';
 import { FormattedDate } from '@/components/global';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WaybillPrint } from '@/modules/Home/services';
@@ -73,6 +74,14 @@ export const getWaybillColumns = (
 					}}
 				/>
 			);
+		},
+	},
+	{
+		accessorKey: 'error_message',
+		header: 'Error',
+		cell: ({ row }) => {
+			const errorMessage = row.getValue('error_message') as string | null;
+			return <ErrorColumn errorMessage={errorMessage} />;
 		},
 	},
 	{
