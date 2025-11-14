@@ -50,6 +50,15 @@ export const getWaybillColumns = (
 		),
 	},
 	{
+		accessorKey: 'tenant_id',
+		header: 'Tenant ID',
+		cell: ({ row }) => (
+			<div className='text-gray-900 text-xs'>
+				{row.getValue('tenant_id')}
+			</div>
+		),
+	},
+	{
 		accessorKey: 'status',
 		header: 'Status',
 		cell: ({ row }) => {
