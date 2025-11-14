@@ -35,6 +35,23 @@ else
     fi
 fi
 
+# Install printer drivers and utilities
+echo -e "${YELLOW}Installing printer drivers and utilities...${NC}"
+sudo apt update
+sudo apt install -y printer-driver-all imagemagick ghostscript
+echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
+
+# Add current user to lpadmin group for printer management
+echo -e "${YELLOW}Adding current user to lpadmin group...${NC}"
+sudo usermod -aG lpadmin $(whoami)
+echo -e "${GREEN}✅ User added to lpadmin group${NC}"
+
+# Enable CUPS remote access
+echo -e "${YELLOW}Enabling CUPS remote access...${NC}"
+sudo cupsctl --remote-any
+sudo systemctl restart cups
+echo -e "${GREEN}✅ CUPS remote access enabled${NC}"
+
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}Creating Python virtual environment...${NC}"
@@ -91,6 +108,14 @@ echo -e "\n${GREEN}✅ Installation complete!${NC}"
 echo -e "${BLUE}Backend dependencies: Installed${NC}"
 echo -e "${BLUE}Frontend dependencies: Installed${NC}"
 echo -e "${BLUE}Database: Initialized${NC}"
+echo -e "${BLUE}Printer utilities: Installed${NC}"
+echo -e "\n${YELLOW}Next steps for printer setup:${NC}"
+echo -e "${BLUE}1. Physically connect your XB-410B printer to the Raspberry Pi (USB/Network)${NC}"
+echo -e "${BLUE}2. Open http://<your-pi-ip>:631 in your browser${NC}"
+echo -e "${BLUE}3. Navigate to Administration → Add Printer${NC}"
+echo -e "${BLUE}4. Select your XB-410B from the list${NC}"
+echo -e "${BLUE}5. Choose a driver (generic thermal driver works)${NC}"
+echo -e "${BLUE}6. Configure label size and settings, then set as default${NC}"
 echo -e "\n${YELLOW}You can now run:${NC}"
 echo -e "${GREEN}  ./run.sh     - Start backend only${NC}"
 echo -e "${GREEN}  ./dev.sh     - Start both backend + frontend${NC}"
