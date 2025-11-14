@@ -3,6 +3,7 @@ import pathlib
 import requests
 from datetime import datetime
 from urllib.parse import urlparse
+from pypdf import PdfReader, PdfWriter
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
@@ -98,10 +99,97 @@ class WaybillDownloadService:
         logger.info(f"Using fallback third-party URL for invoice {invoice_number} (tenant: {tenant_id})")
         return fallback_url
     
+    def _crop_pdf_to_a4(self, pdf_path: str, invoice_number: str) -> str:
+        """
+        Crop PDF to A4 size (210x297mm = 595x842 points at 72 DPI).
+        Creates a new cropped PDF file while preserving the original.
+        
+        Args:
+            pdf_path (str): Path to the original PDF file
+            invoice_number (str): Invoice number for logging
+        
+        Returns:
+            str: Path to the cropped PDF file
+        
+        Raises:
+            Exception: If PDF cropping fails
+        """
+        try:
+            logger.info(f"Starting PDF cropping to A4 size - Invoice: {invoice_number}, File: {pdf_path}")
+            
+            # A4 dimensions in points (72 DPI)
+            # A4 = 210mm × 297mm = 595 × 842 points
+            a4_width = 595
+            a4_height = 842
+            
+            # Read the original PDF
+            reader = PdfReader(pdf_path)
+            writer = PdfWriter()
+            
+            # Process each page
+            for page_num, page in enumerate(reader.pages):
+                # Get page dimensions
+                original_width = page.mediabox.width
+                original_height = page.mediabox.height
+                
+                logger.info(f"Processing page {page_num + 1} - Original size: {original_width}x{original_height} points")
+                
+                # Crop to A4 size (top-left corner at 0,0)
+                page.mediabox.lower_left = (0, 0)
+                page.mediabox.upper_right = (a4_width, a4_height)
+                
+                writer.add_page(page)
+            
+            # Generate cropped filename (replace extension)
+            base_path = os.path.splitext(pdf_path)[0]
+            cropped_path = f"{base_path}_a4.pdf"
+            
+            # Save cropped PDF
+            with open(cropped_path, 'wb') as f:
+                writer.write(f)
+            
+            # Verify cropped file was created
+            if not os.path.exists(cropped_path):
+                raise IOError(f"Cropped PDF was not created successfully: {cropped_path}")
+            
+            original_size = os.path.getsize(pdf_path)
+            cropped_size = os.path.getsize(cropped_path)
+            
+            logger.info(f"PDF cropped successfully to A4 - Invoice: {invoice_number}, Original size: {original_size} bytes, Cropped size: {cropped_size} bytes, Cropped file: {cropped_path}")
+            
+            # Delete original file and keep only the cropped version
+            try:
+                os.remove(pdf_path)
+                logger.info(f"Original PDF file removed - Invoice: {invoice_number}, File: {pdf_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete original PDF file - Invoice: {invoice_number}: {str(e)}")
+            
+            return cropped_path
+        
+        except Exception as e:
+            logger.error(f"Failed to crop PDF to A4 - Invoice: {invoice_number}, File: {pdf_path}: {str(e)}", exc_info=True)
+            raise Exception(f"PDF cropping to A4 failed: {str(e)}")
+    
+    def _cleanup_old_waybill_file(self, old_file_path: str, invoice_number: str) -> None:
+        """
+        Clean up old waybill file when a new one is downloaded.
+        
+        Args:
+            old_file_path (str): Path to the old waybill file to remove
+            invoice_number (str): Invoice number for logging
+        """
+        if old_file_path and os.path.exists(old_file_path):
+            try:
+                os.remove(old_file_path)
+                logger.info(f"Old waybill file cleaned up - Invoice: {invoice_number}, File: {old_file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete old waybill file - Invoice: {invoice_number}, File: {old_file_path}: {str(e)}")
+    
     def download(self, waybill_print, waybill_url: str, invoice_number: str) -> dict:
         """
         Download a waybill file from URL and save to local storage.
         Trusts Content-Type header over URL extension (server is authoritative).
+        Automatically crops PDF files to A4 size for optimal printing.
         Updates the WaybillPrint record with download status and file path.
         
         Args:
@@ -123,6 +211,9 @@ class WaybillDownloadService:
             }
         """
         try:
+            # Store old file path for cleanup when re-downloading
+            old_file_path = waybill_print.local_file_path
+            
             # Use fallback URL if no waybill_url provided
             is_fallback_url = False
             if not waybill_url:
@@ -169,10 +260,22 @@ class WaybillDownloadService:
             if not os.path.exists(filepath):
                 raise IOError(f"File was not saved successfully: {filepath}")
             
-            file_size = os.path.getsize(filepath)
+            original_file_size = os.path.getsize(filepath)
             
             # Log successful download
-            logger.info(f"Waybill saved successfully - Invoice: {invoice_number}, File: {filename}, Size: {file_size} bytes, Fallback: {is_fallback_url}")
+            logger.info(f"Waybill saved successfully - Invoice: {invoice_number}, File: {filename}, Size: {original_file_size} bytes, Fallback: {is_fallback_url}")
+            
+            # CROP PDF TO A4 if file is a PDF
+            if filepath.lower().endswith('.pdf'):
+                try:
+                    filepath = self._crop_pdf_to_a4(filepath, invoice_number)
+                    filename = os.path.basename(filepath)
+                    logger.info(f"PDF cropped to A4 - Invoice: {invoice_number}, New file: {filename}")
+                except Exception as crop_error:
+                    logger.error(f"PDF cropping failed, but continuing with original file - Invoice: {invoice_number}: {str(crop_error)}")
+                    # Continue with original file if cropping fails
+            
+            file_size = os.path.getsize(filepath)
             
             # Update database record with download status
             waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
@@ -180,9 +283,12 @@ class WaybillDownloadService:
             waybill_print.downloaded_at = datetime.now().replace(microsecond=0)
             db.session.commit()
             
+            # Clean up old waybill file after successful new download
+            self._cleanup_old_waybill_file(old_file_path, invoice_number)
+            
             return {
                 'status': 'success',
-                'message': 'Waybill downloaded and saved successfully',
+                'message': 'Waybill downloaded, cropped to A4, and saved successfully',
                 'data': {
                     'waybill_id': waybill_print.id,
                     'invoice_number': invoice_number,

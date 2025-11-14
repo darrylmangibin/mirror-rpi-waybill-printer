@@ -40,13 +40,10 @@ export const WaybillPrintActions = ({
 			<DropdownMenuContent
 				align='end'
 				className='bg-white border-gray-200'>
-				<DropdownMenuItem
-					onClick={() => onDownloadClick(waybill)}
-					disabled={
-						!!waybill.local_file_path ||
-						waybill.status === WaybillPrintStatuses.DOWNLOADING
-					}
-					className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
+			<DropdownMenuItem
+				onClick={() => onDownloadClick(waybill)}
+				disabled={waybill.status !== WaybillPrintStatuses.PENDING}
+				className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
 					<Button
 						asChild
 						type='button'

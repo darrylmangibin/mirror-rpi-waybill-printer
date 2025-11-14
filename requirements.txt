@@ -6,3 +6,4 @@ Flask-Migrate==4.0.5
 Flask-Sieve==1.2.1
 pycups>=2.0.0
 Pillow>=9.0.0
+PyPDF>=3.16.0
