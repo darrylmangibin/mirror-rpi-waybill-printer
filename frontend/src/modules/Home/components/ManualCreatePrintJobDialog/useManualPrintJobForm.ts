@@ -7,6 +7,7 @@ import { useCreateWaybillPrint } from '@/modules/Home/hooks';
 // Schema and constants
 const formSchema = z.object({
 	invoiceNumber: z.string().min(1, 'Invoice number is required').trim(),
+	tenantId: z.string().min(1, 'Tenant ID is required').trim(),
 	url: z.string().optional().refine(
 		(val) => !val || val === '' || z.string().url().safeParse(val).success,
 		'Please enter a valid URL'
@@ -31,6 +32,7 @@ export const useManualPrintJobForm = ({ onSuccess }: UseManualPrintJobFormOption
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			invoiceNumber: '',
+			tenantId: '',
 			url: '',
 		},
 	});
@@ -46,6 +48,7 @@ export const useManualPrintJobForm = ({ onSuccess }: UseManualPrintJobFormOption
 		try {
 			await mutateAsync({
 				invoiceNumber: data.invoiceNumber,
+				tenantId: data.tenantId,
 				waybillUrl: data.url || null,
 			});
 

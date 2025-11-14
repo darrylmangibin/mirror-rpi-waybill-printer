@@ -56,11 +56,16 @@ def auto_queue_download(mapper, connection, target):
     """
     Automatically queue download when new WaybillPrint is created.
     Non-blocking: returns immediately, background worker processes download.
+    If no URL is provided, fallback will be used.
+    Requires: invoice_number and tenant_id
     """
-    if target.waybill_url and target.invoice_number:
+    if target.invoice_number and target.tenant_id:
         try:
             from app.services.waybills.jobs.download_waybill_job import queue_download
             queue_download(target.id)
-            logger.info(f"[EVENT] Download queued for Invoice: {target.invoice_number} (ID: {target.id})")
+            url_status = "with URL" if target.waybill_url else "without URL (fallback pending)"
+            logger.info(f"[EVENT] Download queued for Invoice: {target.invoice_number} (ID: {target.id}) Tenant: {target.tenant_id} {url_status}")
         except Exception as e:
             logger.error(f"Failed to queue download for Invoice {target.invoice_number}: {str(e)}", exc_info=True)
+    else:
+        logger.warning(f"[EVENT] No download queued - Missing Invoice Number or Tenant ID. Invoice: {target.invoice_number}, Tenant: {target.tenant_id}, (ID: {target.id})")

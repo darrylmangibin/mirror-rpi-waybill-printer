@@ -36,9 +36,17 @@ class DownloadWaybillAction:
             invoice_number = waybill_print.invoice_number
             waybill_url = waybill_print.waybill_url
             
-            # Validate URL
+            # Check if URL exists
             if not waybill_url:
-                raise ValueError("Waybill URL is missing")
+                logger.warning(f"No waybill URL provided for Invoice: {invoice_number} (ID: {waybill_print.id}) - Fallback will be used")
+                return {
+                    "status": "pending",
+                    "message": "Waybill created without URL - waiting for fallback processing",
+                    "data": {
+                        "waybill_id": waybill_print.id,
+                        "invoice_number": invoice_number
+                    }
+                }
             
             # Step 1: Set status to DOWNLOADING immediately
             waybill_print.status = WaybillPrintStatuses.DOWNLOADING.value

@@ -65,16 +65,19 @@ const waybillService = {
   /**
    * Create a new waybill print
    * @param invoiceNumber - Invoice number for the waybill
+   * @param tenantId - Tenant ID for the waybill (as string)
    * @param waybillUrl - URL of the waybill to print (optional)
    * @returns Promise with created waybill print
    */
   async createWaybillPrint(
     invoiceNumber: string,
+    tenantId: string,
     waybillUrl?: string | null
   ): Promise<WaybillsResponse> {
     try {
       const payload: Record<string, any> = {
         invoice_number: invoiceNumber,
+        tenant_id: tenantId,
       };
       
       // Only include waybill_url if it's provided
