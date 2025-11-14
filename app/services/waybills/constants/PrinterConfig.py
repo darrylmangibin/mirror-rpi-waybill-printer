@@ -3,6 +3,10 @@ Printer Configuration - Static Values for XPrinter-XP410B Thermal Printer
 
 This file contains hardcoded printer settings optimized for reliable thermal printing.
 No environment variables - all values are static for consistency and reliability.
+
+IMPORTANT: This config works with the official XPrinter Linux SDK driver.
+The install.sh script automatically downloads and installs the XPrinter driver.
+For custom print options, modify the get_print_options() method.
 """
 
 

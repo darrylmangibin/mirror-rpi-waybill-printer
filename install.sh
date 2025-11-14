@@ -35,27 +35,72 @@ echo -e "${GREEN}✅ User added to lpadmin group${NC}"
 
 # Setup printer (XPrinter XP-410B thermal printer)
 echo -e "${YELLOW}Setting up XPrinter XP-410B thermal printer...${NC}"
+
+# Install XPrinter official Linux SDK and drivers
+echo -e "${YELLOW}Installing XPrinter Linux SDK and drivers...${NC}"
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
+
+# Download XPrinter Linux SDK
+echo -e "${YELLOW}Downloading XPrinter Linux SDK...${NC}"
+# Try to download from XPrinter official site
+if wget -q -O linux_sdk.tar.gz "https://www.xprintertech.com/download" 2>/dev/null || \
+   curl -L -o linux_sdk.tar.gz "https://www.xprintertech.com/download" 2>/dev/null; then
+    
+    echo -e "${YELLOW}Extracting XPrinter SDK...${NC}"
+    tar -xzf linux_sdk.tar.gz
+    
+    # Find and run the installation script
+    SDK_DIR=$(find . -maxdepth 2 -name "install.sh" -type f | head -1 | xargs dirname)
+    if [ -n "$SDK_DIR" ] && [ -f "$SDK_DIR/install.sh" ]; then
+        echo -e "${YELLOW}Running XPrinter installation...${NC}"
+        cd "$SDK_DIR"
+        sudo bash ./install.sh
+        echo -e "${GREEN}✅ XPrinter SDK installed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  XPrinter SDK installation script not found${NC}"
+        echo -e "${YELLOW}Manual installation may be required${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Could not download XPrinter Linux SDK${NC}"
+    echo -e "${YELLOW}Please download manually from: https://www.xprintertech.com/download${NC}"
+fi
+
+cd - > /dev/null
+rm -rf "$TEMP_DIR"
+
 # Wait for printer to be detected
 sleep 2
 
 # Remove any existing XPrinter configuration
 sudo lpadmin -x XP-410B 2>/dev/null || true
 
-# Add XPrinter using raw USB connection
-# The printer should be auto-detected by CUPS
+# Detect XPrinter device
 PRINTER_DEVICE=$(lpinfo -v 2>/dev/null | grep -i xprinter | grep usb | head -1 | awk '{print $2}')
 
 if [ -z "$PRINTER_DEVICE" ]; then
-    echo -e "${YELLOW}⚠️  XPrinter not auto-detected. Please connect the printer and run:${NC}"
-    echo -e "${BLUE}   sudo lpinfo -v | grep -i xprinter${NC}"
-    echo -e "${BLUE}   Then add it with: sudo lpadmin -p XP-410B -v <device_uri> -E${NC}"
+    echo -e "${YELLOW}⚠️  XPrinter not auto-detected. Please ensure:${NC}"
+    echo -e "${BLUE}   1. Printer is connected via USB${NC}"
+    echo -e "${BLUE}   2. Printer is powered on${NC}"
+    echo -e "${BLUE}   3. Run: sudo lpinfo -v | grep -i xprinter${NC}"
 else
     echo -e "${YELLOW}Found XPrinter at: $PRINTER_DEVICE${NC}"
-    # Add printer with generic driver
-    sudo lpadmin -p XP-410B -v "$PRINTER_DEVICE" -E -m drv:///sample.drv/generic.ppd
+    
+    # Find available XPrinter driver from SDK
+    XPRINTER_DRIVER=$(lpinfo -m 2>/dev/null | grep -i xprinter | head -1 | awk '{print $1}')
+    
+    if [ -z "$XPRINTER_DRIVER" ]; then
+        # Fallback to generic driver if XPrinter specific not found
+        echo -e "${YELLOW}Using generic driver (XPrinter-specific driver not found)${NC}"
+        XPRINTER_DRIVER="drv:///sample.drv/generic.ppd"
+    fi
+    
+    # Add printer with detected driver
+    sudo lpadmin -p XP-410B -v "$PRINTER_DEVICE" -E -m "$XPRINTER_DRIVER"
+    
     # Set as default
     sudo lpadmin -d XP-410B
-    echo -e "${GREEN}✅ XPrinter XP-410B configured${NC}"
+    echo -e "${GREEN}✅ XPrinter XP-410B configured with driver: $XPRINTER_DRIVER${NC}"
 fi
 
 # Verify printer setup
