@@ -176,7 +176,10 @@ echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
 
 # Create virtual environment if it doesn't exist
 echo -e "${YELLOW}Setting up Python environment...${NC}"
-cd /home/"$ACTUAL_USER"/inspire-projects/rpi-waybill-printer || exit 1
+
+# Get the directory where this script is located (works from any directory)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 
 if [ ! -d "venv" ]; then
     echo -e "${YELLOW}Creating Python virtual environment...${NC}"
