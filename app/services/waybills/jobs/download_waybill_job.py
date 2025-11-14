@@ -42,6 +42,12 @@ def worker():
                     db.session.refresh(waybill)
                     
                     logger.info(f"[DOWNLOAD COMPLETE] Invoice: {invoice}, Status: {result.get('status')}")
+                    
+                    # AUTO-QUEUE FOR PRINTING: Only if download was successful
+                    if result.get('status') == 'success':
+                        from app.services.waybills.jobs.print_waybill_job import queue_print
+                        queue_print(waybill.id)
+                        logger.info(f"[AUTO-QUEUE PRINT] Invoice: {invoice} - Queued for printing after successful download")
                 except Exception as e:
                     logger.error(f"[DOWNLOAD ERROR] Invoice: {invoice}: {str(e)}", exc_info=True)
             

@@ -6,6 +6,7 @@ from flask_sieve import Sieve
 from app.database import db
 from app.utils.network import get_local_ip
 from app.services.waybills.jobs.download_waybill_job import start_workers
+from app.services.waybills.jobs.print_waybill_job import start_print_workers
 
 def create_app():
     # Set custom instance path to keep database inside app directory
@@ -43,7 +44,8 @@ def create_app():
     
     # Start background workers for waybill processing
     with app.app_context():
-        start_workers(num_workers=1)
+        start_workers(num_workers=1)           # Download worker thread
+        start_print_workers(num_workers=1)     # Print worker thread
     
     # API endpoint for testing
     @app.route('/api/hello')
