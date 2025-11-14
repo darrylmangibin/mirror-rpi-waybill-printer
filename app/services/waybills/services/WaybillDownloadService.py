@@ -99,14 +99,56 @@ class WaybillDownloadService:
         logger.info(f"Using fallback third-party URL for invoice {invoice_number} (tenant: {tenant_id})")
         return fallback_url
     
-    def _crop_pdf_to_a4(self, pdf_path: str, invoice_number: str) -> str:
+    def _should_crop_pdf(self, marketplace: str = None) -> bool:
         """
-        Crop PDF to A4 size (210x297mm = 595x842 points at 72 DPI).
+        Determine if PDF should be cropped based on marketplace.
+        Only Zalora and Shopify waybills are cropped to 4x6 inches.
+        
+        Args:
+            marketplace (str, optional): Marketplace name
+        
+        Returns:
+            bool: True if should crop, False otherwise
+        """
+        # Marketplaces that require 4x6 inch cropping
+        crop_marketplaces = {'zalora', 'shopify'}
+        
+        if marketplace and marketplace.lower() in crop_marketplaces:
+            return True
+        
+        return False
+    
+    def _get_crop_dimensions(self, marketplace: str = None) -> tuple:
+        """
+        Get crop dimensions based on marketplace.
+        Returns width and height in points (72 DPI).
+        Currently only Zalora and Shopify use custom dimensions.
+        
+        Args:
+            marketplace (str, optional): Marketplace name
+        
+        Returns:
+            tuple: (width, height) in points for 4x6 inches
+        """
+        # 4x6 inches in points (72 DPI)
+        # 4 inches = 288 points, 6 inches = 432 points
+        crop_width = 288
+        crop_height = 432
+        
+        return (crop_width, crop_height)
+    
+    def _crop_pdf_to_label_size(self, pdf_path: str, invoice_number: str, marketplace: str = None, offset_x: int = 45, offset_y: int = 29) -> str:
+        """
+        Crop PDF to marketplace-specific label size (4x6 inches for thermal printer).
+        Crops from top-left corner with optional offset to avoid cutting edges.
         Creates a new cropped PDF file while preserving the original.
         
         Args:
             pdf_path (str): Path to the original PDF file
             invoice_number (str): Invoice number for logging
+            marketplace (str, optional): Marketplace name for size lookup
+            offset_x (int): Horizontal offset from left edge in points (default 10)
+            offset_y (int): Vertical offset from top edge in points (default 10)
         
         Returns:
             str: Path to the cropped PDF file
@@ -115,12 +157,12 @@ class WaybillDownloadService:
             Exception: If PDF cropping fails
         """
         try:
-            logger.info(f"Starting PDF cropping to A4 size - Invoice: {invoice_number}, File: {pdf_path}")
+            crop_width, crop_height = self._get_crop_dimensions(marketplace)
+            logger.info(f"Starting PDF crop to {crop_width}x{crop_height} points ({crop_width/72:.1f}x{crop_height/72:.1f} inches) with offset ({offset_x}, {offset_y}) - Invoice: {invoice_number}, Marketplace: {marketplace}, File: {pdf_path}")
             
-            # A4 dimensions in points (72 DPI)
-            # A4 = 210mm × 297mm = 595 × 842 points
-            a4_width = 595
-            a4_height = 842
+            # Get dimensions in points
+            label_width = crop_width
+            label_height = crop_height
             
             # Read the original PDF
             reader = PdfReader(pdf_path)
@@ -134,15 +176,17 @@ class WaybillDownloadService:
                 
                 logger.info(f"Processing page {page_num + 1} - Original size: {original_width}x{original_height} points")
                 
-                # Crop to A4 size (top-left corner at 0,0)
-                page.mediabox.lower_left = (0, 0)
-                page.mediabox.upper_right = (a4_width, a4_height)
+                # Crop from TOP-LEFT with offset (PDF coordinates start at bottom-left)
+                # lower_left = (offset_x, original_height - label_height - offset_y)
+                # upper_right = (label_width + offset_x, original_height - offset_y)
+                page.mediabox.lower_left = (offset_x, original_height - label_height - offset_y)
+                page.mediabox.upper_right = (label_width + offset_x, original_height - offset_y)
                 
                 writer.add_page(page)
             
             # Generate cropped filename (replace extension)
             base_path = os.path.splitext(pdf_path)[0]
-            cropped_path = f"{base_path}_a4.pdf"
+            cropped_path = f"{base_path}_cropped.pdf"
             
             # Save cropped PDF
             with open(cropped_path, 'wb') as f:
@@ -155,7 +199,7 @@ class WaybillDownloadService:
             original_size = os.path.getsize(pdf_path)
             cropped_size = os.path.getsize(cropped_path)
             
-            logger.info(f"PDF cropped successfully to A4 - Invoice: {invoice_number}, Original size: {original_size} bytes, Cropped size: {cropped_size} bytes, Cropped file: {cropped_path}")
+            logger.info(f"PDF cropped successfully - Invoice: {invoice_number}, Original size: {original_size} bytes, Cropped size: {cropped_size} bytes, Cropped file: {cropped_path}")
             
             # Delete original file and keep only the cropped version
             try:
@@ -167,8 +211,8 @@ class WaybillDownloadService:
             return cropped_path
         
         except Exception as e:
-            logger.error(f"Failed to crop PDF to A4 - Invoice: {invoice_number}, File: {pdf_path}: {str(e)}", exc_info=True)
-            raise Exception(f"PDF cropping to A4 failed: {str(e)}")
+            logger.error(f"Failed to crop PDF - Invoice: {invoice_number}, File: {pdf_path}: {str(e)}", exc_info=True)
+            raise Exception(f"PDF cropping failed: {str(e)}")
     
     def _cleanup_old_waybill_file(self, old_file_path: str, invoice_number: str) -> None:
         """
@@ -265,15 +309,18 @@ class WaybillDownloadService:
             # Log successful download
             logger.info(f"Waybill saved successfully - Invoice: {invoice_number}, File: {filename}, Size: {original_file_size} bytes, Fallback: {is_fallback_url}")
             
-            # CROP PDF TO A4 if file is a PDF
-            if filepath.lower().endswith('.pdf'):
+            # CROP PDF TO 4x6 INCHES for Zalora and Shopify only
+            marketplace = waybill_print.marketplace
+            if filepath.lower().endswith('.pdf') and self._should_crop_pdf(marketplace):
                 try:
-                    filepath = self._crop_pdf_to_a4(filepath, invoice_number)
+                    filepath = self._crop_pdf_to_label_size(filepath, invoice_number, marketplace)
                     filename = os.path.basename(filepath)
-                    logger.info(f"PDF cropped to A4 - Invoice: {invoice_number}, New file: {filename}")
+                    logger.info(f"PDF cropped to 4x6 inches - Invoice: {invoice_number}, Marketplace: {marketplace}, New file: {filename}")
                 except Exception as crop_error:
                     logger.error(f"PDF cropping failed, but continuing with original file - Invoice: {invoice_number}: {str(crop_error)}")
                     # Continue with original file if cropping fails
+            elif filepath.lower().endswith('.pdf'):
+                logger.info(f"PDF skipping crop (not Zalora/Shopify) - Invoice: {invoice_number}, Marketplace: {marketplace}")
             
             file_size = os.path.getsize(filepath)
             
@@ -286,9 +333,15 @@ class WaybillDownloadService:
             # Clean up old waybill file after successful new download
             self._cleanup_old_waybill_file(old_file_path, invoice_number)
             
+            # Build success message based on whether cropping was applied
+            if self._should_crop_pdf(waybill_print.marketplace):
+                message = 'Waybill downloaded, cropped to 4x6 inches, and saved successfully'
+            else:
+                message = 'Waybill downloaded and saved successfully'
+            
             return {
                 'status': 'success',
-                'message': 'Waybill downloaded, cropped to A4, and saved successfully',
+                'message': message,
                 'data': {
                     'waybill_id': waybill_print.id,
                     'invoice_number': invoice_number,
