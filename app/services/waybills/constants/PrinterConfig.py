@@ -64,7 +64,6 @@ class PrinterConfig:
             "media": f"Custom.{width}x{height}mm",
             "scaling": str(scale),
             "fit-to-page": "true",
-            "raw": "true",
         }
         
         return options
