@@ -187,11 +187,9 @@ if [ ! -d "venv" ]; then
     sudo -u "$ACTUAL_USER" python3 -m venv --system-site-packages venv
 fi
 
-source venv/bin/activate
-
-# Install Python dependencies as the actual user
+# Install Python dependencies using the venv's pip
 echo -e "${YELLOW}Installing Python dependencies...${NC}"
-sudo -u "$ACTUAL_USER" pip3 install -r requirements.txt
+sudo -u "$ACTUAL_USER" ./venv/bin/pip install -r requirements.txt
 echo -e "${GREEN}✅ Python dependencies installed${NC}"
 
 # Initialize database migrations (one-time setup)
@@ -204,7 +202,7 @@ chown "$ACTUAL_USER:$ACTUAL_USER" app/instance
 
 # Only run flask db init if migrations directory doesn't exist
 if [ ! -d "app/migrations" ]; then
-    sudo -u "$ACTUAL_USER" flask db init
+    sudo -u "$ACTUAL_USER" ./venv/bin/flask db init
     echo -e "${GREEN}✅ Database migrations initialized${NC}"
 else
     echo -e "${GREEN}✅ Database migrations already exist${NC}"
@@ -212,7 +210,7 @@ fi
 
 # Apply migrations to create database tables
 echo -e "${YELLOW}Creating database tables...${NC}"
-sudo -u "$ACTUAL_USER" flask db upgrade
+sudo -u "$ACTUAL_USER" ./venv/bin/flask db upgrade
 echo -e "${GREEN}✅ Database tables created${NC}"
 
 # Install frontend dependencies
