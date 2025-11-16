@@ -117,7 +117,7 @@ class CupsJobMonitorService:
             
             # Determine job completion/failure/processing
             is_completed = job_state == 7  # State 7 = completed successfully
-            is_failed = job_state == 9     # State 9 = aborted/failed
+            is_failed = job_state in [5, 9]  # State 5 = canceled, State 9 = aborted/failed
             is_processing = job_state in [1, 2, 3, 4]  # Pending, held, processing, stopped
             
             logger.info(f"CUPS Job Status Check - JobID: {job_id}, Printer: {printer_name}, State: {job_state} ({state_name})")
