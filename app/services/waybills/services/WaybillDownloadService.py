@@ -87,31 +87,36 @@ class WaybillDownloadService:
         base_type = content_type.split(';')[0].strip().lower()
         return content_type_map.get(base_type)
     
-    def _get_waybill_from_third_party(self, waybill_print, invoice_number: str) -> str:
+    def _get_waybill_from_third_party(self, waybill_print, invoice_number: str) -> tuple:
         """
         Generate fallback waybill URL from third-party API based on marketplace.
         Used when no waybill_url is provided from the initial response.
+        
+        For TikTok and other crop-eligible marketplaces, uses FusionTech hosting with Shopify crop offsets.
+        For other marketplaces, uses Railway API pattern.
         
         Args:
             waybill_print: WaybillPrint model instance (contains tenant_id, marketplace)
             invoice_number (str): Invoice number for the waybill
         
         Returns:
-            str: Fallback waybill URL
+            tuple: (fallback_url, crop_marketplace) where crop_marketplace is the marketplace 
+                   to use for crop offsets (may differ from original marketplace for fallback URLs)
         """
         tenant_id = waybill_print.tenant_id
         marketplace = waybill_print.marketplace
         
-        # Shopify uses FusionTech hosted pattern
-        if marketplace and marketplace.lower() == Marketplaces.SHOPIFY.value:
+        # Shopify and TikTok use FusionTech hosted pattern with Shopify crop offsets
+        if marketplace and marketplace.lower() in [Marketplaces.SHOPIFY.value, Marketplaces.TIKTOK.value]:
             fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
-            logger.info(f"Using Shopify FusionTech URL for invoice {invoice_number} (tenant: {tenant_id})")
-            return fallback_url
+            logger.info(f"Using FusionTech URL for invoice {invoice_number} (tenant: {tenant_id}, marketplace: {marketplace}), applying Shopify crop offsets")
+            # Use Shopify offsets for TikTok fallback
+            return (fallback_url, Marketplaces.SHOPIFY.value)
         
         # Default: Railway API pattern for other marketplaces
         fallback_url = f"https://fusion-production-api-{tenant_id}.up.railway.app/api/waybills/{invoice_number}/print-waybill"
         logger.info(f"Using fallback third-party URL for invoice {invoice_number} (tenant: {tenant_id})")
-        return fallback_url
+        return (fallback_url, marketplace)
     
     def _should_crop_pdf(self, marketplace: str = None) -> bool:
         """
@@ -379,8 +384,9 @@ class WaybillDownloadService:
             
             # Use fallback URL if no waybill_url provided
             is_fallback_url = False
+            crop_marketplace = waybill_print.marketplace  # Default to original marketplace
             if not waybill_url:
-                waybill_url = self._get_waybill_from_third_party(waybill_print, invoice_number)
+                waybill_url, crop_marketplace = self._get_waybill_from_third_party(waybill_print, invoice_number)
                 is_fallback_url = True
             
             # Download file with timeout and streaming
@@ -411,10 +417,9 @@ class WaybillDownloadService:
                     file_size = os.path.getsize(filepath)
                     
                     # CROP PDF TO 4x6 INCHES for Zalora and Shopify only
-                    marketplace = waybill_print.marketplace
-                    if self._should_crop_pdf(marketplace):
+                    if self._should_crop_pdf(crop_marketplace):
                         try:
-                            filepath = self._crop_pdf_to_label_size(filepath, invoice_number, marketplace)
+                            filepath = self._crop_pdf_to_label_size(filepath, invoice_number, crop_marketplace)
                             filename = os.path.basename(filepath)
                             logger.info(f"PDF cropped to 4x6 inches after webpage conversion - Invoice: {invoice_number}")
                         except Exception as crop_error:
@@ -432,7 +437,7 @@ class WaybillDownloadService:
                     self._cleanup_old_waybill_file(old_file_path, invoice_number)
                     
                     # Build success message
-                    if self._should_crop_pdf(waybill_print.marketplace):
+                    if self._should_crop_pdf(crop_marketplace):
                         message = 'Waybill webpage converted to PDF, cropped to 4x6 inches, and saved successfully'
                     else:
                         message = 'Waybill webpage converted to PDF and saved successfully'
@@ -507,17 +512,16 @@ class WaybillDownloadService:
             logger.info(f"Waybill saved successfully - Invoice: {invoice_number}, File: {filename}, Size: {original_file_size} bytes, Fallback: {is_fallback_url}")
             
             # CROP PDF TO 4x6 INCHES for Zalora and Shopify only
-            marketplace = waybill_print.marketplace
-            if filepath.lower().endswith('.pdf') and self._should_crop_pdf(marketplace):
+            if filepath.lower().endswith('.pdf') and self._should_crop_pdf(crop_marketplace):
                 try:
-                    filepath = self._crop_pdf_to_label_size(filepath, invoice_number, marketplace)
+                    filepath = self._crop_pdf_to_label_size(filepath, invoice_number, crop_marketplace)
                     filename = os.path.basename(filepath)
-                    logger.info(f"PDF cropped to 4x6 inches - Invoice: {invoice_number}, Marketplace: {marketplace}, New file: {filename}")
+                    logger.info(f"PDF cropped to 4x6 inches - Invoice: {invoice_number}, Crop marketplace: {crop_marketplace}, New file: {filename}")
                 except Exception as crop_error:
                     logger.error(f"PDF cropping failed, but continuing with original file - Invoice: {invoice_number}: {str(crop_error)}")
                     # Continue with original file if cropping fails
             elif filepath.lower().endswith('.pdf'):
-                logger.info(f"PDF skipping crop (not Zalora/Shopify) - Invoice: {invoice_number}, Marketplace: {marketplace}")
+                logger.info(f"PDF skipping crop (not Zalora/Shopify) - Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace}")
             
             file_size = os.path.getsize(filepath)
             
@@ -531,7 +535,7 @@ class WaybillDownloadService:
             self._cleanup_old_waybill_file(old_file_path, invoice_number)
             
             # Build success message based on whether cropping was applied
-            if self._should_crop_pdf(waybill_print.marketplace):
+            if self._should_crop_pdf(crop_marketplace):
                 message = 'Waybill downloaded, cropped to 4x6 inches, and saved successfully'
             else:
                 message = 'Waybill downloaded and saved successfully'
