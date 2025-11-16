@@ -3,6 +3,7 @@ import random
 from app.utils.loggers import get_logger
 from app.config.helper import get
 from app.config import printing as printing_config
+from app.services.waybills.enums.CupsJobStateReasons import CupsJobStateReasons, CupsJobStateGroups
 
 logger = get_logger(__name__)
 
@@ -127,20 +128,29 @@ class CupsJobMonitorService:
             logger.debug(f"[CUPS STATE REASONS] JobID: {job_id}, state_reasons: {state_reasons}")
             
             # Determine job completion/failure/processing
-            # Use state-reasons as primary indicator (more reliable)
+            # IMPORTANT: Check is_processing FIRST - if actively printing, don't mark as failed!
+            
+            # Check if job is currently processing/printing
+            is_processing = (
+                state_reasons in CupsJobStateGroups.PROCESSING.value or
+                any(reason in state_reasons for reason in CupsJobStateGroups.PROCESSING.value) or
+                job_state in [1, 2, 3, 4]  # Pending, held, processing, stopped
+            )
+            
+            # Check if job is completed successfully
             is_completed = (
-                'completed' in state_reasons or 
+                any(reason in state_reasons for reason in CupsJobStateGroups.COMPLETED.value) or
                 job_state == 7  # Fallback to state code
             )
+            
+            # CRITICAL: Only mark as failed if NOT currently printing!
+            # This prevents false failures when job-state=5 (held) but job-printing is active
             is_failed = (
-                'aborted' in state_reasons or 
-                'canceled' in state_reasons or
-                job_state in [5, 9]  # Fallback to state codes
-            )
-            is_processing = (
-                'job-printing' in state_reasons or 
-                'processing' in state_reasons or
-                job_state in [1, 2, 3, 4]  # Fallback to state codes
+                (
+                    any(reason in state_reasons for reason in CupsJobStateGroups.FAILED.value) or
+                    job_state in [5, 9]  # Fallback to state codes
+                ) and 
+                not is_processing  # ← KEY: Don't fail if still printing!
             )
             
             logger.info(f"CUPS Job Status Check - JobID: {job_id}, Printer: {printer_name}, State: {job_state} ({state_name})")
