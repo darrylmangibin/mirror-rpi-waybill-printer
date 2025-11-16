@@ -34,7 +34,22 @@ class PrintWaybillAction:
             logger.info(f"PrintWaybillAction executing - Invoice: {invoice_number}")
             
             # Delegate to service - handles validation, status updates, and error handling
-            return self.print_service.print_waybill(waybill_print)
+            result = self.print_service.print_waybill(waybill_print)
+            
+            # NEW: Queue for CUPS monitoring if print was successful
+            if result.get('status') == 'success' and result.get('data'):
+                try:
+                    cups_job_id = result['data'].get('job_id')
+                    printer_name = result['data'].get('printer')
+                    
+                    if cups_job_id and printer_name:
+                        from app.services.waybills.jobs.monitor_print_job import queue_monitor
+                        queue_monitor(waybill_print.id, cups_job_id, printer_name, invoice_number)
+                        logger.info(f"[AUTO-QUEUE MONITOR] Invoice: {invoice_number} - Queued for CUPS status monitoring, JobID: {cups_job_id}")
+                except Exception as monitor_error:
+                    logger.error(f"Failed to queue monitor after print: {str(monitor_error)}", exc_info=True)
+            
+            return result
         
         except Exception as e:
             logger.error(f"Error in PrintWaybillAction: {str(e)}", exc_info=True)

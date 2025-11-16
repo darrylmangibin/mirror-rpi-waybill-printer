@@ -42,29 +42,6 @@ def print_worker():
                     db.session.refresh(waybill)
                     
                     logger.info(f"[PRINT COMPLETE] Invoice: {invoice}, Status: {result.get('status')}")
-                    logger.debug(f"[DEBUG] Full result: {result}")  # DEBUG: See full result
-                    
-                    # NEW: If print was successful, queue for CUPS monitoring
-                    if result.get('status') == 'success':
-                        logger.info(f"[DEBUG] Print successful, checking for data...")  # DEBUG
-                        if result.get('data'):
-                            cups_job_id = result['data'].get('job_id')
-                            printer_name = result['data'].get('printer')
-                            logger.info(f"[DEBUG] CUPS JobID: {cups_job_id}, Printer: {printer_name}")  # DEBUG
-                            
-                            if cups_job_id and printer_name:
-                                try:
-                                    from app.services.waybills.jobs.monitor_print_job import queue_monitor
-                                    queue_monitor(waybill.id, cups_job_id, printer_name, invoice)
-                                    logger.info(f"[AUTO-QUEUE MONITOR] Invoice: {invoice} - Queued for CUPS status monitoring, JobID: {cups_job_id}")
-                                except Exception as monitor_error:
-                                    logger.error(f"[ERROR] Failed to queue monitor: {str(monitor_error)}", exc_info=True)
-                            else:
-                                logger.warning(f"[WARNING] Missing cups_job_id or printer_name - JobID: {cups_job_id}, Printer: {printer_name}")
-                        else:
-                            logger.warning(f"[WARNING] No data in result: {result}")
-                    else:
-                        logger.warning(f"[WARNING] Print not successful, status: {result.get('status')}")
                 
                 except Exception as e:
                     logger.error(f"[PRINT ERROR] Invoice: {invoice}: {str(e)}", exc_info=True)
