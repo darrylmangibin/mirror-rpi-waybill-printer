@@ -1,4 +1,10 @@
 import { FormattedDate } from '@/components/global';
+import { PrinterIcon, Zap as ZapIcon, ClockIcon, AlertCircleIcon } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipTrigger,
+	TooltipContent,
+} from '@/components/ui/tooltip';
 
 interface PrintDetailsColumnProps {
 	printStatus: string | null;
@@ -28,6 +34,17 @@ export const PrintDetailsColumn = ({
 		? printStatus.charAt(0).toUpperCase() + printStatus.slice(1)
 		: 'Idle';
 
+	if (!printerName && !cupsJobId && !printCompletedAt && !printError) {
+		return (
+			<div className='space-y-1'>
+				<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
+					{statusDisplay}
+				</div>
+				<div className='text-gray-500 text-xs'>-</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className='space-y-1'>
 			{/* Status Badge */}
@@ -35,32 +52,55 @@ export const PrintDetailsColumn = ({
 				{statusDisplay}
 			</div>
 
-			{/* Details Grid */}
-			<div className='text-xs space-y-0.5'>
+			{/* Details with Icons */}
+			<div className='space-y-1'>
 				{printerName && (
-					<div className='text-gray-700'>
-						<span className='font-semibold'>Printer:</span> {printerName}
-					</div>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div className='flex items-center gap-1.5 cursor-pointer'>
+								<PrinterIcon className='w-4 h-4 text-gray-800' />
+								<span className='text-xs text-gray-500 font-medium truncate'>{printerName}</span>
+							</div>
+						</TooltipTrigger>
+						<TooltipContent>
+							Printer: {printerName}
+						</TooltipContent>
+					</Tooltip>
 				)}
 
 				{cupsJobId && (
-					<div className='text-gray-700'>
-						<span className='font-semibold'>Job:</span>{' '}
-						<span className='font-mono'>{cupsJobId}</span>
-					</div>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div className='flex items-center gap-1.5 cursor-pointer'>
+								<ZapIcon className='w-4 h-4 text-gray-800' />
+								<span className='text-xs text-gray-500 font-medium font-mono'>{cupsJobId}</span>
+							</div>
+						</TooltipTrigger>
+						<TooltipContent>
+							Job ID: {cupsJobId}
+						</TooltipContent>
+					</Tooltip>
 				)}
 
 				{printCompletedAt && (
-					<div className='text-gray-700'>
-						<span className='font-semibold'>Completed:</span>{' '}
+					<div className='flex items-center gap-1.5 text-xs text-gray-400'>
+						<ClockIcon className='w-3.5 h-3.5 text-gray-600' />
 						<FormattedDate date={printCompletedAt} />
 					</div>
 				)}
 
 				{printError && (
-					<div className='text-red-600 max-w-xs truncate' title={printError}>
-						<span className='font-semibold'>Error:</span> {printError}
-					</div>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div className='flex items-center gap-1.5 cursor-pointer text-red-600'>
+								<AlertCircleIcon className='w-4 h-4 text-red-600' />
+								<span className='text-xs font-medium truncate'>Error</span>
+							</div>
+						</TooltipTrigger>
+						<TooltipContent className='max-w-xs break-all bg-red-50 text-red-600 border-red-200'>
+							{printError}
+						</TooltipContent>
+					</Tooltip>
 				)}
 			</div>
 		</div>

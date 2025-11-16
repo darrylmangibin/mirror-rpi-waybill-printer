@@ -26,3 +26,10 @@ Always use `@/` for internal imports.
 - Use explicit type annotations
 - Use generics for components
 - Prefer `unknown` or specific types
+
+## Icon Naming Convention
+
+- Always use the `Icon` suffix for icons to distinguish them from custom components
+- For icons without the suffix, import with an alias: `import { Zap as ZapIcon } from 'lucide-react'`
+- This makes it immediately clear that the name refers to an icon, not a custom component
+- Example: `<PrinterIcon />`, `<ZapIcon />`, `<ClockIcon />`, `<AlertCircleIcon />`
