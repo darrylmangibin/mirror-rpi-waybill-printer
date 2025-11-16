@@ -47,9 +47,23 @@ export const PrintDetailsColumn = ({
 
 	return (
 		<div className='space-y-1'>
-			{/* Status Badge */}
-			<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
-				{statusDisplay}
+			{/* Status Badge with Error Icon */}
+			<div className='flex items-center justify-between'>
+				<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
+					{statusDisplay}
+				</div>
+				{printError && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div className='cursor-pointer'>
+								<AlertCircleIcon className='w-4 h-4 text-red-600' />
+							</div>
+						</TooltipTrigger>
+						<TooltipContent className='max-w-xs break-all bg-red-50 text-red-600 border-red-200'>
+							{printError}
+						</TooltipContent>
+					</Tooltip>
+				)}
 			</div>
 
 			{/* Details - Compact Layout */}
@@ -72,19 +86,6 @@ export const PrintDetailsColumn = ({
 						<ClockIcon className='w-3.5 h-3.5 text-gray-600' />
 						<FormattedDate date={printCompletedAt} />
 					</div>
-				)}
-
-				{printError && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<div className='cursor-pointer'>
-								<AlertCircleIcon className='w-4 h-4 text-red-600' />
-							</div>
-						</TooltipTrigger>
-						<TooltipContent className='max-w-xs break-all bg-red-50 text-red-600 border-red-200'>
-								{printError}
-						</TooltipContent>
-					</Tooltip>
 				)}
 			</div>
 		</div>
