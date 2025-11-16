@@ -54,6 +54,17 @@ export const PrintDetailsColumn = ({
 		<div className='space-y-1.5'>
 			{/* Printer Icon + Status Badge - Top Line */}
 			<div className='flex items-center gap-1.5'>
+				{cupsJobId && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<PrinterIcon className='w-4 h-4 text-gray-700 cursor-pointer' />
+						</TooltipTrigger>
+						<TooltipContent>
+							Job ID: {cupsJobId}
+						</TooltipContent>
+					</Tooltip>
+				)}
+				{!cupsJobId && <PrinterIcon className='w-4 h-4 text-gray-700' />}
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Badge variant='outline' className={cn('rounded-full cursor-pointer', getStatusGradientClass(printStatus))}>
@@ -63,8 +74,11 @@ export const PrintDetailsColumn = ({
 							</span>
 						</Badge>
 					</TooltipTrigger>
-					<TooltipContent>
-						{printError ? printError : cupsJobId && `Job ID: ${cupsJobId}`}
+					<TooltipContent className={printError ? 'max-w-xs break-all' : ''}>
+						<div className='space-y-1'>
+							{cupsJobId && <div>Job ID: {cupsJobId}</div>}
+							{printError && <div>{printError}</div>}
+						</div>
 					</TooltipContent>
 				</Tooltip>
 			</div>
