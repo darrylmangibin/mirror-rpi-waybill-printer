@@ -15,7 +15,7 @@ import os
 config = {
     # Mock/Test Mode Configuration
     'mock': {
-        'enabled': os.getenv('MOCK_MODE', 'true').lower() == 'true',
+        'enabled': True,  # HARD-CODED: Set to False when ready for real printing
         'description': 'When enabled, simulates printing and CUPS monitoring without touching the actual printer'
     },
     
