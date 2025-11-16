@@ -23,7 +23,15 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 import { useManualPrintJobForm } from './useManualPrintJobForm';
+import { marketplaceOptions } from '@/modules/Home/constants';
 
 interface ManualCreatePrintJobDialogProps {
 	onSubmit?: (invoiceNumber: string, url: string) => Promise<void>;
@@ -54,11 +62,11 @@ export const ManualCreatePrintJobDialog = ({
 								</Button>
 							</div>
 						</TooltipTrigger>
-						<TooltipContent className='bg-gray-900 text-white border-0 max-w-xs'>
-							<p className='text-xs'>
-								Click to manually create a print job with invoice number, tenant ID, and optional URL
-							</p>
-						</TooltipContent>
+					<TooltipContent className='bg-gray-900 text-white border-0 max-w-xs'>
+						<p className='text-xs'>
+							Click to manually create a print job with invoice number, marketplace, tenant ID, and optional URL
+						</p>
+					</TooltipContent>
 					</Tooltip>
 				</div>
 			</DialogTrigger>
@@ -73,7 +81,7 @@ export const ManualCreatePrintJobDialog = ({
 						/>
 					}
 					title='Create Print Job'
-					description='Enter invoice number, tenant ID, and optionally a URL to create a print job'
+					description='Enter invoice number, marketplace, tenant ID, and optionally a URL to create a print job'
 				/>
 
 				<div className='px-4 py-4 space-y-4'>
@@ -94,6 +102,31 @@ export const ManualCreatePrintJobDialog = ({
 												{...field}
 											/>
 										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name='marketplace'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Marketplace</FormLabel>
+										<Select onValueChange={field.onChange} defaultValue={field.value}>
+											<FormControl>
+												<SelectTrigger disabled={isPending}>
+													<SelectValue placeholder='Select a marketplace' />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{marketplaceOptions.map((option) => (
+													<SelectItem key={option.value} value={option.value}>
+														{option.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 										<FormMessage />
 									</FormItem>
 								)}

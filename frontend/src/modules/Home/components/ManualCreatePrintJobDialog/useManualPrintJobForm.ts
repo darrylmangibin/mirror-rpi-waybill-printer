@@ -8,6 +8,7 @@ import { useCreateWaybillPrint } from '@/modules/Home/hooks';
 const formSchema = z.object({
 	invoiceNumber: z.string().min(1, 'Invoice number is required').trim(),
 	tenantId: z.string().min(1, 'Tenant ID is required').trim(),
+	marketplace: z.string().min(1, 'Marketplace is required').trim(),
 	url: z.string().optional().refine(
 		(val) => !val || val === '' || z.string().url().safeParse(val).success,
 		'Please enter a valid URL'
@@ -33,6 +34,7 @@ export const useManualPrintJobForm = ({ onSuccess }: UseManualPrintJobFormOption
 		defaultValues: {
 			invoiceNumber: '',
 			tenantId: '',
+			marketplace: '',
 			url: '',
 		},
 	});
@@ -49,6 +51,7 @@ export const useManualPrintJobForm = ({ onSuccess }: UseManualPrintJobFormOption
 			await mutateAsync({
 				invoiceNumber: data.invoiceNumber,
 				tenantId: data.tenantId,
+				marketplace: data.marketplace,
 				waybillUrl: data.url || null,
 			});
 

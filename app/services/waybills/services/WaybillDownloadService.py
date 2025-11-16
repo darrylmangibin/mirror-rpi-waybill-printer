@@ -121,7 +121,7 @@ class WaybillDownloadService:
             bool: True if should crop, False otherwise
         """
         # Marketplaces that require 4x6 inch cropping
-        crop_marketplaces = {Marketplaces.ZALORA.value, Marketplaces.SHOPIFY.value}
+        crop_marketplaces = Marketplaces.get_crop_eligible_marketplaces()
         
         if marketplace and marketplace.lower() in crop_marketplaces:
             return True
