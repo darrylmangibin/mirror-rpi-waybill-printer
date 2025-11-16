@@ -81,71 +81,75 @@ export const ManualCreatePrintJobDialog = ({
 						/>
 					}
 					title='Create Print Job'
-					description='Enter invoice number, marketplace, tenant ID, and optionally a URL to create a print job'
+					description='Fill in the details to create a new print job'
 				/>
 
-				<div className='px-4 py-4 space-y-4'>
+				<div className='px-4 py-3'>
 					<Form {...form}>
 						<form
 							onSubmit={form.handleSubmit(handleSubmit)}
-							className='space-y-4'>
-							<FormField
-								control={form.control}
-								name='tenantId'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Tenant ID</FormLabel>
-										<FormControl>
-											<Input
-												placeholder='Enter tenant ID'
-												disabled={isPending}
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							className='space-y-3'>
+							<div className='grid grid-cols-2 gap-3'>
+								<FormField
+									control={form.control}
+									name='marketplace'
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel className='text-xs font-medium'>Marketplace</FormLabel>
+											<Select onValueChange={field.onChange} defaultValue={field.value}>
+												<FormControl>
+													<SelectTrigger disabled={isPending} className='h-8 text-sm w-full'>
+														<SelectValue placeholder='Select' />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{marketplaceOptions.map((option) => (
+														<SelectItem key={option.value} value={option.value}>
+															{option.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormMessage className='text-xs' />
+										</FormItem>
+									)}
+								/>
 
-							<FormField
-								control={form.control}
-								name='marketplace'
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Marketplace</FormLabel>
-										<Select onValueChange={field.onChange} defaultValue={field.value}>
+								<FormField
+									control={form.control}
+									name='tenantId'
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel className='text-xs font-medium'>Tenant ID</FormLabel>
 											<FormControl>
-												<SelectTrigger disabled={isPending}>
-													<SelectValue placeholder='Select a marketplace' />
-												</SelectTrigger>
+												<Input
+													placeholder='havaianas'
+													disabled={isPending}
+													className='h-8 text-sm'
+													{...field}
+												/>
 											</FormControl>
-											<SelectContent>
-												{marketplaceOptions.map((option) => (
-													<SelectItem key={option.value} value={option.value}>
-														{option.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+											<FormMessage className='text-xs' />
+										</FormItem>
+									)}
+								/>
+							</div>
 
 							<FormField
 								control={form.control}
 								name='invoiceNumber'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Invoice Number</FormLabel>
+										<FormLabel className='text-xs font-medium'>Invoice Number</FormLabel>
 										<FormControl>
 											<Input
-												placeholder='Enter invoice number'
+												placeholder='INV-2025-00123'
 												disabled={isPending}
+												className='h-8 text-sm'
 												{...field}
 											/>
 										</FormControl>
-										<FormMessage />
+										<FormMessage className='text-xs' />
 									</FormItem>
 								)}
 							/>
@@ -155,16 +159,17 @@ export const ManualCreatePrintJobDialog = ({
 								name='url'
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>URL <span className='text-gray-500 text-xs font-normal'>(Optional)</span></FormLabel>
+										<FormLabel className='text-xs font-medium'>Custom URL <span className='text-gray-400 font-normal'>(Optional)</span></FormLabel>
 										<FormControl>
 											<Input
 												type='url'
-												placeholder='Enter URL to print (leave empty to skip)'
+												placeholder='https://example.com/waybill.pdf'
 												disabled={isPending}
+												className='h-8 text-sm'
 												{...field}
 											/>
 										</FormControl>
-										<FormMessage />
+										<FormMessage className='text-xs' />
 									</FormItem>
 								)}
 							/>

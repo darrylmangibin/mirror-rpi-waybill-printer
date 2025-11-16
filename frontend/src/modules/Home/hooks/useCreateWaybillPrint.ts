@@ -21,10 +21,10 @@ export const useCreateWaybillPrint = () => {
   } = useMutation<
     WaybillsResponse,
     Error,
-    { invoiceNumber: string; tenantId: string; waybillUrl: string | null | undefined }
+    { invoiceNumber: string; tenantId: string; marketplace: string; waybillUrl: string | null | undefined }
   >({
-    mutationFn: ({ invoiceNumber, tenantId, waybillUrl }) =>
-      waybillService.createWaybillPrint(invoiceNumber, tenantId, waybillUrl),
+    mutationFn: ({ invoiceNumber, tenantId, marketplace, waybillUrl }) =>
+      waybillService.createWaybillPrint(invoiceNumber, tenantId, waybillUrl, marketplace),
     
     onSuccess: () => {
       // Invalidate the waybill list query to refetch data
