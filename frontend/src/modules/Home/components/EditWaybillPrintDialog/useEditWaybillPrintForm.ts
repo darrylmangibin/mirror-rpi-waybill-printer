@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -48,6 +48,18 @@ export const useEditWaybillPrintForm = ({
 			url: waybill.waybill_url || '',
 		},
 	});
+
+	// Reset form whenever waybill ID changes (e.g., when reopening with different waybill)
+	// Only depend on specific waybill properties to avoid unnecessary re-runs and memory leaks
+	useEffect(() => {
+		form.reset({
+			invoiceNumber: waybill.invoice_number || '',
+			tenantId: waybill.tenant_id?.toString() || '',
+			marketplace: waybill.marketplace || '',
+			url: waybill.waybill_url || '',
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [waybill.id, waybill.invoice_number, waybill.tenant_id, waybill.marketplace, waybill.waybill_url]);
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen);

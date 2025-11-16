@@ -3,6 +3,7 @@ export { useCreateWaybillPrint } from './useCreateWaybillPrint';
 export { useGetPrintJobQREndPoint } from './useGetPrintJobQREndPoint';
 export { useDownloadWaybill } from './useDownloadWaybill';
 export { usePrintWaybill } from './usePrintWaybill';
+export { useEditWaybill } from './useEditWaybill';
 export { useChangeWaybillStatus } from './useChangeWaybillStatus';
 export { useWaybillStream } from './useWaybillStream';
 export { useDeleteWaybill } from './useDeleteWaybill';

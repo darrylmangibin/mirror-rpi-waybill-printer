@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'sonner';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
@@ -200,20 +201,27 @@ const Home = () => {
 				{/* DIALOGS / MODALS */}
 				{selectedWaybill && (
 					<>
-				<EditWaybillPrintDialog
-					waybill={selectedWaybill}
-					open={editDialogOpen}
-					onOpenChange={(open) => {
-						setEditDialogOpen(open);
-						if (!open) {
-							setSelectedWaybill(null);
-						}
-					}}
-					onSuccess={async () => {
-						setEditDialogOpen(false);
-						// The data will be refetched via SSE/polling
-					}}
-				/>
+			<EditWaybillPrintDialog
+				waybill={selectedWaybill}
+				open={editDialogOpen}
+				onOpenChange={(open) => {
+					setEditDialogOpen(open);
+					if (!open) {
+						setSelectedWaybill(null);
+					}
+				}}
+				onSuccess={async () => {
+					setEditDialogOpen(false);
+					toast.success('Waybill updated successfully!');
+					// Refetch waybill data to reflect changes
+					await actions.refetch();
+					// Update selectedWaybill with fresh data from refetched waybills
+					const updatedWaybill = waybills.find(w => w.id === selectedWaybill?.id);
+					if (updatedWaybill) {
+						setSelectedWaybill(updatedWaybill);
+					}
+				}}
+			/>
 						<DownloadWaybillDialog
 							waybillId={String(selectedWaybill.id)}
 							invoiceNumber={selectedWaybill.invoice_number}
