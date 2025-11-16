@@ -45,9 +45,26 @@ def create_app():
     
     # Start background workers for waybill processing
     with app.app_context():
-        start_workers(num_workers=1)           # Download worker thread
-        start_print_workers(num_workers=1)     # Print worker thread
-        start_monitor_workers(num_workers=1)   # NEW: Monitor worker thread (checks CUPS job status)
+        from app.utils.loggers import get_logger
+        logger = get_logger(__name__)
+        
+        try:
+            start_workers(num_workers=1)           # Download worker thread
+            logger.info("✓ Download workers initialized")
+        except Exception as e:
+            logger.error(f"Failed to start download workers: {str(e)}", exc_info=True)
+        
+        try:
+            start_print_workers(num_workers=1)     # Print worker thread
+            logger.info("✓ Print workers initialized")
+        except Exception as e:
+            logger.error(f"Failed to start print workers: {str(e)}", exc_info=True)
+        
+        try:
+            start_monitor_workers(num_workers=1)   # NEW: Monitor worker thread (checks CUPS job status)
+            logger.info("✓ Monitor workers initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to start monitor workers: {str(e)}", exc_info=True)
     
     # API endpoint for testing
     @app.route('/api/hello')
