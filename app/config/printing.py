@@ -35,7 +35,7 @@ config = {
     
     # CUPS Monitoring Configuration
     'monitoring': {
-        'check_interval': 5,  # seconds between CUPS status checks
+        'check_interval': 3,  # seconds between CUPS status checks
         'max_checks': 120,  # maximum checks before timeout (5 seconds × 120 = 10 minutes)
         'timeout_seconds': 600,  # 10 minutes
         'description': 'Monitor settings for tracking print jobs through CUPS'
