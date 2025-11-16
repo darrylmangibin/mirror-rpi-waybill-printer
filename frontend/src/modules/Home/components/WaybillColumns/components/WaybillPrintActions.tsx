@@ -3,7 +3,7 @@ import {
 	EditIcon,
 	DownloadIcon,
 	PrinterIcon,
-	TrashIcon,
+	Trash2Icon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -99,7 +99,7 @@ export const WaybillPrintActions = ({
 						size='sm'
 						className='w-full hover:bg-red-50'>
 						<div className='flex items-center justify-start gap-2'>
-							<TrashIcon className='h-4 w-4 text-red-600' />
+							<Trash2Icon className='h-4 w-4 text-red-600' />
 							<span className='text-xs text-red-600'>Delete</span>
 						</div>
 					</Button>
