@@ -236,7 +236,7 @@ class WaybillDownloadService:
             logger.error(f"Failed to convert webpage to PDF - Invoice: {invoice_number}, URL: {url}: {str(e)}", exc_info=True)
             raise Exception(f"Webpage-to-PDF conversion failed: {str(e)}")
     
-    def _crop_pdf_to_label_size(self, pdf_path: str, invoice_number: str, marketplace: str = None, offset_x: int = 45, offset_y: int = 29) -> str:
+    def _crop_pdf_to_label_size(self, pdf_path: str, invoice_number: str, marketplace: str = None, offset_x: int = None, offset_y: int = None) -> str:
         """
         Crop PDF to marketplace-specific label size (4x6 inches for thermal printer).
         Crops from top-left corner with optional offset to avoid cutting edges.
@@ -246,8 +246,8 @@ class WaybillDownloadService:
             pdf_path (str): Path to the original PDF file
             invoice_number (str): Invoice number for logging
             marketplace (str, optional): Marketplace name for size lookup
-            offset_x (int): Horizontal offset from left edge in points (default 10)
-            offset_y (int): Vertical offset from top edge in points (default 10)
+            offset_x (int): Horizontal offset from left edge in points (default varies by marketplace)
+            offset_y (int): Vertical offset from top edge in points (default varies by marketplace)
         
         Returns:
             str: Path to the cropped PDF file
@@ -256,6 +256,23 @@ class WaybillDownloadService:
             Exception: If PDF cropping fails
         """
         try:
+            # Set marketplace-specific offsets
+            # Negative offsets expand the crop box outward for padding
+            # Positive offsets shrink the crop box inward
+            if offset_x is None or offset_y is None:
+                if marketplace and marketplace.lower() == Marketplaces.SHOPIFY.value:
+                    # Shopify: negative offset to add white space padding (expand outward)
+                    offset_x = offset_x if offset_x is not None else -2
+                    offset_y = offset_y if offset_y is not None else -2
+                elif marketplace and marketplace.lower() == Marketplaces.ZALORA.value:
+                    # Zalora: negative offset to add white space padding (expand outward)
+                    offset_x = offset_x if offset_x is not None else -1
+                    offset_y = offset_y if offset_y is not None else -1
+                else:
+                    # Other marketplaces: default small positive offset for safety
+                    offset_x = offset_x if offset_x is not None else 5
+                    offset_y = offset_y if offset_y is not None else 5
+            
             crop_width, crop_height = self._get_crop_dimensions(marketplace)
             logger.info(f"Starting PDF crop to {crop_width}x{crop_height} points ({crop_width/72:.1f}x{crop_height/72:.1f} inches) with offset ({offset_x}, {offset_y}) - Invoice: {invoice_number}, Marketplace: {marketplace}, File: {pdf_path}")
             
@@ -276,6 +293,7 @@ class WaybillDownloadService:
                 logger.info(f"Processing page {page_num + 1} - Original size: {original_width}x{original_height} points")
                 
                 # Crop from TOP-LEFT with offset (PDF coordinates start at bottom-left)
+                # For Shopify/Zalora: crop to 4x6" starting near the top-left corner
                 # lower_left = (offset_x, original_height - label_height - offset_y)
                 # upper_right = (label_width + offset_x, original_height - offset_y)
                 page.mediabox.lower_left = (offset_x, original_height - label_height - offset_y)
