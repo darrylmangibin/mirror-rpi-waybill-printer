@@ -37,6 +37,17 @@ export const marketplaceColors: Record<Marketplace, string> = {
 };
 
 /**
+ * Helper to get marketplace icon paths
+ */
+export const marketplaceIcons: Record<Marketplace, string> = {
+	[Marketplaces.ZALORA]: '/images/marketplaces/zalora-icon.png',
+	[Marketplaces.SHOPIFY]: '/images/marketplaces/shopify-icon.png',
+	[Marketplaces.SHOPEE]: '/images/marketplaces/shopee-icon.png',
+	[Marketplaces.TIKTOK]: '/images/marketplaces/tiktok-icon.png',
+	[Marketplaces.LAZADA]: '/images/marketplaces/lazada-icon.png',
+};
+
+/**
  * Helper to get marketplace options for dropdowns/selects
  */
 export const marketplaceOptions = Object.entries(Marketplaces).map(([, value]) => ({

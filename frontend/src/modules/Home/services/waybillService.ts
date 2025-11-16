@@ -13,6 +13,12 @@ export interface WaybillPrint {
   local_file_path: string | null;
   error_message: string | null;
   downloaded_at: string | null;
+  // Print-related fields
+  print_status: 'idle' | 'pending' | 'printing' | 'completed' | 'error';
+  cups_job_id: number | null;
+  printer_name: string | null;
+  print_error: string | null;
+  print_completed_at: string | null;
 }
 
 export interface WaybillsResponse {

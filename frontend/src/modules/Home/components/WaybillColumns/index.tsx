@@ -4,7 +4,10 @@ import { FilePath } from '@/modules/Home/components/WaybillColumns/components/Fi
 import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
 import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
 import { ErrorColumn } from '@/modules/Home/components/WaybillColumns/components/ErrorColumn';
+import { PlatformBadge } from '@/modules/Home/components/WaybillColumns/components/PlatformBadge';
+import { PrintDetailsColumn } from '@/modules/Home/components/WaybillColumns/components/PrintDetailsColumn';
 import { FormattedDate } from '@/components/global';
+import { marketplaceIcons } from '@/modules/Home/constants/marketplaces';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WaybillPrint } from '@/modules/Home/services';
 
@@ -43,34 +46,46 @@ export const getWaybillColumns = (
 		enableHiding: false,
 	},
 	{
-		accessorKey: 'invoice_number',
-		header: 'Invoice',
-		cell: ({ row }) => (
-			<div className=' text-gray-900 text-xs'>
-				{row.getValue('invoice_number')}
-			</div>
-		),
-	},
-	{
-		accessorKey: 'marketplace',
-		header: 'Marketplace',
+		accessorKey: 'tenant_id',
+		header: 'Platform',
 		cell: ({ row }) => {
+			const tenantId = row.getValue('tenant_id') as number | null;
 			const marketplace = row.getValue('marketplace') as string | null;
+			const icon = marketplace
+				? marketplaceIcons[marketplace as keyof typeof marketplaceIcons]
+				: undefined;
 			return (
-				<div className='text-gray-900 text-xs'>
-					{marketplace || '-'}
-				</div>
+				<PlatformBadge
+					tenantId={tenantId}
+					icon={icon}
+					marketplace={marketplace || undefined}
+				/>
 			);
 		},
 	},
 	{
-		accessorKey: 'tenant_id',
-		header: 'Tenant ID',
-		cell: ({ row }) => (
-			<div className='text-gray-900 text-xs'>
-				{row.getValue('tenant_id')}
-			</div>
-		),
+		accessorKey: 'invoice_number',
+		header: 'Invoice Number',
+		cell: ({ row }) => {
+			const invoiceNumber = row.getValue('invoice_number') as string | null;
+			const tenantId = row.original.tenant_id;
+
+			if (!invoiceNumber) {
+				return <div className='text-gray-500 text-xs'>-</div>;
+			}
+
+			const invoiceUrl = `https://${tenantId}.fusiontech.asia/dashboard/live/invoices/${invoiceNumber}`;
+
+			return (
+				<a
+					href={invoiceUrl}
+					target='_blank'
+					rel='noopener noreferrer'
+					className='text-xs text-blue-800 font-semibold transition-colors'>
+					{invoiceNumber}
+				</a>
+			);
+		},
 	},
 	{
 		accessorKey: 'status',
@@ -130,20 +145,41 @@ export const getWaybillColumns = (
 		},
 	},
 	{
+		id: 'print_details',
+		header: 'Print Details',
+		cell: ({ row }) => {
+			const printStatus = row.getValue('print_status') as string | null;
+			const printerName = row.getValue('printer_name') as string | null;
+			const cupsJobId = row.getValue('cups_job_id') as number | null;
+			const printError = row.getValue('print_error') as string | null;
+			const printCompletedAt = row.getValue('print_completed_at') as string | null;
+
+			return (
+				<PrintDetailsColumn
+					printStatus={printStatus}
+					printerName={printerName}
+					cupsJobId={cupsJobId}
+					printError={printError}
+					printCompletedAt={printCompletedAt}
+				/>
+			);
+		},
+	},
+	{
 		id: 'actions',
 		enableHiding: false,
 		cell: ({ row }) => {
 			const waybill = row.original;
 
-		return (
-			<WaybillPrintActions
-				waybill={waybill}
-				onEditClick={context.onEditClick}
-				onDownloadClick={context.onDownloadClick}
-				onPrintClick={context.onPrintClick}
-				onDeleteClick={context.onDeleteClick}
-			/>
-		);
+			return (
+				<WaybillPrintActions
+					waybill={waybill}
+					onEditClick={context.onEditClick}
+					onDownloadClick={context.onDownloadClick}
+					onPrintClick={context.onPrintClick}
+					onDeleteClick={context.onDeleteClick}
+				/>
+			);
 		},
 	},
 ];
