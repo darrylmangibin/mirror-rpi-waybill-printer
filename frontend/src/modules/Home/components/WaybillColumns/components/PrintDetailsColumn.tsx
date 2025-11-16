@@ -1,5 +1,5 @@
 import { FormattedDate } from '@/components/global';
-import { PrinterIcon, Zap as ZapIcon, ClockIcon, AlertCircleIcon } from 'lucide-react';
+import { ClockIcon, AlertCircleIcon } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipTrigger,
@@ -34,7 +34,7 @@ export const PrintDetailsColumn = ({
 		? printStatus.charAt(0).toUpperCase() + printStatus.slice(1)
 		: 'Idle';
 
-	if (!printerName && !cupsJobId && !printCompletedAt && !printError) {
+	if (!cupsJobId && !printCompletedAt && !printError) {
 		return (
 			<div className='space-y-1'>
 				<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
@@ -52,28 +52,13 @@ export const PrintDetailsColumn = ({
 				{statusDisplay}
 			</div>
 
-			{/* Details with Icons */}
+			{/* Details - Compact Layout */}
 			<div className='space-y-1'>
-				{printerName && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<div className='flex items-center gap-1.5 cursor-pointer'>
-								<PrinterIcon className='w-4 h-4 text-gray-800' />
-								<span className='text-xs text-gray-500 font-medium truncate'>{printerName}</span>
-							</div>
-						</TooltipTrigger>
-						<TooltipContent>
-							Printer: {printerName}
-						</TooltipContent>
-					</Tooltip>
-				)}
-
 				{cupsJobId && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<div className='flex items-center gap-1.5 cursor-pointer'>
-								<ZapIcon className='w-4 h-4 text-gray-800' />
-								<span className='text-xs text-gray-500 font-medium font-mono'>{cupsJobId}</span>
+								<span className='text-xs text-gray-500 font-medium font-mono'>#{cupsJobId}</span>
 							</div>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -98,7 +83,7 @@ export const PrintDetailsColumn = ({
 							</div>
 						</TooltipTrigger>
 						<TooltipContent className='max-w-xs break-all bg-red-50 text-red-600 border-red-200'>
-							{printError}
+								{printError}
 						</TooltipContent>
 					</Tooltip>
 				)}
