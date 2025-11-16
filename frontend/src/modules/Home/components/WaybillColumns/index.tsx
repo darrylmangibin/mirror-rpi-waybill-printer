@@ -11,6 +11,7 @@ import type { WaybillPrint } from '@/modules/Home/services';
 export type { WaybillPrint } from '@/modules/Home/services';
 
 export interface WaybillColumnsContext {
+	onEditClick: (waybill: WaybillPrint) => void;
 	onDownloadClick: (waybill: WaybillPrint) => void;
 	onPrintClick: (waybill: WaybillPrint) => void;
 	onDeleteClick: (waybill: WaybillPrint) => void;
@@ -137,6 +138,7 @@ export const getWaybillColumns = (
 		return (
 			<WaybillPrintActions
 				waybill={waybill}
+				onEditClick={context.onEditClick}
 				onDownloadClick={context.onDownloadClick}
 				onPrintClick={context.onPrintClick}
 				onDeleteClick={context.onDeleteClick}

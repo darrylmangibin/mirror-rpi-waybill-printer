@@ -3,7 +3,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogFooter,
-	DialogTrigger,
 } from '@/components/ui/dialog';
 import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
@@ -15,26 +14,25 @@ import type { WaybillPrint } from '@/modules/Home/services/waybillService';
 
 interface EditWaybillPrintDialogProps {
 	waybill: WaybillPrint;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 	onSuccess?: (invoiceNumber: string, url: string) => Promise<void>;
 }
 
 export const EditWaybillPrintDialog = ({
 	waybill,
+	open,
+	onOpenChange,
 	onSuccess,
 }: EditWaybillPrintDialogProps) => {
-	const { open, handleOpenChange, form, handleSubmit, isPending } =
+	const { form, handleSubmit, isPending } =
 		useEditWaybillPrintForm({
 			waybill,
 			onSuccess,
 		});
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger asChild>
-				<Button size='sm' variant='ghost' className='h-8 w-8 p-0'>
-					<Edit2Icon className='w-4 h-4' />
-				</Button>
-			</DialogTrigger>
+		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className='sm:max-w-md p-0 gap-0' showCloseButton={false}>
 				<DialogHeaderComponent
 					icon={
@@ -56,18 +54,18 @@ export const EditWaybillPrintDialog = ({
 
 				<DialogFooter>
 					<div className='flex items-center justify-end gap-2 w-full bg-gray-100 py-2 rounded-b-lg px-4'>
-						<Button
-							type='button'
-							variant='outline'
-							onClick={() => handleOpenChange(false)}
-							disabled={isPending}>
-							Cancel
-						</Button>
-						<PrimaryButton
-							onClick={form.handleSubmit(handleSubmit)}
-							disabled={isPending}>
-							{isPending ? 'Updating...' : 'Update'}
-						</PrimaryButton>
+					<Button
+						type='button'
+						variant='outline'
+						onClick={() => onOpenChange(false)}
+						disabled={isPending}>
+						Cancel
+					</Button>
+					<PrimaryButton
+						onClick={form.handleSubmit(handleSubmit)}
+						disabled={isPending}>
+						{isPending ? 'Saving...' : 'Update'}
+					</PrimaryButton>
 					</div>
 				</DialogFooter>
 			</DialogContent>

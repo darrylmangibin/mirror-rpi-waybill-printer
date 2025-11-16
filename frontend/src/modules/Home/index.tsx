@@ -2,47 +2,64 @@ import React from 'react';
 import { DataTable } from '@/components/global/components/DataTable';
 import { TopNavbar } from '@/components/global/components/TopNavbar';
 import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
-import { getWaybillColumns, type WaybillPrint } from '@/modules/Home/components/WaybillColumns';
-import { useGetWaybillPrints, usePrintWaybill, useWaybillStream, useDeleteWaybill } from '@/modules/Home/hooks';
+import {
+	getWaybillColumns,
+	type WaybillPrint,
+} from '@/modules/Home/components/WaybillColumns';
+import {
+	useGetWaybillPrints,
+	usePrintWaybill,
+	useWaybillStream,
+	useDeleteWaybill,
+} from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { CreateWaybillPrintDialog } from '@/modules/Home/components/CreateWaybillPrintDialog';
+import { EditWaybillPrintDialog } from '@/modules/Home/components/EditWaybillPrintDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
 import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
 import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfirmationDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
+	const [editDialogOpen, setEditDialogOpen] = React.useState(false);
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-	const [selectedWaybill, setSelectedWaybill] = React.useState<WaybillPrint | null>(null);
-	
+	const [selectedWaybill, setSelectedWaybill] =
+		React.useState<WaybillPrint | null>(null);
+
 	// Initialize Server-Sent Events stream for real-time updates
 	useWaybillStream();
-	
+
 	// Smart polling: track active downloads for dynamic intervals
-	const [activeDownloads, setActiveDownloads] = React.useState<Set<string>>(new Set());
+	const [activeDownloads, setActiveDownloads] = React.useState<Set<string>>(
+		new Set()
+	);
 	const [isPolling, setIsPolling] = React.useState(false);
-	
+
 	// Determine polling interval based on active downloads
 	// With SSE providing real-time updates, we can use longer intervals for RPi efficiency
 	// 2000ms (2s) when downloading, 10000ms (10s) otherwise
 	// SSE will trigger immediate cache invalidation on changes
 	const pollingInterval = activeDownloads.size > 0 ? 2000 : 10000;
-	
-	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(isPolling, pollingInterval);
+
+	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(
+		isPolling,
+		pollingInterval
+	);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
-	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting } = useDeleteWaybill();
+	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting } =
+		useDeleteWaybill();
 
 	// Auto-stop polling when download completes (status becomes "downloaded")
 	React.useEffect(() => {
 		if (selectedWaybill && activeDownloads.has(String(selectedWaybill.id))) {
 			// Find current waybill data
-			const currentWaybill = waybills.find(w => w.id === selectedWaybill.id);
-			
+			const currentWaybill = waybills.find((w) => w.id === selectedWaybill.id);
+
 			if (currentWaybill && currentWaybill.status === 'downloaded') {
 				// Download completed! Stop polling
-				setActiveDownloads(prev => {
+				setActiveDownloads((prev) => {
 					const next = new Set(prev);
 					next.delete(String(selectedWaybill.id));
 					return next;
@@ -51,6 +68,11 @@ const Home = () => {
 			}
 		}
 	}, [waybills, selectedWaybill, activeDownloads]);
+
+	const handleEditClick = (waybill: WaybillPrint) => {
+		setSelectedWaybill(waybill);
+		setEditDialogOpen(true);
+	};
 
 	const handleDownloadClick = (waybill: WaybillPrint) => {
 		setSelectedWaybill(waybill);
@@ -87,11 +109,13 @@ const Home = () => {
 	};
 
 	const waybillColumns = React.useMemo(
-		() => getWaybillColumns({ 
-			onDownloadClick: handleDownloadClick, 
-			onPrintClick: handlePrintClick,
-			onDeleteClick: handleDeleteClick,
-		}),
+		() =>
+			getWaybillColumns({
+				onEditClick: handleEditClick,
+				onDownloadClick: handleDownloadClick,
+				onPrintClick: handlePrintClick,
+				onDeleteClick: handleDeleteClick,
+			}),
 		[]
 	);
 
@@ -105,7 +129,9 @@ const Home = () => {
 				<TopNavbar />
 				<div className='max-w-7xl mx-auto px-6 py-8'>
 					<div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-						<h2 className='text-red-900 font-semibold mb-2'>Error Loading Waybills</h2>
+						<h2 className='text-red-900 font-semibold mb-2'>
+							Error Loading Waybills
+						</h2>
 						<p className='text-red-700'>{error}</p>
 						<button
 							onClick={() => actions.refetch()}
@@ -140,23 +166,24 @@ const Home = () => {
 							<div className='flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 rounded-md'>
 								<span className='w-2 h-2 bg-blue-600 rounded-full animate-pulse' />
 								<span className='text-xs text-blue-600 font-medium'>
-									Live {activeDownloads.size > 0 ? `(${activeDownloads.size})` : ''}
+									Live{' '}
+									{activeDownloads.size > 0 ? `(${activeDownloads.size})` : ''}
 								</span>
 							</div>
 						)}
 					</div>
-				{/* Create Print Jobs */}
-				<div className='flex gap-2'>
-					<CreateWaybillPrintDialog 
-						onSubmit={async () => {
-							// Enable polling to watch the auto-download
-							setIsPolling(true);
-							// The waybill will be in the list after creation
-							// SSE will notify of the new waybill immediately
-						}}
-					/>
-					<ScanPrintJobDialog />
-				</div>
+					{/* Create Print Jobs */}
+					<div className='flex gap-2'>
+						<CreateWaybillPrintDialog
+							onSubmit={async () => {
+								// Enable polling to watch the auto-download
+								setIsPolling(true);
+								// The waybill will be in the list after creation
+								// SSE will notify of the new waybill immediately
+							}}
+						/>
+						<ScanPrintJobDialog />
+					</div>
 				</div>
 
 				<DataTable
@@ -170,47 +197,63 @@ const Home = () => {
 					isLoading={loading}
 				/>
 
-	{/* DIALOGS / MODALS */}
-	{selectedWaybill && (
-		<>
-			<DownloadWaybillDialog
-				waybillId={String(selectedWaybill.id)}
-				invoiceNumber={selectedWaybill.invoice_number}
-				waybillUrl={selectedWaybill.waybill_url}
-				open={downloadDialogOpen}
-				onOpenChange={setDownloadDialogOpen}
-				onDownloadStart={() => {
-					// Add to active downloads and enable polling
-					setActiveDownloads(prev => new Set(prev).add(String(selectedWaybill.id)));
-					setIsPolling(true);
-				}}
-				onDownloadComplete={() => {
-					// Remove from active downloads
-					setActiveDownloads(prev => {
-						const next = new Set(prev);
-						next.delete(String(selectedWaybill.id));
-						return next;
-					});
-					// Disable polling only if no more active downloads
-					setIsPolling(false);
-				}}
-				showTrigger={false}
-			/>
-			<PrintWaybillDialog
-				waybill={selectedWaybill}
-				open={printDialogOpen}
-				onOpenChange={setPrintDialogOpen}
-				onConfirm={handlePrintConfirm}
-			/>
-			<DeleteConfirmationDialog
-				waybill={selectedWaybill}
-				open={deleteDialogOpen}
-				onOpenChange={setDeleteDialogOpen}
-				onConfirm={handleDeleteConfirm}
-				isLoading={isDeleting}
-			/>
-		</>
-	)}
+				{/* DIALOGS / MODALS */}
+				{selectedWaybill && (
+					<>
+				<EditWaybillPrintDialog
+					waybill={selectedWaybill}
+					open={editDialogOpen}
+					onOpenChange={(open) => {
+						setEditDialogOpen(open);
+						if (!open) {
+							setSelectedWaybill(null);
+						}
+					}}
+					onSuccess={async () => {
+						setEditDialogOpen(false);
+						// The data will be refetched via SSE/polling
+					}}
+				/>
+						<DownloadWaybillDialog
+							waybillId={String(selectedWaybill.id)}
+							invoiceNumber={selectedWaybill.invoice_number}
+							waybillUrl={selectedWaybill.waybill_url}
+							open={downloadDialogOpen}
+							onOpenChange={setDownloadDialogOpen}
+							onDownloadStart={() => {
+								// Add to active downloads and enable polling
+								setActiveDownloads((prev) =>
+									new Set(prev).add(String(selectedWaybill.id))
+								);
+								setIsPolling(true);
+							}}
+							onDownloadComplete={() => {
+								// Remove from active downloads
+								setActiveDownloads((prev) => {
+									const next = new Set(prev);
+									next.delete(String(selectedWaybill.id));
+									return next;
+								});
+								// Disable polling only if no more active downloads
+								setIsPolling(false);
+							}}
+							showTrigger={false}
+						/>
+						<PrintWaybillDialog
+							waybill={selectedWaybill}
+							open={printDialogOpen}
+							onOpenChange={setPrintDialogOpen}
+							onConfirm={handlePrintConfirm}
+						/>
+						<DeleteConfirmationDialog
+							waybill={selectedWaybill}
+							open={deleteDialogOpen}
+							onOpenChange={setDeleteDialogOpen}
+							onConfirm={handleDeleteConfirm}
+							isLoading={isDeleting}
+						/>
+					</>
+				)}
 			</div>
 		</>
 	);

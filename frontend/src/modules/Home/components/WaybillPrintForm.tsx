@@ -35,30 +35,30 @@ export const WaybillPrintForm = ({
 	return (
 		<div className='space-y-3'>
 			<div className='grid grid-cols-2 gap-3'>
-				<FormField
-					control={control}
-					name='marketplace'
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className='text-xs font-medium'>Marketplace</FormLabel>
-							<Select onValueChange={field.onChange} defaultValue={field.value}>
-								<FormControl>
-									<SelectTrigger disabled={isPending} className='h-8 text-sm w-full'>
-										<SelectValue placeholder='Select' />
-									</SelectTrigger>
-								</FormControl>
-								<SelectContent>
-									{marketplaceOptions.map((option) => (
-										<SelectItem key={option.value} value={option.value}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FormMessage className='text-xs' />
-						</FormItem>
-					)}
-				/>
+			<FormField
+				control={control}
+				name='marketplace'
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel className='text-xs font-medium'>Marketplace</FormLabel>
+						<Select onValueChange={field.onChange} value={field.value || ''}>
+							<FormControl>
+								<SelectTrigger disabled={isPending} className='h-8 text-sm w-full'>
+									<SelectValue placeholder='Select' />
+								</SelectTrigger>
+							</FormControl>
+							<SelectContent>
+								{marketplaceOptions.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<FormMessage className='text-xs' />
+					</FormItem>
+				)}
+			/>
 
 				<FormField
 					control={control}

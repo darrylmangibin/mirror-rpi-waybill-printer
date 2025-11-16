@@ -1,5 +1,6 @@
 import {
 	MoreHorizontalIcon,
+	EditIcon,
 	DownloadIcon,
 	PrinterIcon,
 	TrashIcon,
@@ -16,6 +17,7 @@ import { WaybillPrintStatuses } from '@/modules/Home/constants/waybillStatuses';
 
 interface WaybillPrintActionsProps {
 	waybill: WaybillPrint;
+	onEditClick: (waybill: WaybillPrint) => void;
 	onDownloadClick: (waybill: WaybillPrint) => void;
 	onPrintClick: (waybill: WaybillPrint) => void;
 	onDeleteClick: (waybill: WaybillPrint) => void;
@@ -23,6 +25,7 @@ interface WaybillPrintActionsProps {
 
 export const WaybillPrintActions = ({
 	waybill,
+	onEditClick,
 	onDownloadClick,
 	onPrintClick,
 	onDeleteClick,
@@ -37,25 +40,40 @@ export const WaybillPrintActions = ({
 					<MoreHorizontalIcon className='h-4 w-4' />
 				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent
-				align='end'
-				className='bg-white border-gray-200'>
+		<DropdownMenuContent
+			align='end'
+			className='bg-white border-gray-200'>
+			<DropdownMenuItem
+				onClick={() => onEditClick(waybill)}
+				className='text-gray-900 hover:bg-gray-100 p-0! transition-colors'>
+				<Button
+					asChild
+					type='button'
+					variant='ghost'
+					size='sm'
+					className='hover:bg-transparent w-full'>
+					<div className='flex items-center justify-start gap-2'>
+						<EditIcon className='h-4 w-4' />
+						<span className='text-xs'>Edit</span>
+					</div>
+				</Button>
+			</DropdownMenuItem>
 			<DropdownMenuItem
 				onClick={() => onDownloadClick(waybill)}
 				disabled={waybill.status !== WaybillPrintStatuses.PENDING}
 				className='text-gray-900 hover:bg-gray-100 p-0! disabled:hover:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors'>
-					<Button
-						asChild
-						type='button'
-						variant='ghost'
-						size='sm'
-						className='hover:bg-transparent w-full'>
-						<div className='flex items-center justify-start gap-2'>
-							<DownloadIcon className='h-4 w-4' />
-							<span className='text-xs'>Download</span>
-						</div>
-					</Button>
-				</DropdownMenuItem>
+				<Button
+					asChild
+					type='button'
+					variant='ghost'
+					size='sm'
+					className='hover:bg-transparent w-full'>
+					<div className='flex items-center justify-start gap-2'>
+						<DownloadIcon className='h-4 w-4' />
+						<span className='text-xs'>Download</span>
+					</div>
+				</Button>
+			</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => onPrintClick(waybill)}
 					className='text-gray-900 hover:bg-gray-100 p-0! transition-colors'>
