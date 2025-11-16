@@ -77,9 +77,8 @@ export const PrintDetailsColumn = ({
 				{printError && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<div className='flex items-center gap-1.5 cursor-pointer text-red-600'>
+							<div className='cursor-pointer'>
 								<AlertCircleIcon className='w-4 h-4 text-red-600' />
-								<span className='text-xs font-medium truncate'>Error</span>
 							</div>
 						</TooltipTrigger>
 						<TooltipContent className='max-w-xs break-all bg-red-50 text-red-600 border-red-200'>
