@@ -33,6 +33,13 @@ class WaybillPrint(db.Model):
     error_message = db.Column(db.Text, nullable=True)  # Error details if download fails
     downloaded_at = db.Column(db.DateTime, nullable=True)  # When download completed
     
+    # Print Management (NEW)
+    print_status = db.Column(db.String, default='idle')  # 'idle', 'pending', 'printing', 'completed', 'error'
+    cups_job_id = db.Column(db.Integer, nullable=True)  # CUPS job ID for tracking
+    printer_name = db.Column(db.String, nullable=True)  # Printer used for this job
+    print_error = db.Column(db.Text, nullable=True)  # Error details if print fails
+    print_completed_at = db.Column(db.DateTime, nullable=True)  # When printing actually completed
+    
     def __repr__(self):
         return f'<WaybillPrint {self.id}>'
     
@@ -50,6 +57,12 @@ class WaybillPrint(db.Model):
             'local_file_path': self.local_file_path,
             'error_message': self.error_message,
             'downloaded_at': self.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') if self.downloaded_at else None,
+            # Print-related fields (NEW)
+            'print_status': self.print_status,
+            'cups_job_id': self.cups_job_id,
+            'printer_name': self.printer_name,
+            'print_error': self.print_error,
+            'print_completed_at': self.print_completed_at.strftime('%Y-%m-%d %H:%M:%S') if self.print_completed_at else None,
         }
 
 

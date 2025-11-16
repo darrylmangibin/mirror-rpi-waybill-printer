@@ -188,9 +188,12 @@ class PrintWaybillService:
             
             # Update status to "printing" after successful submission to CUPS
             waybill_print.status = WaybillPrintStatuses.PRINTING.value
+            waybill_print.print_status = 'pending'      # NEW: Initial print status (pending submission to CUPS)
+            waybill_print.cups_job_id = job_id          # NEW: Store CUPS job ID for tracking
+            waybill_print.printer_name = printer_name   # NEW: Store which printer was used
             db.session.commit()
             
-            logger.info(f"Waybill status updated to 'printing' - Invoice: {invoice_number}, JobID: {job_id}")
+            logger.info(f"Waybill status updated to 'printing' - Invoice: {invoice_number}, CUPS JobID: {job_id}, Printer: {printer_name}")
             
             return {
                 'status': 'success',

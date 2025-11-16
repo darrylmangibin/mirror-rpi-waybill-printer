@@ -42,6 +42,17 @@ def print_worker():
                     db.session.refresh(waybill)
                     
                     logger.info(f"[PRINT COMPLETE] Invoice: {invoice}, Status: {result.get('status')}")
+                    
+                    # NEW: If print was successful, queue for CUPS monitoring
+                    if result.get('status') == 'success' and result.get('data'):
+                        cups_job_id = result['data'].get('job_id')
+                        printer_name = result['data'].get('printer')
+                        
+                        if cups_job_id and printer_name:
+                            from app.services.waybills.jobs.monitor_print_job import queue_monitor
+                            queue_monitor(waybill.id, cups_job_id, printer_name, invoice)
+                            logger.info(f"[AUTO-QUEUE MONITOR] Invoice: {invoice} - Queued for CUPS status monitoring, JobID: {cups_job_id}")
+                
                 except Exception as e:
                     logger.error(f"[PRINT ERROR] Invoice: {invoice}: {str(e)}", exc_info=True)
             

@@ -1,0 +1,155 @@
+import cups
+from app.utils.loggers import get_logger
+
+logger = get_logger(__name__)
+
+
+class CupsJobMonitorService:
+    """
+    Service to monitor CUPS print job status.
+    Queries CUPS daemon for job state and translates to our status values.
+    """
+    
+    # CUPS job state constants (from CUPS documentation)
+    JOB_STATES = {
+        1: 'pending',      # Job is pending
+        2: 'held',         # Job is held
+        3: 'processing',   # Job is currently processing
+        4: 'stopped',      # Job has stopped
+        5: 'canceled',     # Job has been canceled
+        7: 'completed',    # Job completed (SUCCESS)
+        9: 'aborted'       # Job was aborted (ERROR)
+    }
+    
+    def __init__(self):
+        """Initialize CUPS connection."""
+        try:
+            self.conn = cups.Connection()
+            logger.info("CupsJobMonitorService initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize CUPS connection in CupsJobMonitorService: {str(e)}")
+            self.conn = None
+    
+    def _ensure_connection(self):
+        """Ensure CUPS connection is active, reconnect if needed."""
+        try:
+            if not self.conn:
+                self.conn = cups.Connection()
+        except Exception as e:
+            logger.error(f"Failed to reconnect to CUPS: {str(e)}")
+            self.conn = None
+    
+    def check_job_status(self, printer_name: str, job_id: int) -> dict:
+        """
+        Check the status of a specific CUPS print job.
+        
+        Args:
+            printer_name (str): Name of the printer
+            job_id (int): CUPS job ID
+        
+        Returns:
+            dict: {
+                'job_id': int,
+                'state': int (CUPS state code) or None,
+                'state_name': str (human-readable state),
+                'is_completed': bool,
+                'is_failed': bool,
+                'is_processing': bool,
+                'error': str (if error occurred) or None
+            }
+        """
+        try:
+            self._ensure_connection()
+            
+            if not self.conn:
+                return {
+                    'job_id': job_id,
+                    'state': None,
+                    'state_name': 'unknown',
+                    'is_completed': False,
+                    'is_failed': True,
+                    'is_processing': False,
+                    'error': 'CUPS connection unavailable'
+                }
+            
+            # Get job attributes from CUPS daemon
+            job_attrs = self.conn.getJobAttributes(printer_name, job_id)
+            job_state = job_attrs.get('job-state', None)
+            
+            # Translate CUPS state to our status
+            state_name = self.JOB_STATES.get(job_state, 'unknown')
+            
+            # Determine job completion/failure/processing
+            is_completed = job_state == 7  # State 7 = completed successfully
+            is_failed = job_state == 9     # State 9 = aborted/failed
+            is_processing = job_state in [1, 2, 3, 4]  # Pending, held, processing, stopped
+            
+            logger.info(f"CUPS Job Status Check - JobID: {job_id}, Printer: {printer_name}, State: {job_state} ({state_name})")
+            
+            return {
+                'job_id': job_id,
+                'state': job_state,
+                'state_name': state_name,
+                'is_completed': is_completed,
+                'is_failed': is_failed,
+                'is_processing': is_processing,
+                'error': None
+            }
+        
+        except cups.IPPError as e:
+            # Job might have been removed from queue after completion
+            logger.warning(f"CUPS IPP Error checking job {job_id} on {printer_name}: {str(e)}")
+            return {
+                'job_id': job_id,
+                'state': None,
+                'state_name': 'unknown',
+                'is_completed': False,
+                'is_failed': True,
+                'is_processing': False,
+                'error': f"CUPS error: {str(e)}"
+            }
+        
+        except Exception as e:
+            logger.error(f"Error checking CUPS job status for job {job_id}: {str(e)}", exc_info=True)
+            return {
+                'job_id': job_id,
+                'state': None,
+                'state_name': 'unknown',
+                'is_completed': False,
+                'is_failed': False,
+                'is_processing': False,
+                'error': str(e)
+            }
+    
+    def get_all_jobs_for_printer(self, printer_name: str, include_completed: bool = False) -> dict:
+        """
+        Get all jobs for a printer.
+        
+        Args:
+            printer_name (str): Name of the printer
+            include_completed (bool): Whether to include completed jobs
+        
+        Returns:
+            dict: {job_id: job_attributes, ...}
+        """
+        try:
+            self._ensure_connection()
+            
+            if not self.conn:
+                logger.error("Cannot get jobs - CUPS connection unavailable")
+                return {}
+            
+            # Get active jobs
+            jobs = self.conn.getJobs(printer_name, completed=False)
+            
+            # Optionally get completed jobs too
+            if include_completed:
+                completed_jobs = self.conn.getJobs(printer_name, completed=True)
+                jobs = {**jobs, **completed_jobs}
+            
+            return jobs
+        
+        except Exception as e:
+            logger.error(f"Error getting jobs for printer {printer_name}: {str(e)}", exc_info=True)
+            return {}
+
