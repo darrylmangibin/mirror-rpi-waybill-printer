@@ -7,6 +7,7 @@ from pypdf import PdfReader, PdfWriter
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
+from app.services.waybills.enums.Marketplaces import Marketplaces
 
 logger = get_logger(__name__)
 
@@ -84,17 +85,26 @@ class WaybillDownloadService:
     
     def _get_waybill_from_third_party(self, waybill_print, invoice_number: str) -> str:
         """
-        Generate fallback waybill URL from third-party API (Railway).
+        Generate fallback waybill URL from third-party API based on marketplace.
         Used when no waybill_url is provided from the initial response.
         
         Args:
-            waybill_print: WaybillPrint model instance (contains tenant_id)
+            waybill_print: WaybillPrint model instance (contains tenant_id, marketplace)
             invoice_number (str): Invoice number for the waybill
         
         Returns:
             str: Fallback waybill URL
         """
         tenant_id = waybill_print.tenant_id
+        marketplace = waybill_print.marketplace
+        
+        # Shopify uses FusionTech hosted pattern
+        if marketplace and marketplace.lower() == Marketplaces.SHOPIFY.value:
+            fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
+            logger.info(f"Using Shopify FusionTech URL for invoice {invoice_number} (tenant: {tenant_id})")
+            return fallback_url
+        
+        # Default: Railway API pattern for other marketplaces
         fallback_url = f"https://fusion-production-api-{tenant_id}.up.railway.app/api/waybills/{invoice_number}/print-waybill"
         logger.info(f"Using fallback third-party URL for invoice {invoice_number} (tenant: {tenant_id})")
         return fallback_url
@@ -111,7 +121,7 @@ class WaybillDownloadService:
             bool: True if should crop, False otherwise
         """
         # Marketplaces that require 4x6 inch cropping
-        crop_marketplaces = {'zalora'}
+        crop_marketplaces = {Marketplaces.ZALORA.value, Marketplaces.SHOPIFY.value}
         
         if marketplace and marketplace.lower() in crop_marketplaces:
             return True
