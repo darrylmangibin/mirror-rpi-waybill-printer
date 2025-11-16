@@ -1,6 +1,7 @@
 import { FormattedDate } from '@/components/global';
 import { ClockIcon, AlertCircleIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
 	Tooltip,
 	TooltipTrigger,
@@ -26,22 +27,22 @@ export const PrintDetailsColumn = ({
 		? printStatus.charAt(0).toUpperCase() + printStatus.slice(1)
 		: 'Idle';
 
-	// Map status to badge variant
-	const getStatusVariant = (status: string | null) => {
+	// Map status to gradient styling
+	const getStatusGradientClass = (status: string | null) => {
 		switch (status) {
 			case 'completed':
-				return 'default';
+				return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200';
 			case 'error':
-				return 'destructive';
+				return 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border-red-200';
 			default:
-				return 'outline';
+				return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border-gray-200';
 		}
 	};
 
 	if (!cupsJobId && !printCompletedAt && !printError) {
 		return (
 			<div className='space-y-1'>
-				<Badge variant={getStatusVariant(printStatus)} className='rounded-full'>
+				<Badge variant='outline' className={cn('rounded-full', getStatusGradientClass(printStatus))}>
 					{statusDisplay}
 				</Badge>
 				<div className='text-gray-500 text-xs'>-</div>
@@ -67,7 +68,7 @@ export const PrintDetailsColumn = ({
 
 			{/* Status Badge - Middle */}
 			<div className='flex items-center gap-1.5'>
-				<Badge variant={getStatusVariant(printStatus)} className='rounded-full'>
+				<Badge variant='outline' className={cn('rounded-full', getStatusGradientClass(printStatus))}>
 					{statusDisplay}
 				</Badge>
 				{printError && (
@@ -77,7 +78,7 @@ export const PrintDetailsColumn = ({
 								<AlertCircleIcon className='w-4 h-4 text-red-600' />
 							</div>
 						</TooltipTrigger>
-						<TooltipContent className='max-w-xs break-all bg-red-50 text-red-600 border-red-200'>
+						<TooltipContent className='max-w-xs break-all'>
 							{printError}
 						</TooltipContent>
 					</Tooltip>
