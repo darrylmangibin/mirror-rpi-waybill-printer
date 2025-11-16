@@ -1,5 +1,5 @@
 import { FormattedDate } from '@/components/global';
-import { ClockIcon, AlertCircleIcon, PrinterIcon } from 'lucide-react';
+import { ClockIcon, AlertCircleIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
