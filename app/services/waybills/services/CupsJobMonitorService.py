@@ -106,10 +106,10 @@ class CupsJobMonitorService:
                     logger.debug(f"[MOCK] Job {job_id_int} check #{checks_count + 1} → completed ✅")
             else:
                 # REAL MODE: Query actual CUPS daemon
-                logger.debug(f"[CUPS DEBUG] Calling getJobAttributes with printer_name='{printer_name}' (type: {type(printer_name).__name__}), job_id_int={job_id_int} (type: {type(job_id_int).__name__})")
+                logger.debug(f"[CUPS DEBUG] Calling getJobAttributes with job_id={job_id_int} (type: {type(job_id_int).__name__})")
                 
-                # Call CUPS to get job attributes
-                job_attrs = self.conn.getJobAttributes(printer_name, job_id_int)
+                # Call CUPS to get job attributes - CUPS API only needs job_id
+                job_attrs = self.conn.getJobAttributes(job_id_int)
                 job_state = job_attrs.get('job-state', None)
             
             # Translate CUPS state to our status
