@@ -127,20 +127,28 @@ class CupsJobMonitorService:
             logger.debug(f"[CUPS STATE REASONS] JobID: {job_id}, state_reasons: {state_reasons}")
             
             # Determine job completion/failure/processing
-            # Use state-reasons as primary indicator (more reliable)
-            is_completed = (
-                'completed' in state_reasons or 
-                job_state == 7  # Fallback to state code
-            )
-            is_failed = (
-                'aborted' in state_reasons or 
-                'canceled' in state_reasons or
-                job_state in [5, 9]  # Fallback to state codes
-            )
+            # IMPORTANT: job-printing in reasons means it's actively printing, NOT failed
+            # Even if job_state=5 (held), if job-printing is in reasons, it's printing
+            
             is_processing = (
                 'job-printing' in state_reasons or 
                 'processing' in state_reasons or
-                job_state in [1, 2, 3, 4]  # Fallback to state codes
+                job_state in [1, 2, 3, 4]  # Pending, held, processing, stopped
+            )
+            
+            # Only mark as failed if NOT currently printing
+            is_failed = (
+                (
+                    'aborted' in state_reasons or 
+                    'canceled' in state_reasons or
+                    job_state in [5, 9]
+                ) and 
+                not is_processing  # Don't mark as failed if actively printing
+            )
+            
+            is_completed = (
+                'completed' in state_reasons or 
+                job_state == 7  # Fallback to state code
             )
             
             logger.info(f"CUPS Job Status Check - JobID: {job_id}, Printer: {printer_name}, State: {job_state} ({state_name})")
