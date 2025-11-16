@@ -192,6 +192,44 @@ echo -e "${YELLOW}Installing Python dependencies...${NC}"
 sudo -u "$ACTUAL_USER" ./venv/bin/pip install -r requirements.txt
 echo -e "${GREEN}✅ Python dependencies installed${NC}"
 
+# Install Playwright browser dependencies for HTML-to-PDF conversion
+echo -e "${YELLOW}Installing Playwright browser dependencies...${NC}"
+echo -e "${BLUE}This enables HTML webpage-to-PDF conversion for waybill downloads${NC}"
+apt update
+apt install -y \
+    libasound2t64 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6
+echo -e "${GREEN}✅ Playwright dependencies installed${NC}"
+
+# Install Playwright browser binaries
+echo -e "${YELLOW}Installing Playwright Chromium browser...${NC}"
+sudo -u "$ACTUAL_USER" ./venv/bin/python3 -m playwright install chromium
+echo -e "${GREEN}✅ Playwright Chromium installed${NC}"
+
 # Initialize database migrations (one-time setup)
 echo -e "${YELLOW}Initializing database migrations...${NC}"
 export FLASK_APP=run:app
@@ -240,12 +278,17 @@ echo -e "${BLUE}Backend dependencies: Installed${NC}"
 echo -e "${BLUE}Frontend dependencies: Installed${NC}"
 echo -e "${BLUE}Database: Initialized${NC}"
 echo -e "${BLUE}CUPS: Configured with thermal printer support${NC}"
+echo -e "${BLUE}Playwright: Installed for HTML-to-PDF conversion${NC}"
 echo -e "\n${YELLOW}CUPS & Thermal Printer Configuration (Admin Level):${NC}"
 echo -e "${BLUE}• $ACTUAL_USER has admin access to lpadmin group${NC}"
 echo -e "${BLUE}• Thermal printer drivers installed (Zebra PPD compatible)${NC}"
 echo -e "${BLUE}• CUPS configured for admin-level printer management${NC}"
 echo -e "${BLUE}• CUPS web interface: http://localhost:631${NC}"
 echo -e "${BLUE}• PNG-to-PDF conversion enabled for printing${NC}"
+echo -e "\n${YELLOW}Waybill PDF Conversion (Playwright):${NC}"
+echo -e "${BLUE}• HTML webpage-to-PDF conversion enabled${NC}"
+echo -e "${BLUE}• Chromium headless browser installed${NC}"
+echo -e "${BLUE}• Automatic conversion when API returns HTML${NC}"
 echo -e "\n${YELLOW}View configured printers:${NC}"
 echo -e "${BLUE}  lpstat -p -d${NC}"
 echo -e "\n${YELLOW}To manually add/configure thermal printer (XPrinter) with admin access:${NC}"

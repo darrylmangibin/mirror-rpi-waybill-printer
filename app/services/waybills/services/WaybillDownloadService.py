@@ -8,6 +8,8 @@ from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.services.waybills.enums.Marketplaces import Marketplaces
+import asyncio
+from playwright.async_api import async_playwright
 
 logger = get_logger(__name__)
 
@@ -147,6 +149,93 @@ class WaybillDownloadService:
         
         return (crop_width, crop_height)
     
+    def _is_html_content(self, response) -> bool:
+        """
+        Check if the response is HTML instead of a file.
+        Used to detect when API returns a webpage instead of a direct file.
+        
+        Args:
+            response: requests.Response object
+        
+        Returns:
+            bool: True if content is HTML, False otherwise
+        """
+        try:
+            content_type = response.headers.get('Content-Type', '').lower()
+            
+            # Check if Content-Type header indicates HTML
+            if 'text/html' in content_type:
+                logger.info(f"HTML detected from Content-Type header: {content_type}")
+                return True
+            
+            # Also check the actual content (fallback) - peek at first 500 bytes
+            content = response.content[:500]
+            try:
+                text = content.decode('utf-8', errors='ignore')
+                if text.startswith('<!DOCTYPE') or '<html' in text.lower() or '<?xml' in text:
+                    logger.info(f"HTML detected from content inspection")
+                    return True
+            except:
+                pass
+            
+            return False
+        except Exception as e:
+            logger.warning(f"Error checking if content is HTML: {str(e)}")
+            return False
+    
+    async def _convert_webpage_to_pdf(self, url: str, invoice_number: str, output_path: str) -> bool:
+        """
+        Convert a webpage (HTML) to PDF using headless browser (Playwright).
+        Used when the waybill endpoint returns HTML instead of direct PDF.
+        
+        Args:
+            url (str): URL of the webpage to convert
+            invoice_number (str): Invoice number for logging
+            output_path (str): Where to save the PDF
+        
+        Returns:
+            bool: True if successful, False otherwise
+        
+        Raises:
+            Exception: If conversion fails
+        """
+        try:
+            logger.info(f"Starting webpage-to-PDF conversion - Invoice: {invoice_number}, URL: {url}")
+            
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+                
+                logger.info(f"Playwright browser launched, loading page - Invoice: {invoice_number}")
+                
+                # Navigate to the URL and wait for page to be interactive
+                # Using 'domcontentloaded' instead of 'networkidle' to avoid timeout on pages with persistent background requests
+                # This waits for the page to be visible and interactive, not for ALL network requests to finish
+                await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                
+                # Give the page an extra moment to fully render
+                await page.wait_for_timeout(2000)
+                
+                logger.info(f"Page loaded, generating PDF - Invoice: {invoice_number}")
+                
+                # Generate PDF with A4 format (standard paper size)
+                await page.pdf(path=output_path, format='A4')
+                
+                await browser.close()
+                
+                # Verify file was created
+                if not os.path.exists(output_path):
+                    raise IOError(f"PDF file was not created: {output_path}")
+                
+                file_size = os.path.getsize(output_path)
+                logger.info(f"Webpage converted to PDF successfully - Invoice: {invoice_number}, File size: {file_size} bytes, Path: {output_path}")
+                
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to convert webpage to PDF - Invoice: {invoice_number}, URL: {url}: {str(e)}", exc_info=True)
+            raise Exception(f"Webpage-to-PDF conversion failed: {str(e)}")
+    
     def _crop_pdf_to_label_size(self, pdf_path: str, invoice_number: str, marketplace: str = None, offset_x: int = 45, offset_y: int = 29) -> str:
         """
         Crop PDF to marketplace-specific label size (4x6 inches for thermal printer).
@@ -281,6 +370,83 @@ class WaybillDownloadService:
             # Log response details for debugging
             content_type = response.headers.get('Content-Type', 'Not specified')
             logger.info(f"Download response - Invoice: {invoice_number}, Content-Type: {content_type}, Fallback: {is_fallback_url}, Status: {response.status_code}")
+            
+            # CHECK: If API returns HTML instead of file, convert webpage to PDF
+            if self._is_html_content(response):
+                logger.info(f"HTML content detected, converting webpage to PDF - Invoice: {invoice_number}, URL: {waybill_url}")
+                
+                # Generate filename for the PDF
+                timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+                filename = f"{waybill_print.id}_{invoice_number}_{timestamp}.pdf"
+                filename = self._sanitize_filename(filename)
+                filepath = os.path.join(self.download_directory, filename)
+                
+                # Convert webpage to PDF using Playwright
+                try:
+                    asyncio.run(self._convert_webpage_to_pdf(waybill_url, invoice_number, filepath))
+                    logger.info(f"Webpage conversion successful - Invoice: {invoice_number}, Output file: {filename}")
+                    
+                    # Get file size after conversion
+                    file_size = os.path.getsize(filepath)
+                    
+                    # CROP PDF TO 4x6 INCHES for Zalora and Shopify only
+                    marketplace = waybill_print.marketplace
+                    if self._should_crop_pdf(marketplace):
+                        try:
+                            filepath = self._crop_pdf_to_label_size(filepath, invoice_number, marketplace)
+                            filename = os.path.basename(filepath)
+                            logger.info(f"PDF cropped to 4x6 inches after webpage conversion - Invoice: {invoice_number}")
+                        except Exception as crop_error:
+                            logger.error(f"PDF cropping failed after conversion, continuing with original - Invoice: {invoice_number}: {str(crop_error)}")
+                    
+                    file_size = os.path.getsize(filepath)
+                    
+                    # Update database record
+                    waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
+                    waybill_print.local_file_path = filepath
+                    waybill_print.downloaded_at = datetime.now().replace(microsecond=0)
+                    db.session.commit()
+                    
+                    # Clean up old waybill file
+                    self._cleanup_old_waybill_file(old_file_path, invoice_number)
+                    
+                    # Build success message
+                    if self._should_crop_pdf(waybill_print.marketplace):
+                        message = 'Waybill webpage converted to PDF, cropped to 4x6 inches, and saved successfully'
+                    else:
+                        message = 'Waybill webpage converted to PDF and saved successfully'
+                    
+                    return {
+                        'status': 'success',
+                        'message': message,
+                        'data': {
+                            'waybill_id': waybill_print.id,
+                            'invoice_number': invoice_number,
+                            'filepath': filepath,
+                            'filename': filename,
+                            'file_size': file_size
+                        }
+                    }
+                except Exception as e:
+                    error_msg = f"Failed to convert webpage to PDF: {str(e)}"
+                    logger.error(f"Webpage-to-PDF conversion error - Invoice: {invoice_number}: {error_msg}", exc_info=True)
+                    
+                    # Update database with error status
+                    try:
+                        waybill_print.status = WaybillPrintStatuses.ERROR.value
+                        waybill_print.error_message = error_msg
+                        db.session.commit()
+                    except Exception as db_error:
+                        logger.error(f"Failed to update WaybillPrint on conversion error: {str(db_error)}", exc_info=True)
+                    
+                    return {
+                        'status': 'error',
+                        'message': error_msg,
+                        'data': {
+                            'waybill_id': waybill_print.id,
+                            'invoice_number': invoice_number
+                        }
+                    }
             
             # PRIORITY 1: Check Content-Type header from server (authoritative source)
             extension = self._get_extension_from_content_type(content_type)
