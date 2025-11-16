@@ -5,22 +5,16 @@ import {
 	TooltipTrigger,
 	TooltipContent,
 } from '@/components/ui/tooltip';
+import type { WaybillPrint } from '@/modules/Home/services';
 
 interface PrintDetailsColumnProps {
-	printStatus: string | null;
-	printerName: string | null;
-	cupsJobId: number | null;
-	printError: string | null;
-	printCompletedAt: string | null;
+	waybill: Partial<WaybillPrint>;
 }
 
 export const PrintDetailsColumn = ({
-	printStatus,
-	printerName,
-	cupsJobId,
-	printError,
-	printCompletedAt,
+	waybill,
 }: PrintDetailsColumnProps) => {
+	const { print_status: printStatus, cups_job_id: cupsJobId, print_error: printError, print_completed_at: printCompletedAt } = waybill;
 	const statusColors: Record<string, string> = {
 		idle: 'bg-gray-100 text-gray-800',
 		pending: 'bg-yellow-100 text-yellow-800',
@@ -48,7 +42,7 @@ export const PrintDetailsColumn = ({
 	return (
 		<div className='space-y-1'>
 			{/* Status Badge with Error Icon */}
-			<div className='flex items-center justify-between'>
+			<div className='flex items-center gap-1.5'>
 				<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
 					{statusDisplay}
 				</div>

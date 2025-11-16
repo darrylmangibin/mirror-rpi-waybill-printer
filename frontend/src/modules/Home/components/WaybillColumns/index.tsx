@@ -139,23 +139,7 @@ export const getWaybillColumns = (
 	{
 		id: 'print_details',
 		header: 'Print Details',
-		cell: ({ row }) => {
-			const printStatus = row.original.print_status as string | null | undefined;
-			const printerName = row.original.printer_name as string | null | undefined;
-			const cupsJobId = row.original.cups_job_id as number | null | undefined;
-			const printError = row.original.print_error as string | null | undefined;
-			const printCompletedAt = row.original.print_completed_at as string | null | undefined;
-
-			return (
-				<PrintDetailsColumn
-					printStatus={printStatus || null}
-					printerName={printerName || null}
-					cupsJobId={cupsJobId || null}
-					printError={printError || null}
-					printCompletedAt={printCompletedAt || null}
-				/>
-			);
-		},
+		cell: ({ row }) => <PrintDetailsColumn waybill={row.original as Partial<WaybillPrint>} />,
 	},
 	{
 		accessorKey: 'created_at',
