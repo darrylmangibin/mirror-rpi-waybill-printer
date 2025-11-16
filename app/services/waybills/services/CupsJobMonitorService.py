@@ -118,10 +118,30 @@ class CupsJobMonitorService:
             # Translate CUPS state to our status
             state_name = self.JOB_STATES.get(job_state, 'unknown')
             
+            # Get job state reasons (more reliable than state code)
+            state_reasons = job_attrs.get('job-state-reasons', '')
+            if isinstance(state_reasons, list):
+                state_reasons = ' '.join(state_reasons)
+            state_reasons = str(state_reasons).lower()
+            
+            logger.debug(f"[CUPS STATE REASONS] JobID: {job_id}, state_reasons: {state_reasons}")
+            
             # Determine job completion/failure/processing
-            is_completed = job_state == 7  # State 7 = completed successfully
-            is_failed = job_state in [5, 9]  # State 5 = canceled, State 9 = aborted/failed
-            is_processing = job_state in [1, 2, 3, 4]  # Pending, held, processing, stopped
+            # Use state-reasons as primary indicator (more reliable)
+            is_completed = (
+                'completed' in state_reasons or 
+                job_state == 7  # Fallback to state code
+            )
+            is_failed = (
+                'aborted' in state_reasons or 
+                'canceled' in state_reasons or
+                job_state in [5, 9]  # Fallback to state codes
+            )
+            is_processing = (
+                'job-printing' in state_reasons or 
+                'processing' in state_reasons or
+                job_state in [1, 2, 3, 4]  # Fallback to state codes
+            )
             
             logger.info(f"CUPS Job Status Check - JobID: {job_id}, Printer: {printer_name}, State: {job_state} ({state_name})")
             
