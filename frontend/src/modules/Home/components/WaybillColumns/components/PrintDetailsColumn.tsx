@@ -52,34 +52,32 @@ export const PrintDetailsColumn = ({
 
 	return (
 		<div className='space-y-1.5'>
-			{/* Printer Icon + Job ID + Status Badge - Top Line */}
+			{/* Printer Icon + Status Badge - Top Line */}
 			<div className='flex items-center gap-1.5'>
-				<PrinterIcon className='w-4 h-4 text-gray-700' />
 				{cupsJobId && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className='text-xs text-gray-700 font-medium cursor-pointer font-mono'>{cupsJobId}</span>
+							<PrinterIcon className='w-4 h-4 text-gray-700 cursor-pointer' />
 						</TooltipTrigger>
 						<TooltipContent>
 							Job ID: {cupsJobId}
 						</TooltipContent>
 					</Tooltip>
 				)}
-				<Badge variant='outline' className={cn('rounded-full', getStatusGradientClass(printStatus))}>
-					{statusDisplay}
-				</Badge>
-				{printError && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<div className='cursor-pointer'>
-								<AlertCircleIcon className='w-4 h-4 text-red-600' />
-							</div>
-						</TooltipTrigger>
-						<TooltipContent className='max-w-xs break-all'>
-							{printError}
-						</TooltipContent>
-					</Tooltip>
-				)}
+				{!cupsJobId && <PrinterIcon className='w-4 h-4 text-gray-700' />}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Badge variant='outline' className={cn('rounded-full cursor-pointer', getStatusGradientClass(printStatus))}>
+							<span className='flex items-center gap-1'>
+								{statusDisplay}
+								{printError && <AlertCircleIcon className='w-3.5 h-3.5 text-red-600' />}
+							</span>
+						</Badge>
+					</TooltipTrigger>
+					<TooltipContent>
+						{printError ? printError : cupsJobId && `Job ID: ${cupsJobId}`}
+					</TooltipContent>
+				</Tooltip>
 			</div>
 
 			{/* Completed At - Bottom */}
