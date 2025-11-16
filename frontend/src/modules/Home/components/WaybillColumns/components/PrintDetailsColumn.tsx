@@ -1,5 +1,6 @@
 import { FormattedDate } from '@/components/global';
 import { ClockIcon, AlertCircleIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import {
 	Tooltip,
 	TooltipTrigger,
@@ -14,38 +15,61 @@ interface PrintDetailsColumnProps {
 export const PrintDetailsColumn = ({
 	waybill,
 }: PrintDetailsColumnProps) => {
-	const { print_status: printStatus, cups_job_id: cupsJobId, print_error: printError, print_completed_at: printCompletedAt } = waybill;
-	const statusColors: Record<string, string> = {
-		idle: 'bg-gray-100 text-gray-800',
-		pending: 'bg-yellow-100 text-yellow-800',
-		printing: 'bg-blue-100 text-blue-800',
-		completed: 'bg-green-100 text-green-800',
-		error: 'bg-red-100 text-red-800',
-	};
+	const { 
+		print_status: printStatus = null, 
+		cups_job_id: cupsJobId = null, 
+		print_error: printError = null, 
+		print_completed_at: printCompletedAt = null 
+	} = waybill;
 
-	const colorClass = statusColors[printStatus || 'idle'] || statusColors.idle;
 	const statusDisplay = printStatus
 		? printStatus.charAt(0).toUpperCase() + printStatus.slice(1)
 		: 'Idle';
 
+	// Map status to badge variant
+	const getStatusVariant = (status: string | null) => {
+		switch (status) {
+			case 'completed':
+				return 'default';
+			case 'error':
+				return 'destructive';
+			default:
+				return 'outline';
+		}
+	};
+
 	if (!cupsJobId && !printCompletedAt && !printError) {
 		return (
 			<div className='space-y-1'>
-				<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
+				<Badge variant={getStatusVariant(printStatus)} className='rounded-full'>
 					{statusDisplay}
-				</div>
+				</Badge>
 				<div className='text-gray-500 text-xs'>-</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className='space-y-1'>
-			{/* Status Badge with Error Icon */}
+		<div className='space-y-1.5'>
+			{/* Job ID - Top */}
+			{cupsJobId && (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<div className='cursor-pointer'>
+							<span className='text-xs text-gray-700 font-medium'>Job ID: <span className='font-mono'>{cupsJobId}</span></span>
+						</div>
+					</TooltipTrigger>
+					<TooltipContent>
+						Job ID: {cupsJobId}
+					</TooltipContent>
+				</Tooltip>
+			)}
+
+			{/* Status Badge - Middle */}
 			<div className='flex items-center gap-1.5'>
-				<div className={`inline-block px-2 py-1 rounded text-xs font-medium ${colorClass}`}>
+				<Badge variant={getStatusVariant(printStatus)} className='rounded-full'>
 					{statusDisplay}
-				</div>
+				</Badge>
 				{printError && (
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -60,28 +84,13 @@ export const PrintDetailsColumn = ({
 				)}
 			</div>
 
-			{/* Details - Compact Layout */}
-			<div className='space-y-1'>
-				{cupsJobId && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<div className='flex items-center gap-1.5 cursor-pointer'>
-								<span className='text-xs text-gray-500 font-medium font-mono'>#{cupsJobId}</span>
-							</div>
-						</TooltipTrigger>
-						<TooltipContent>
-							Job ID: {cupsJobId}
-						</TooltipContent>
-					</Tooltip>
-				)}
-
-				{printCompletedAt && (
-					<div className='flex items-center gap-1.5 text-xs text-gray-400'>
-						<ClockIcon className='w-3.5 h-3.5 text-gray-600' />
-						<FormattedDate date={printCompletedAt} />
-					</div>
-				)}
-			</div>
+			{/* Completed At - Bottom */}
+			{printCompletedAt && (
+				<div className='flex items-center gap-1.5 text-xs text-gray-400'>
+					<ClockIcon className='w-3.5 h-3.5 text-gray-600' />
+					<FormattedDate date={printCompletedAt} />
+				</div>
+			)}
 		</div>
 	);
 };
