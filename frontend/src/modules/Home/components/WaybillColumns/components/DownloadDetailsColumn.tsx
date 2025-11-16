@@ -1,5 +1,5 @@
 import { FormattedDate } from '@/components/global';
-import { FileIcon, Clock, X } from 'lucide-react';
+import { FileCheckIcon, FileXIcon, ClockIcon } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipTrigger,
@@ -25,7 +25,8 @@ export const DownloadDetailsColumn = ({
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<div className='flex items-center gap-1.5 cursor-pointer'>
-							<FileIcon className='w-4 h-4 text-green-600 flex-shrink-0' />
+							<FileCheckIcon className='w-4 h-4 text-gray-800' />
+							<span className='text-xs text-gray-500 font-medium'>File</span>
 						</div>
 					</TooltipTrigger>
 					<TooltipContent className='max-w-xs break-all'>
@@ -34,13 +35,14 @@ export const DownloadDetailsColumn = ({
 				</Tooltip>
 			) : downloadedAt ? (
 				<div className='flex items-center gap-1.5'>
-					<X className='w-4 h-4 text-red-600 flex-shrink-0' />
+					<FileXIcon className='w-4 h-4 text-gray-800' />
+					<span className='text-xs text-gray-500 font-medium'>File</span>
 				</div>
 			) : null}
 
 			{downloadedAt && (
-				<div className='flex items-center gap-1.5 text-xs text-gray-600'>
-					<Clock className='w-3.5 h-3.5 text-gray-600 flex-shrink-0' />
+				<div className='flex items-center gap-1.5 text-xs text-gray-400'>
+					<ClockIcon className='w-3.5 h-3.5 text-gray-600' />
 					<FormattedDate date={downloadedAt} />
 				</div>
 			)}
