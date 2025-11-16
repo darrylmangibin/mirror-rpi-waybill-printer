@@ -75,6 +75,11 @@ class CupsJobMonitorService:
             # Get job attributes from CUPS daemon
             # Ensure job_id is an integer (CUPS API requirement)
             job_id_int = int(job_id)
+            
+            # Debug: log what we're passing to CUPS
+            logger.debug(f"[CUPS DEBUG] Calling getJobAttributes with printer_name='{printer_name}' (type: {type(printer_name).__name__}), job_id_int={job_id_int} (type: {type(job_id_int).__name__})")
+            
+            # Call CUPS to get job attributes
             job_attrs = self.conn.getJobAttributes(printer_name, job_id_int)
             job_state = job_attrs.get('job-state', None)
             
@@ -101,6 +106,7 @@ class CupsJobMonitorService:
         except cups.IPPError as e:
             # Job might have been removed from queue after completion
             logger.warning(f"CUPS IPP Error checking job {job_id} on {printer_name}: {str(e)}")
+            logger.debug(f"[CUPS IPP ERROR DETAILS] Exception type: {type(e).__name__}, Message: {str(e)}")
             return {
                 'job_id': job_id,
                 'state': None,
@@ -111,8 +117,23 @@ class CupsJobMonitorService:
                 'error': f"CUPS error: {str(e)}"
             }
         
+        except TypeError as e:
+            # This happens when CUPS API receives wrong type arguments
+            logger.error(f"TypeError checking CUPS job {job_id}: {str(e)}", exc_info=True)
+            logger.error(f"[TYPE ERROR DEBUG] printer_name='{printer_name}' (type: {type(printer_name).__name__}), job_id_int={job_id_int} (type: {type(job_id_int).__name__})")
+            return {
+                'job_id': job_id,
+                'state': None,
+                'state_name': 'unknown',
+                'is_completed': False,
+                'is_failed': False,
+                'is_processing': False,
+                'error': f"Type error: {str(e)}"
+            }
+        
         except Exception as e:
             logger.error(f"Error checking CUPS job status for job {job_id}: {str(e)}", exc_info=True)
+            logger.error(f"[EXCEPTION DEBUG] Exception type: {type(e).__name__}, Printer: {printer_name}, JobID: {job_id}")
             return {
                 'job_id': job_id,
                 'state': None,
