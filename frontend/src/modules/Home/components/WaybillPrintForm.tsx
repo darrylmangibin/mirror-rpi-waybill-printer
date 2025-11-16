@@ -28,7 +28,6 @@ export interface WaybillPrintFormProps {
  */
 export const WaybillPrintForm = ({
 	isPending = false,
-	isEditing = false,
 }: WaybillPrintFormProps) => {
 	const { control } = useFormContext();
 

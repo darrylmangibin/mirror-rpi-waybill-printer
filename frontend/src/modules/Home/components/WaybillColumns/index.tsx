@@ -1,11 +1,11 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/components/WaybillUrlBadge';
-import { FilePath } from '@/modules/Home/components/WaybillColumns/components/FilePath';
 import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
 import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
 import { ErrorColumn } from '@/modules/Home/components/WaybillColumns/components/ErrorColumn';
 import { PlatformBadge } from '@/modules/Home/components/WaybillColumns/components/PlatformBadge';
 import { PrintDetailsColumn } from '@/modules/Home/components/WaybillColumns/components/PrintDetailsColumn';
+import { DownloadDetailsColumn } from '@/modules/Home/components/WaybillColumns/components/DownloadDetailsColumn';
 import { FormattedDate } from '@/components/global';
 import { marketplaceIcons } from '@/modules/Home/constants/marketplaces';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -49,11 +49,13 @@ export const getWaybillColumns = (
 		accessorKey: 'tenant_id',
 		header: 'Platform',
 		cell: ({ row }) => {
-			const tenantId = row.getValue('tenant_id') as number | null;
-			const marketplace = row.getValue('marketplace') as string | null;
-			const icon = marketplace
-				? marketplaceIcons[marketplace as keyof typeof marketplaceIcons]
+			const tenantId = row.original.tenant_id as number | null;
+			const marketplace = row.original.marketplace as string | null;
+			
+			const icon = marketplace && marketplace.toLowerCase() in marketplaceIcons
+				? marketplaceIcons[marketplace.toLowerCase() as keyof typeof marketplaceIcons]
 				: undefined;
+			
 			return (
 				<PlatformBadge
 					tenantId={tenantId}
@@ -121,19 +123,38 @@ export const getWaybillColumns = (
 		},
 	},
 	{
-		accessorKey: 'local_file_path',
-		header: 'File Path',
+		id: 'download_details',
+		header: 'Download Details',
 		cell: ({ row }) => {
-			const path = row.getValue('local_file_path') as string | null;
-			return <FilePath path={path} />;
+			const localFilePath = row.original.local_file_path as string | null | undefined;
+			const downloadedAt = row.original.downloaded_at as string | null | undefined;
+			return (
+				<DownloadDetailsColumn
+					localFilePath={localFilePath || null}
+					downloadedAt={downloadedAt || null}
+				/>
+			);
 		},
 	},
 	{
-		accessorKey: 'downloaded_at',
-		header: 'Downloaded At',
+		id: 'print_details',
+		header: 'Print Details',
 		cell: ({ row }) => {
-			const date = row.getValue('downloaded_at') as string | null;
-			return <FormattedDate date={date} />;
+			const printStatus = row.original.print_status as string | null | undefined;
+			const printerName = row.original.printer_name as string | null | undefined;
+			const cupsJobId = row.original.cups_job_id as number | null | undefined;
+			const printError = row.original.print_error as string | null | undefined;
+			const printCompletedAt = row.original.print_completed_at as string | null | undefined;
+
+			return (
+				<PrintDetailsColumn
+					printStatus={printStatus || null}
+					printerName={printerName || null}
+					cupsJobId={cupsJobId || null}
+					printError={printError || null}
+					printCompletedAt={printCompletedAt || null}
+				/>
+			);
 		},
 	},
 	{
@@ -142,27 +163,6 @@ export const getWaybillColumns = (
 		cell: ({ row }) => {
 			const date = row.getValue('created_at') as string | null;
 			return <FormattedDate date={date} />;
-		},
-	},
-	{
-		id: 'print_details',
-		header: 'Print Details',
-		cell: ({ row }) => {
-			const printStatus = row.getValue('print_status') as string | null;
-			const printerName = row.getValue('printer_name') as string | null;
-			const cupsJobId = row.getValue('cups_job_id') as number | null;
-			const printError = row.getValue('print_error') as string | null;
-			const printCompletedAt = row.getValue('print_completed_at') as string | null;
-
-			return (
-				<PrintDetailsColumn
-					printStatus={printStatus}
-					printerName={printerName}
-					cupsJobId={cupsJobId}
-					printError={printError}
-					printCompletedAt={printCompletedAt}
-				/>
-			);
 		},
 	},
 	{
