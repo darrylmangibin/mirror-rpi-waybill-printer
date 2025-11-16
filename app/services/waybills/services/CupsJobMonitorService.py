@@ -111,6 +111,9 @@ class CupsJobMonitorService:
                 # Call CUPS to get job attributes - CUPS API only needs job_id
                 job_attrs = self.conn.getJobAttributes(job_id_int)
                 job_state = job_attrs.get('job-state', None)
+                
+                # DEBUG: Log all available job attributes to understand job state better
+                logger.info(f"[CUPS RAW ATTRIBUTES] JobID: {job_id_int}, All attrs: {job_attrs}")
             
             # Translate CUPS state to our status
             state_name = self.JOB_STATES.get(job_state, 'unknown')
