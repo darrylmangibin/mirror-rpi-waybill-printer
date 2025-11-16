@@ -8,6 +8,8 @@ from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.services.waybills.enums.Marketplaces import Marketplaces
+from app.services.waybills.config.download_service_config import config, get_crop_offset
+from app.config.helper import get as config_get
 import asyncio
 from playwright.async_api import async_playwright
 
@@ -143,11 +145,8 @@ class WaybillDownloadService:
             tuple: (width, height) in points for 4x6 inches
         """
         # 4x6 inches in points (72 DPI)
-        # 4 inches = 288 points, 6 inches = 432 points
-        crop_width = 288
-        crop_height = 432
-        
-        return (crop_width, crop_height)
+        # Edit config['pdf'] in app/services/waybills/config/download_service_config.py to change dimensions
+        return (config['pdf']['label_width_points'], config['pdf']['label_height_points'])
     
     def _is_html_content(self, response) -> bool:
         """
@@ -168,10 +167,10 @@ class WaybillDownloadService:
                 logger.info(f"HTML detected from Content-Type header: {content_type}")
                 return True
             
-            # Also check the actual content (fallback) - peek at first 500 bytes
-            content = response.content[:500]
+            # Also check the actual content (fallback) - peek at first bytes
+            content = response.content[:config['file_io']['html_preview_size']]
             try:
-                text = content.decode('utf-8', errors='ignore')
+                text = content.decode(config['encoding']['default_encoding'], errors='ignore')
                 if text.startswith('<!DOCTYPE') or '<html' in text.lower() or '<?xml' in text:
                     logger.info(f"HTML detected from content inspection")
                     return True
@@ -211,15 +210,16 @@ class WaybillDownloadService:
                 # Navigate to the URL and wait for page to be interactive
                 # Using 'domcontentloaded' instead of 'networkidle' to avoid timeout on pages with persistent background requests
                 # This waits for the page to be visible and interactive, not for ALL network requests to finish
-                await page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                # Edit config['timeouts'] in app/services/waybills/config/download_service_config.py to adjust timeouts
+                await page.goto(url, wait_until=config['playwright']['page_load_wait_until'], timeout=config['timeouts']['playwright_page_load_ms'])
                 
                 # Give the page an extra moment to fully render
-                await page.wait_for_timeout(2000)
+                await page.wait_for_timeout(config['timeouts']['playwright_render_delay_ms'])
                 
                 logger.info(f"Page loaded, generating PDF - Invoice: {invoice_number}")
                 
-                # Generate PDF with A4 format (standard paper size)
-                await page.pdf(path=output_path, format='A4')
+                # Generate PDF with configured format (standard paper size)
+                await page.pdf(path=output_path, format=config['pdf']['page_format'])
                 
                 await browser.close()
                 
@@ -259,22 +259,24 @@ class WaybillDownloadService:
             # Set marketplace-specific offsets
             # Negative offsets expand the crop box outward for padding
             # Positive offsets shrink the crop box inward
+            # Edit config['crop_offsets'] in app/services/waybills/config/download_service_config.py to adjust offsets
             if offset_x is None or offset_y is None:
                 if marketplace and marketplace.lower() == Marketplaces.SHOPIFY.value:
                     # Shopify: negative offset to add white space padding (expand outward)
-                    offset_x = offset_x if offset_x is not None else -2
-                    offset_y = offset_y if offset_y is not None else -2
+                    offset_x = offset_x if offset_x is not None else config['crop_offsets']['shopify']['x']
+                    offset_y = offset_y if offset_y is not None else config['crop_offsets']['shopify']['y']
                 elif marketplace and marketplace.lower() == Marketplaces.ZALORA.value:
-                    # Zalora: negative offset to add white space padding (expand outward)
-                    offset_x = offset_x if offset_x is not None else -1
-                    offset_y = offset_y if offset_y is not None else -1
+                    # Zalora: positive offset to shrink from edges
+                    offset_x = offset_x if offset_x is not None else config['crop_offsets']['zalora']['x']
+                    offset_y = offset_y if offset_y is not None else config['crop_offsets']['zalora']['y']
                 else:
                     # Other marketplaces: default small positive offset for safety
-                    offset_x = offset_x if offset_x is not None else 5
-                    offset_y = offset_y if offset_y is not None else 5
+                    offset_x = offset_x if offset_x is not None else config['crop_offsets']['default']['x']
+                    offset_y = offset_y if offset_y is not None else config['crop_offsets']['default']['y']
             
             crop_width, crop_height = self._get_crop_dimensions(marketplace)
-            logger.info(f"Starting PDF crop to {crop_width}x{crop_height} points ({crop_width/72:.1f}x{crop_height/72:.1f} inches) with offset ({offset_x}, {offset_y}) - Invoice: {invoice_number}, Marketplace: {marketplace}, File: {pdf_path}")
+            dpi = config['pdf']['dpi']
+            logger.info(f"Starting PDF crop to {crop_width}x{crop_height} points ({crop_width/dpi:.1f}x{crop_height/dpi:.1f} inches) with offset ({offset_x}, {offset_y}) - Invoice: {invoice_number}, Marketplace: {marketplace}, File: {pdf_path}")
             
             # Get dimensions in points
             label_width = crop_width
@@ -382,7 +384,8 @@ class WaybillDownloadService:
                 is_fallback_url = True
             
             # Download file with timeout and streaming
-            response = requests.get(waybill_url, timeout=30, stream=True)
+            # Edit config['timeouts'] in app/services/waybills/config/download_service_config.py to adjust timeout
+            response = requests.get(waybill_url, timeout=config['timeouts']['requests_download_sec'], stream=True)
             response.raise_for_status()
             
             # Log response details for debugging
@@ -394,7 +397,7 @@ class WaybillDownloadService:
                 logger.info(f"HTML content detected, converting webpage to PDF - Invoice: {invoice_number}, URL: {waybill_url}")
                 
                 # Generate filename for the PDF
-                timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+                timestamp = datetime.now().strftime(config['encoding']['timestamp_format'])
                 filename = f"{waybill_print.id}_{invoice_number}_{timestamp}.pdf"
                 filename = self._sanitize_filename(filename)
                 filepath = os.path.join(self.download_directory, filename)
@@ -480,7 +483,7 @@ class WaybillDownloadService:
                 extension = '.pdf'
             
             # Generate unique filename: id_invoice_number_datetime (no milliseconds)
-            timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+            timestamp = datetime.now().strftime(config['encoding']['timestamp_format'])
             filename = f"{waybill_print.id}_{invoice_number}_{timestamp}{extension}"
             
             # Ensure safe filename
@@ -490,7 +493,7 @@ class WaybillDownloadService:
             
             # Save file to disk
             with open(filepath, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
+                for chunk in response.iter_content(chunk_size=config['file_io']['download_chunk_size']):
                     if chunk:
                         f.write(chunk)
             
