@@ -1,5 +1,5 @@
 import { FormattedDate } from '@/components/global';
-import { ClockIcon, AlertCircleIcon } from 'lucide-react';
+import { ClockIcon, AlertCircleIcon, PrinterIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -52,22 +52,19 @@ export const PrintDetailsColumn = ({
 
 	return (
 		<div className='space-y-1.5'>
-			{/* Job ID - Top */}
-			{cupsJobId && (
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<div className='cursor-pointer'>
-							<span className='text-xs text-gray-700 font-medium'>Job ID: <span className='font-mono'>{cupsJobId}</span></span>
-						</div>
-					</TooltipTrigger>
-					<TooltipContent>
-						Job ID: {cupsJobId}
-					</TooltipContent>
-				</Tooltip>
-			)}
-
-			{/* Status Badge - Middle */}
+			{/* Printer Icon + Job ID + Status Badge - Top Line */}
 			<div className='flex items-center gap-1.5'>
+				<PrinterIcon className='w-4 h-4 text-gray-700' />
+				{cupsJobId && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span className='text-xs text-gray-700 font-medium cursor-pointer font-mono'>{cupsJobId}</span>
+						</TooltipTrigger>
+						<TooltipContent>
+							Job ID: {cupsJobId}
+						</TooltipContent>
+					</Tooltip>
+				)}
 				<Badge variant='outline' className={cn('rounded-full', getStatusGradientClass(printStatus))}>
 					{statusDisplay}
 				</Badge>
