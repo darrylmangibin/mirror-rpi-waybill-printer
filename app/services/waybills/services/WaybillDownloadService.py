@@ -92,31 +92,24 @@ class WaybillDownloadService:
         Generate fallback waybill URL from third-party API based on marketplace.
         Used when no waybill_url is provided from the initial response.
         
-        For TikTok and other crop-eligible marketplaces, uses FusionTech hosting with Shopify crop offsets.
-        For other marketplaces, uses Railway API pattern.
+        Uses FusionTech hosted URL as universal fallback for all marketplaces with Shopify crop offsets.
         
         Args:
             waybill_print: WaybillPrint model instance (contains tenant_id, marketplace)
             invoice_number (str): Invoice number for the waybill
         
         Returns:
-            tuple: (fallback_url, crop_marketplace) where crop_marketplace is the marketplace 
-                   to use for crop offsets (may differ from original marketplace for fallback URLs)
+            tuple: (fallback_url, crop_marketplace) where crop_marketplace is always Shopify for consistent crop offsets
         """
         tenant_id = waybill_print.tenant_id
         marketplace = waybill_print.marketplace
         
-        # Shopify and TikTok use FusionTech hosted pattern with Shopify crop offsets
-        if marketplace and marketplace.lower() in [Marketplaces.SHOPIFY.value, Marketplaces.TIKTOK.value]:
-            fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
-            logger.info(f"Using FusionTech URL for invoice {invoice_number} (tenant: {tenant_id}, marketplace: {marketplace}), applying Shopify crop offsets")
-            # Use Shopify offsets for TikTok fallback
-            return (fallback_url, Marketplaces.SHOPIFY.value)
+        # Use FusionTech hosted pattern for all marketplaces as universal fallback
+        fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
+        logger.info(f"Using FusionTech fallback URL for invoice {invoice_number} (tenant: {tenant_id}, marketplace: {marketplace}), applying Shopify crop offsets")
         
-        # Default: Railway API pattern for other marketplaces
-        fallback_url = f"https://fusion-production-api-{tenant_id}.up.railway.app/api/waybills/{invoice_number}/print-waybill"
-        logger.info(f"Using fallback third-party URL for invoice {invoice_number} (tenant: {tenant_id})")
-        return (fallback_url, marketplace)
+        # Always use Shopify offsets for consistent PDF cropping across all marketplaces
+        return (fallback_url, Marketplaces.SHOPIFY.value)
     
     def _should_crop_pdf(self, marketplace: str = None) -> bool:
         """
