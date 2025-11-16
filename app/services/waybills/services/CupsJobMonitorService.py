@@ -73,7 +73,9 @@ class CupsJobMonitorService:
                 }
             
             # Get job attributes from CUPS daemon
-            job_attrs = self.conn.getJobAttributes(printer_name, job_id)
+            # Ensure job_id is an integer (CUPS API requirement)
+            job_id_int = int(job_id)
+            job_attrs = self.conn.getJobAttributes(printer_name, job_id_int)
             job_state = job_attrs.get('job-state', None)
             
             # Translate CUPS state to our status
