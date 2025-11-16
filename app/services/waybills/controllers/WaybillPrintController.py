@@ -124,6 +124,34 @@ class WaybillPrintController:
                 "message": str(e)
             }
     
+    def update(self, waybill_print: WaybillPrint, data: dict) -> dict:
+        """
+        Update a waybill print.
+        
+        Args:
+            waybill_print: WaybillPrint model instance to update
+            data: Dictionary with fields to update
+            
+        Returns:
+            dict: Response with status and updated waybill data
+        """
+        try:
+            # Call service method to update waybill
+            updated_waybill = WaybillPrintService.update(waybill_print, data)
+            
+            return {
+                "status": "success",
+                "message": "Waybill updated successfully",
+                "data": updated_waybill.to_dict()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error updating waybill: {str(e)}", exc_info=True)
+            return {
+                "status": "error",
+                "message": str(e)
+            }
+    
     def destroy(self, waybill_print: WaybillPrint) -> dict:
         """
         Delete a waybill print.

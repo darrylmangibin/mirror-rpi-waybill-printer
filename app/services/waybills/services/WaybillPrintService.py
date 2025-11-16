@@ -63,6 +63,51 @@ class WaybillPrintService:
             raise
     
     @staticmethod
+    def update(waybill_print: WaybillPrint, data: dict) -> WaybillPrint:
+        """
+        Update a WaybillPrint record with new data.
+        
+        Args:
+            waybill_print (WaybillPrint): The waybill print instance to update
+            data (dict): Dictionary containing fields to update:
+                - invoice_number (str, optional): New invoice number
+                - waybill_url (str, optional): New waybill URL
+                - marketplace (str, optional): New marketplace identifier
+                - tenant_id (int, optional): New tenant ID
+        
+        Returns:
+            WaybillPrint: The updated waybill print instance
+            
+        Raises:
+            Exception: If database update fails
+            
+        Example:
+            >>> waybill = WaybillPrint.query.get(1)
+            >>> data = {'invoice_number': 'INV-002', 'waybill_url': 'https://new-url'}
+            >>> updated = WaybillPrintService.update(waybill, data)
+        """
+        try:
+            # Update only provided fields
+            if 'invoice_number' in data:
+                waybill_print.invoice_number = data.get('invoice_number')
+            if 'waybill_url' in data:
+                waybill_print.waybill_url = data.get('waybill_url')
+            if 'marketplace' in data:
+                waybill_print.marketplace = data.get('marketplace')
+            if 'tenant_id' in data:
+                waybill_print.tenant_id = data.get('tenant_id')
+            
+            # Commit changes
+            db.session.commit()
+            
+            return waybill_print
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error updating WaybillPrint: {str(e)}", exc_info=True)
+            raise
+    
+    @staticmethod
     def destroy(waybill_print: WaybillPrint) -> bool:
         """Delete a WaybillPrint record and clean up associated local file."""
         try:

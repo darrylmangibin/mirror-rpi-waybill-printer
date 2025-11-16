@@ -5,7 +5,7 @@ import { SearchBoxInput } from '@/components/global/components/SearchBoxInput';
 import { getWaybillColumns, type WaybillPrint } from '@/modules/Home/components/WaybillColumns';
 import { useGetWaybillPrints, usePrintWaybill, useWaybillStream, useDeleteWaybill } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
-import { ManualCreatePrintJobDialog } from '@/modules/Home/components/ManualCreatePrintJobDialog';
+import { CreateWaybillPrintDialog } from '@/modules/Home/components/CreateWaybillPrintDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
 import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
 import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfirmationDialog';
@@ -147,7 +147,7 @@ const Home = () => {
 					</div>
 				{/* Create Print Jobs */}
 				<div className='flex gap-2'>
-					<ManualCreatePrintJobDialog 
+					<CreateWaybillPrintDialog 
 						onSubmit={async () => {
 							// Enable polling to watch the auto-download
 							setIsPolling(true);

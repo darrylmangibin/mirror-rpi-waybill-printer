@@ -145,6 +145,50 @@ const waybillService = {
   },
 
   /**
+   * Update an existing waybill print
+   * @param waybillId - ID of the waybill to update
+   * @param invoiceNumber - Updated invoice number
+   * @param tenantId - Updated tenant ID
+   * @param waybillUrl - Updated waybill URL (optional)
+   * @param marketplace - Updated marketplace (optional)
+   * @returns Promise with updated waybill print
+   */
+  async updateWaybillPrint(
+    waybillId: string | number,
+    invoiceNumber: string,
+    tenantId: string,
+    waybillUrl?: string | null,
+    marketplace?: string | null
+  ): Promise<WaybillsResponse> {
+    try {
+      const payload: Record<string, any> = {
+        invoice_number: invoiceNumber,
+        tenant_id: tenantId,
+      };
+
+      if (waybillUrl) {
+        payload.waybill_url = waybillUrl;
+      }
+
+      if (marketplace) {
+        payload.marketplace = marketplace;
+      }
+
+      const response = await api.put<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.UPDATE_PRINT(Number(waybillId)),
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to update waybill print: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Delete a waybill print
    * @param waybillId - ID of the waybill to delete
    * @returns Promise with delete result

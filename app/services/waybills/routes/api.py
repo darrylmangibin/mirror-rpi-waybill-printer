@@ -39,6 +39,17 @@ def store():
     return jsonify(result), status_code
 
 
+@waybills_bp.route('/prints/<int:waybill_print>', methods=['PUT'])
+@get_model(WaybillPrint)
+@validate(StoreWaybillRequest)
+def update(waybill_print):
+    """Update a waybill print by ID."""
+    data = request.get_json()
+    result = controller.update(waybill_print, data)
+    status_code = 200 if result.get('status') == 'success' else 500
+    return jsonify(result), status_code
+
+
 @waybills_bp.route('/prints/<int:waybill_print>', methods=['DELETE'])
 @get_model(WaybillPrint)
 def destroy(waybill_print):

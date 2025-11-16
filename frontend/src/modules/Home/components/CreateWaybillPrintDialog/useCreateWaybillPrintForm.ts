@@ -17,15 +17,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface UseManualPrintJobFormOptions {
+interface UseCreateWaybillPrintFormOptions {
 	onSuccess?: (invoiceNumber: string, url: string) => Promise<void>;
 }
 
 /**
- * Hook to manage manual print job form logic
+ * Hook to manage create waybill print form logic
  * Handles form state, validation, and submission
  */
-export const useManualPrintJobForm = ({ onSuccess }: UseManualPrintJobFormOptions = {}) => {
+export const useCreateWaybillPrintForm = ({ onSuccess }: UseCreateWaybillPrintFormOptions = {}) => {
 	const [open, setOpen] = useState(false);
 	const { mutateAsync, isPending } = useCreateWaybillPrint();
 
