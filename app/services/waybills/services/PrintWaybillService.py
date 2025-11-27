@@ -1,5 +1,4 @@
 import os
-import cups
 import random
 from datetime import datetime
 from PIL import Image
@@ -8,6 +7,12 @@ from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.config.helper import get
 from app.config import printing as printing_config
+
+# Optional CUPS import - for development environments where CUPS isn't available
+try:
+    import cups
+except ImportError:
+    cups = None
 
 logger = get_logger(__name__)
 
@@ -97,6 +102,9 @@ class PrintWaybillService:
         Raises:
             ValueError: If no printer is available
         """
+        if cups is None:
+            raise Exception("CUPS module is not installed. Please install python3-cups for printing functionality.")
+        
         try:
             conn = cups.Connection()
             

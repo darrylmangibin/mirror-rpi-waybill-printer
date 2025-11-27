@@ -1,9 +1,14 @@
-import cups
 import random
 from app.utils.loggers import get_logger
 from app.config.helper import get
 from app.config import printing as printing_config
 from app.services.waybills.enums.CupsJobStateReasons import CupsJobStateReasons, CupsJobStateGroups
+
+# Optional CUPS import - for development environments where CUPS isn't available
+try:
+    import cups
+except ImportError:
+    cups = None
 
 logger = get_logger(__name__)
 
@@ -30,6 +35,11 @@ class CupsJobMonitorService:
     
     def __init__(self):
         """Initialize CUPS connection."""
+        if cups is None:
+            logger.warning("CUPS module not available - CupsJobMonitorService will run in mock mode")
+            self.conn = None
+            return
+        
         try:
             self.conn = cups.Connection()
             logger.info("CupsJobMonitorService initialized")
