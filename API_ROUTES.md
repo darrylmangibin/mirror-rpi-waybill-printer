@@ -7,6 +7,27 @@ The base URL is dynamic and depends on the device's IP address:
 - Local: `http://localhost:5000`
 - Network: `http://192.168.1.100:5000` (replace with actual IP address)
 
+## Health Check
+
+**GET** `/api/health/check`
+
+Check if the server is reachable and the base URL is valid. Used by mobile devices to validate the connection before sending print requests.
+
+### Response
+
+```json
+{
+  "status": "success",
+  "message": "✓ Connected! You can now send API requests."
+}
+```
+
+### Example Usage
+
+```bash
+curl http://localhost:5000/api/health/check
+```
+
 ## Create & Print Waybill
 
 **POST** `/api/waybills/prints`
