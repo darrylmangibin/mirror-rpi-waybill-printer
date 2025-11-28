@@ -151,9 +151,9 @@ const Home = () => {
 			<TopNavbar />
 
 			{/* Main Content */}
-			<div className='max-w-7xl mx-auto px-6 py-8'>
-				<div className='top-toolbar flex items-center justify-between mb-3'>
-					<div className='flex items-center gap-3'>
+			<div className='max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8'>
+				<div className='top-toolbar flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-3'>
+					<div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto'>
 						<SearchBoxInput
 							value={searchQuery}
 							onChange={setSearchQuery}
@@ -164,7 +164,7 @@ const Home = () => {
 						/>
 						{/* Live polling indicator */}
 						{isPolling && (
-							<div className='flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 rounded-md'>
+							<div className='flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 rounded-md whitespace-nowrap'>
 								<span className='w-2 h-2 bg-blue-600 rounded-full animate-pulse' />
 								<span className='text-xs text-blue-600 font-medium'>
 									Live{' '}
@@ -174,7 +174,7 @@ const Home = () => {
 						)}
 					</div>
 					{/* Create Print Jobs */}
-					<div className='flex gap-2'>
+					<div className='flex gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none'>
 						<CreateWaybillPrintDialog
 							onSubmit={async () => {
 								// Enable polling to watch the auto-download

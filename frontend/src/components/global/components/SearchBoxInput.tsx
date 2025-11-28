@@ -34,7 +34,7 @@ export const SearchBoxInput: React.FC<SearchBoxInputProps> = ({
 	};
 
 	return (
-		<div className={cn('search-box relative', searchPosition === 'right' ? 'flex-row-reverse' : 'flex-row')}>
+		<div className={cn('search-box relative w-full sm:w-auto', searchPosition === 'right' ? 'flex-row-reverse' : 'flex-row')}>
 			{searchPosition === 'left' && (
 				<Button
 					size={'icon'}
@@ -56,7 +56,7 @@ export const SearchBoxInput: React.FC<SearchBoxInputProps> = ({
 				}}
 				onFocus={handleFocus}
 				className={cn(
-					'w-[300px] h-8 bg-white focus-visible:ring-purple-200 focus-visible:ring-[2px] selection:bg-blue-500',
+					'w-full sm:w-[300px] h-8 bg-white focus-visible:ring-purple-200 focus-visible:ring-[2px] selection:bg-blue-500',
 					searchPosition === 'left' ? 'pl-8' : 'pr-8'
 				)}
 			/>
