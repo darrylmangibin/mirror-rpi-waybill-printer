@@ -84,16 +84,16 @@ export const ScanPrintJobDialog = () => {
 						<div className='space-y-4 flex flex-col items-center'>
 							<div className='flex justify-center bg-white w-full'>
 								<QRCodeSVG
-									value={`${networkInfo.api_url}/api/waybills/prints`}
+									value={`${networkInfo.api_url}`}
 									size={200}
 									level='H'
-									includeMargin={true}
+									includeMargin={false}
 									className='rounded shadow-sm'
 								/>
 							</div>
 
 							<p className='text-xs font-mono break-all max-w-sm text-center mb-8 bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600 shadow-sm'>
-								{`${networkInfo.api_url}/api/waybills/prints`}
+								{`${networkInfo.api_url}`}
 							</p>
 						</div>
 					)}
