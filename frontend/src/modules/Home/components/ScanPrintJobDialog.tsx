@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { QrCode } from 'lucide-react';
 import {
 	Dialog,
 	DialogContent,
@@ -15,6 +14,7 @@ import {
 import PrimaryButton from '@/components/global/components/buttons/PrimaryButton';
 import { DialogHeaderComponent } from '@/components/global/components/DialogHeader';
 import { useGetPrintJobQREndPoint } from '@/modules/Home/hooks';
+import { QrCodeIcon } from 'lucide-react';
 
 export const ScanPrintJobDialog = () => {
 	const [open, setOpen] = useState(false);
@@ -40,8 +40,8 @@ export const ScanPrintJobDialog = () => {
 									size='sm'
 									type='button'
 									onClick={() => {}}
-									className='gap-2'>
-									<QrCode className='w-4 h-4' />
+									className='gap-2 w-full md:w-fit'>
+									<QrCodeIcon className='w-4 h-4' />
 									<span>QR Code</span>
 								</PrimaryButton>
 							</div>
@@ -60,7 +60,7 @@ export const ScanPrintJobDialog = () => {
 				showCloseButton={false}>
 				<DialogHeaderComponent
 					icon={
-						<QrCode
+						<QrCodeIcon
 							strokeWidth={2}
 							className='w-5 h-5 text-violet-600'
 						/>

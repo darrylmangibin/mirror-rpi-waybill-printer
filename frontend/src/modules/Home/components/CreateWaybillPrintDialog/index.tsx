@@ -40,7 +40,7 @@ export const CreateWaybillPrintDialog = ({
 									type='button'
 									variant='outline'
 									className={cn(
-										'active:scale-95 focus:outline-none focus:ring-0 rounded-lg gap-2'
+										'active:scale-95 focus:outline-none focus:ring-0 rounded-lg gap-2 w-full md:w-fit'
 									)}>
 									<PlusIcon className='w-4 h-4' />
 									<span>New</span>
