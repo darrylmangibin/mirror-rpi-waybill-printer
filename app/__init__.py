@@ -32,7 +32,9 @@ def create_app():
     
     # Register blueprints
     from app.services.waybills.routes.api import waybills_bp
+    from app.services.health.routes.api import health_bp
     app.register_blueprint(waybills_bp)
+    app.register_blueprint(health_bp)
     
     # Import models
     from app.services.waybills.models.WaybillPrint import WaybillPrint
@@ -65,14 +67,6 @@ def create_app():
             logger.info("✓ Monitor workers initialized successfully")
         except Exception as e:
             logger.error(f"Failed to start monitor workers: {str(e)}", exc_info=True)
-    
-    # API endpoint for testing
-    @app.route('/api/hello')
-    def api_hello():
-        return {
-            "message": "Hello from Flask Backend!",
-            "status": "success"
-        }
     
     @app.route('/api/network/local-ip')
     def get_network_info():
