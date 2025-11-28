@@ -51,6 +51,7 @@ export const getWaybillColumns = (
 		cell: ({ row }) => {
 			const tenantId = row.original.tenant_id as number | null;
 			const marketplace = row.original.marketplace as string | null;
+			const isNoMarketplace = marketplace === 'no_marketplace';
 			
 			const icon = marketplace && marketplace.toLowerCase() in marketplaceIcons
 				? marketplaceIcons[marketplace.toLowerCase() as keyof typeof marketplaceIcons]
@@ -61,6 +62,7 @@ export const getWaybillColumns = (
 					tenantId={tenantId}
 					icon={icon}
 					marketplace={marketplace || undefined}
+					isNoMarketplace={isNoMarketplace}
 				/>
 			);
 		},

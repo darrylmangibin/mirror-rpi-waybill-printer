@@ -40,7 +40,7 @@ export const WaybillPrintForm = ({
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel className='text-xs font-medium'>Marketplace</FormLabel>
-						<Select onValueChange={field.onChange} value={field.value || ''}>
+						<Select onValueChange={field.onChange} value={field.value}>
 							<FormControl>
 								<SelectTrigger disabled={isPending} className='h-8 text-sm w-full'>
 									<SelectValue placeholder='Select' />

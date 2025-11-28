@@ -4,14 +4,16 @@ import {
 	TooltipTrigger,
 	TooltipContent,
 } from '@/components/ui/tooltip';
+import { Store as ShopIcon } from 'lucide-react';
 
 interface PlatformBadgeProps {
 	tenantId: number | string | null;
 	icon?: string;
 	marketplace?: string;
+	isNoMarketplace?: boolean;
 }
 
-export const PlatformBadge = ({ tenantId, icon, marketplace }: PlatformBadgeProps) => {
+export const PlatformBadge = ({ tenantId, icon, marketplace, isNoMarketplace }: PlatformBadgeProps) => {
 	if (!tenantId) {
 		return <div className='text-gray-500 text-xs'>-</div>;
 	}
@@ -25,15 +27,19 @@ export const PlatformBadge = ({ tenantId, icon, marketplace }: PlatformBadgeProp
 			<span className='font-semibold whitespace-nowrap'>
 				{formattedTenantId}
 			</span>
-			{icon && (
+			{(icon || isNoMarketplace) && (
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<div className='flex items-center justify-center h-4 w-4 rounded-full border border-blue-300 bg-white shadow-sm shrink-0 cursor-pointer'>
-							<img
-								src={icon}
-								alt='marketplace icon'
-								className='w-[75%] h-[75%] object-contain'
-							/>
+						<div className='flex items-center justify-center h-4 w-4 rounded-full border border-blue-300 bg-white shadow-sm shrink-0 cursor-pointer relative overflow-hidden'>
+							{isNoMarketplace ? (
+								<ShopIcon className='w-3 h-3 text-blue-600' />
+							) : (
+								<img
+									src={icon}
+									alt='marketplace icon'
+									className='absolute inset-0 w-full h-full p-0.5 object-contain object-center'
+								/>
+							)}
 						</div>
 					</TooltipTrigger>
 					<TooltipContent>

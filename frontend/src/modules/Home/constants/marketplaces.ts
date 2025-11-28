@@ -50,10 +50,16 @@ export const marketplaceIcons: Record<Marketplace, string> = {
 /**
  * Helper to get marketplace options for dropdowns/selects
  */
-export const marketplaceOptions = Object.entries(Marketplaces).map(([, value]) => ({
-	value,
-	label: marketplaceLabels[value as Marketplace],
-}));
+export const marketplaceOptions = [
+	{
+		value: 'no_marketplace',
+		label: 'No Marketplace',
+	},
+	...Object.entries(Marketplaces).map(([, value]) => ({
+		value,
+		label: marketplaceLabels[value as Marketplace],
+	})),
+];
 
 /**
  * Helper to get all marketplace values as array
