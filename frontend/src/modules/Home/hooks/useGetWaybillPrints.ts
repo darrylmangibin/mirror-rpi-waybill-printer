@@ -8,16 +8,21 @@ const PAGE = 1;
 
 /**
  * Hook to fetch paginated waybill prints using TanStack Query
- * Supports polling to refresh data at intervals
- * @param initialPage - Initial page number (default: 1)
+ * Supports polling to refresh data at intervals and search
  * @param enablePolling - Enable polling for real-time updates (default: false)
  * @param pollInterval - Polling interval in milliseconds (default: 2000ms)
+ * @param searchQuery - Optional search query for invoice number (default: empty string)
  * @returns Query state and pagination methods
  */
-export const useGetWaybillPrints = (enablePolling = false, pollInterval = 2000) => {
+export const useGetWaybillPrints = (enablePolling = false, pollInterval = 2000, searchQuery = '') => {
   const [page, setPage] = useState<number>(PAGE);
   const perPage = PER_PAGE;
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setPage(PAGE);
+  }, [searchQuery]);
 
   const {
 		data: response,
@@ -27,8 +32,8 @@ export const useGetWaybillPrints = (enablePolling = false, pollInterval = 2000) 
 		isPending,
 		refetch,
 	} = useQuery<PaginatedWaybillsResponse>({
-		queryKey: [WAYBILL_QUERY_KEYS.waybills, page],
-		queryFn: () => waybillService.getWaybillPrints(page, perPage),
+		queryKey: [WAYBILL_QUERY_KEYS.waybills, page, searchQuery],
+		queryFn: () => waybillService.getWaybillPrints(page, perPage, searchQuery),
 		staleTime: 0, // Always consider data stale for real-time updates
 		gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
 		retry: 2,

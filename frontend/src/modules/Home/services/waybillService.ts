@@ -43,21 +43,30 @@ export interface NetworkInfo {
 
 const waybillService = {
   /**
-   * Fetch all waybill prints with optional pagination
+   * Fetch all waybill prints with optional pagination and search
    * @param page - Page number (1-based)
    * @param perPage - Items per page
+   * @param search - Optional search query for invoice number
    * @returns Promise with waybill prints
    */
   async getWaybillPrints(
     page: number = 1,
-    perPage: number = 10
+    perPage: number = 10,
+    search?: string
   ): Promise<PaginatedWaybillsResponse> {
     try {
+      const params: Record<string, any> = {
+        page,
+        per_page: perPage,
+      };
+      
+      // Add search parameter if provided and non-empty
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+      
       const response = await api.get<PaginatedWaybillsResponse>(WAYBILL_ENDPOINTS.LIST_PRINTS, {
-        params: {
-          page,
-          per_page: perPage,
-        },
+        params,
       });
       return response.data;
     } catch (error) {

@@ -46,7 +46,8 @@ const Home = () => {
 
 	const { waybills, error, pagination, actions, loading } = useGetWaybillPrints(
 		isPolling,
-		pollingInterval
+		pollingInterval,
+		searchQuery
 	);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
 	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting } =
@@ -158,7 +159,9 @@ const Home = () => {
 							value={searchQuery}
 							onChange={setSearchQuery}
 							onSearch={(query) => {
-								alert(`Searching for: ${query}`);
+								setSearchQuery(query);
+								// Reset to page 1 when searching
+								actions.goToPage(1);
 							}}
 							autoSelectAllText={true}
 						/>
