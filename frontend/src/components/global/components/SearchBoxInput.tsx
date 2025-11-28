@@ -45,21 +45,21 @@ export const SearchBoxInput: React.FC<SearchBoxInputProps> = ({
 					<SearchIcon className='h-4 w-4 text-gray-500' />
 				</Button>
 			)}
-			<Input
-				placeholder={placeholder}
-				value={value}
-				onChange={(e) => onChange?.(e.target.value)}
-				onKeyDown={(e) => {
-					if (e.key === 'Enter') {
-						handleSearch();
-					}
-				}}
-				onFocus={handleFocus}
-				className={cn(
-					'w-full sm:w-[300px] h-8 bg-white focus-visible:ring-purple-200 focus-visible:ring-[2px] selection:bg-blue-500',
-					searchPosition === 'left' ? 'pl-8' : 'pr-8'
-				)}
-			/>
+		<Input
+			placeholder={placeholder}
+			value={value}
+			onChange={(e) => onChange?.(e.target.value)}
+			onKeyDown={(e) => {
+				if (e.key === 'Enter') {
+					handleSearch();
+				}
+			}}
+			onFocus={handleFocus}
+			className={cn(
+				'w-full sm:w-[300px] h-8 bg-white focus-visible:ring-purple-200 focus-visible:ring-[2px] selection:bg-blue-500',
+				searchPosition === 'left' ? 'pl-8' : 'pr-8'
+			)}
+		/>
 			{searchPosition === 'right' && (
 				<Button
 					size={'icon'}

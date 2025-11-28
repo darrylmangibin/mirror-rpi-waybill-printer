@@ -22,6 +22,7 @@ import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfir
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
+	const [searchInputValue, setSearchInputValue] = React.useState('');
 	const [editDialogOpen, setEditDialogOpen] = React.useState(false);
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
@@ -125,6 +126,12 @@ const Home = () => {
 		console.log('Selected rows:', rows);
 	};
 
+	const handleSearch = (query: string) => {
+		setSearchQuery(query);
+		// Reset to page 1 when searching
+		actions.goToPage(1);
+	};
+
 	if (error) {
 		return (
 			<>
@@ -155,16 +162,12 @@ const Home = () => {
 			<div className='max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8'>
 				<div className='top-toolbar flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-3'>
 					<div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto'>
-						<SearchBoxInput
-							value={searchQuery}
-							onChange={setSearchQuery}
-							onSearch={(query) => {
-								setSearchQuery(query);
-								// Reset to page 1 when searching
-								actions.goToPage(1);
-							}}
-							autoSelectAllText={true}
-						/>
+					<SearchBoxInput
+						value={searchInputValue}
+						onChange={setSearchInputValue}
+						onSearch={handleSearch}
+						autoSelectAllText={true}
+					/>
 						{/* Live polling indicator */}
 						{isPolling && (
 							<div className='flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 rounded-md whitespace-nowrap'>
