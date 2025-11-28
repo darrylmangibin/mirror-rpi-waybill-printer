@@ -11,10 +11,10 @@ health_bp = Blueprint('health', __name__, url_prefix='/api/health')
 health_service = HealthCheckService()
 
 
-@health_bp.route('/check', methods=['POST'])
+@health_bp.route('/check', methods=['GET'])
 def check_connection():
     """
-    POST endpoint to check if the device can reach the server.
+    GET endpoint to check if the device can reach the server.
     Used by mobile devices to validate the base_url configuration.
     
     Returns:
