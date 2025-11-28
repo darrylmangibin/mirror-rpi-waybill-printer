@@ -3,7 +3,7 @@ from flask_sieve import validate
 from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
-from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction
+from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction, GetStatusAction
 from app.utils.decorators import get_model
 from app.utils.loggers import get_logger
 from app.database import db
@@ -76,6 +76,16 @@ def print_waybill(waybill_print):
     print_action = PrintWaybillAction()
     result = print_action(waybill_print)
     status_code = 200 if result.get('status') == 'success' else 400
+    return jsonify(result), status_code
+
+
+@waybills_bp.route('/prints/<int:waybill_print>/status', methods=['GET'])
+@get_model(WaybillPrint)
+def get_status(waybill_print):
+    """Get comprehensive status information for a waybill print job."""
+    get_status_action = GetStatusAction()
+    result = get_status_action(waybill_print)
+    status_code = 200 if result.get('status') == 'success' else 500
     return jsonify(result), status_code
 
 
