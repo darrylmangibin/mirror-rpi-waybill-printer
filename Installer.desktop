@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Installer
+Comment=Git pull + Install all dependencies (one-click setup)
+Icon=system-software-install
+Exec=bash -c 'cd /home/pi/rpi-waybill-printer && sudo bash ./install.sh'
+Terminal=true
+Categories=Utility;
+X-Desktop-File-Install-Version=0.24
+

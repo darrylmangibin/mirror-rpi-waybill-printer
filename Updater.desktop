@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Updater
+Comment=Git pull + update dependencies (quick update)
+Icon=system-software-update
+Exec=bash -c 'cd /home/pi/rpi-waybill-printer && sudo bash ./update.sh'
+Terminal=true
+Categories=Utility;
+X-Desktop-File-Install-Version=0.24
+

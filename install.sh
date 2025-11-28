@@ -9,6 +9,15 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Installing RPI Waybill Printer (Backend + Frontend)${NC}\n"
 
+# Pull latest changes from git
+echo -e "${YELLOW}📥 Pulling latest changes from git...${NC}"
+git pull origin main
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Git pull successful${NC}\n"
+else
+    echo -e "${YELLOW}⚠️  Git pull failed (continuing with installation)${NC}\n"
+fi
+
 # Function to check if script is run with sudo (admin level)
 check_root() {
     if [[ $EUID -ne 0 ]]; then

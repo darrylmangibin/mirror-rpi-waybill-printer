@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Waybill Auto Run
+Comment=Start or restart the RPI Waybill Printer service
+Icon=application-x-executable
+Exec=bash -c 'cd /home/pi/rpi-waybill-printer && sudo ./auto_run.sh; echo "Press Enter to close..."; read'
+Terminal=true
+Categories=Utility;
+X-Desktop-File-Install-Version=0.24
+
