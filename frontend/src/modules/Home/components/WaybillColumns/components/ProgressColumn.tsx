@@ -6,15 +6,20 @@ import {
 	AlertCircleIcon,
 	CheckCircle2Icon,
 	Loader2Icon,
-	PrinterIcon
+	PrinterIcon,
+	EyeIcon,
+	LinkIcon,
+	CopyIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover';
+import { WAYBILL_ENDPOINTS } from '@/modules/Home/services/endpoints';
 import type { WaybillPrint } from '@/modules/Home/services';
 
 interface ProgressColumnProps {
@@ -23,6 +28,7 @@ interface ProgressColumnProps {
 
 export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 	const {
+		id: waybillId = null,
 		status = null,
 		local_file_path: localFilePath = null,
 		downloaded_at: downloadedAt = null,
@@ -33,6 +39,23 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 		print_completed_at: printCompletedAt = null,
 		waybill_url: waybillUrl = null,
 	} = waybill;
+
+	// Get file format from path
+	const getFileFormat = (filePath: string | null): string => {
+		if (!filePath) return '';
+		const ext = filePath.split('.').pop()?.toUpperCase() || '';
+		return ext || 'PDF'; // Default to PDF if no extension
+	};
+
+	const fileFormat = getFileFormat(localFilePath);
+	const previewUrl = waybillId ? WAYBILL_ENDPOINTS.PREVIEW_FILE(waybillId) : null;
+
+	// Copy URL to clipboard
+	const copyUrlToClipboard = () => {
+		if (waybillUrl) {
+			navigator.clipboard.writeText(waybillUrl);
+		}
+	};
 
 	// Download status
 	const getDownloadStatus = () => {
@@ -105,93 +128,101 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 					</Badge>
 				</div>
 			</PopoverTrigger>
-			<PopoverContent className='w-80' side='left'>
-				<div className='space-y-4'>
-					{/* Download Details */}
-					<div className='space-y-2'>
-						<h4 className='font-semibold text-sm flex items-center gap-2'>
-							<FileCheckIcon className='w-4 h-4' />
-							Download Details
-						</h4>
-						<div className='space-y-1 text-sm'>
-							{downloadedAt && (
-								<div className='flex items-center gap-2'>
-									<ClockIcon className='w-3.5 h-3.5 text-gray-500' />
-									<span className='text-gray-600'>Downloaded:</span>
-									<FormattedDate date={downloadedAt} />
+			<PopoverContent className='w-80 p-3' side='left'>
+				<div className='space-y-2'>
+					{/* ERRORS - Compact alert */}
+					{(errorMessage || printError) && (
+						<div className='bg-red-50 border-l-4 border-red-500 p-2 rounded-r text-xs'>
+							<div className='flex gap-2'>
+								<AlertCircleIcon className='w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5' />
+								<div className='space-y-1'>
+									{errorMessage && <div className='text-red-800'><span className='font-medium'>Download:</span> {errorMessage}</div>}
+									{printError && <div className='text-red-800'><span className='font-medium'>Print:</span> {printError}</div>}
 								</div>
-							)}
-							{localFilePath && (
-								<div className='flex items-start gap-2'>
-									<FileCheckIcon className='w-3.5 h-3.5 text-gray-500 mt-0.5' />
-									<div className='flex-1'>
-										<span className='text-gray-600'>File:</span>
-										<div className='text-xs break-all text-gray-700 mt-0.5'>{localFilePath}</div>
-									</div>
-								</div>
-							)}
-							{errorMessage && (
-								<div className='flex items-start gap-2'>
-									<AlertCircleIcon className='w-3.5 h-3.5 text-red-500 mt-0.5' />
-									<div className='flex-1'>
-										<span className='text-red-600 font-medium'>Error:</span>
-										<div className='text-xs break-all text-red-700 mt-0.5'>{errorMessage}</div>
-									</div>
-								</div>
-							)}
-							{!downloadedAt && !localFilePath && !errorMessage && (
-								<div className='text-gray-500 text-xs'>No download information available</div>
-							)}
+							</div>
 						</div>
+					)}
+
+					{/* WORKFLOW STATUS - Compact inline */}
+					<div className='space-y-1'>
+						<div className='text-xs font-bold text-gray-500 uppercase px-1'>Status</div>
+						
+						{/* Download */}
+						<div className='flex items-center justify-between text-xs px-2 py-1 bg-gray-50 rounded'>
+							<div className='flex items-center gap-1.5'>
+								<DownloadIcon className={cn('w-3.5 h-3.5 text-gray-600', downloadStatus.status === 'downloading' && 'animate-spin')} />
+								<span className='font-medium'>Download</span>
+							</div>
+							<Badge variant='outline' className={cn('text-xs px-1.5 py-0', getStatusBadgeClass(downloadStatus.status))}>
+								{downloadStatus.label}
+							</Badge>
+						</div>
+						{downloadedAt && (
+							<div className='text-xs text-gray-600 px-2'>
+								<ClockIcon className='w-3 h-3 inline mr-1' />
+								<FormattedDate date={downloadedAt} />
+							</div>
+						)}
+
+						{/* Print */}
+						<div className='flex items-center justify-between text-xs px-2 py-1 bg-gray-50 rounded mt-1'>
+							<div className='flex items-center gap-1.5'>
+								<PrintIcon className={cn('w-3.5 h-3.5 text-gray-600', printStatusInfo.status === 'printing' && 'animate-spin')} />
+								<span className='font-medium'>Print</span>
+							</div>
+							<Badge variant='outline' className={cn('text-xs px-1.5 py-0', getStatusBadgeClass(printStatusInfo.status))}>
+								{printStatusInfo.label}
+							</Badge>
+						</div>
+						{printCompletedAt && (
+							<div className='text-xs text-gray-600 px-2'>
+								<ClockIcon className='w-3 h-3 inline mr-1' />
+								<FormattedDate date={printCompletedAt} />
+							</div>
+						)}
 					</div>
 
-					{/* Print Details */}
-					<div className='space-y-2'>
-						<h4 className='font-semibold text-sm flex items-center gap-2'>
-							<PrinterIcon className='w-4 h-4' />
-							Print Details
-						</h4>
-						<div className='space-y-1 text-sm'>
-							{printCompletedAt && (
-								<div className='flex items-center gap-2'>
-									<ClockIcon className='w-3.5 h-3.5 text-gray-500' />
-									<span className='text-gray-600'>Completed:</span>
-									<FormattedDate date={printCompletedAt} />
-								</div>
-							)}
-							{cupsJobId && (
-								<div className='flex items-center gap-2'>
-									<span className='text-gray-600'>Job ID:</span>
-									<span className='text-gray-700 font-mono text-xs'>{cupsJobId}</span>
-								</div>
-							)}
-							{printError && (
-								<div className='flex items-start gap-2'>
-									<AlertCircleIcon className='w-3.5 h-3.5 text-red-500 mt-0.5' />
-									<div className='flex-1'>
-										<span className='text-red-600 font-medium'>Error:</span>
-										<div className='text-xs break-all text-red-700 mt-0.5'>{printError}</div>
-									</div>
-								</div>
-							)}
-							{!printCompletedAt && !cupsJobId && !printError && (
-								<div className='text-gray-500 text-xs'>No print information available</div>
-							)}
+					{/* FILE & PREVIEW - Compact */}
+					{localFilePath && previewUrl && (
+						<div className='space-y-1 pt-1'>
+							<div className='flex items-center gap-1.5 text-xs px-2'>
+								<FileCheckIcon className='w-3.5 h-3.5 text-gray-600' />
+								<span className='font-medium'>PDF</span>
+							</div>
+							<Button
+								variant='outline'
+								size='sm'
+								className='w-full h-7 text-xs'
+								onClick={() => window.open(previewUrl, '_blank')}
+							>
+								<EyeIcon className='w-3 h-3 mr-1' />
+								Preview
+							</Button>
 						</div>
-					</div>
+					)}
 
-					{/* Waybill URL */}
+					{/* SOURCE URL - Compact action row */}
 					{waybillUrl && (
-						<div className='space-y-2'>
-							<h4 className='font-semibold text-sm'>Waybill URL</h4>
+						<div className='flex items-center gap-1 pt-1'>
 							<a
 								href={waybillUrl}
 								target='_blank'
 								rel='noopener noreferrer'
-								className='text-xs text-blue-600 hover:text-blue-800 break-all underline'
+								className='flex-1 text-xs text-blue-600 hover:text-blue-800 underline truncate'
+								title={waybillUrl}
 							>
-								{waybillUrl}
+								<LinkIcon className='w-3 h-3 inline mr-1 mb-0.5' />
+								Open
 							</a>
+							<Button
+								variant='ghost'
+								size='sm'
+								className='h-6 px-2 hover:bg-gray-100'
+								onClick={copyUrlToClipboard}
+								title='Copy URL'
+							>
+								<CopyIcon className='w-3.5 h-3.5' />
+							</Button>
 						</div>
 					)}
 				</div>

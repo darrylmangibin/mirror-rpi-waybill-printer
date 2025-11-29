@@ -1,39 +1,64 @@
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover';
+import type { WaybillPrint } from '@/modules/Home/services';
 
 interface ErrorColumnProps {
-	errorMessage: string | null;
+	waybill: Partial<WaybillPrint>;
 }
 
-export const ErrorColumn: React.FC<ErrorColumnProps> = ({ errorMessage }) => {
-	// Only show warning icon if there's an error message
-	if (errorMessage) {
-		return (
-			<Popover>
-				<PopoverTrigger asChild>
-						<AlertTriangle className="w-5 h-5 text-yellow-500 hover:text-yellow-600 cursor-pointer" />
-				</PopoverTrigger>
-				<PopoverContent className="w-72" side="left">
-					<div className="space-y-2">
-						<div className="flex items-center gap-2">
-							<AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0" />
-							<h4 className="font-semibold text-yellow-900">Warning Details</h4>
-						</div>
-						<p className="text-sm text-gray-700 wrap-break-word">
-							{errorMessage}
-						</p>
-					</div>
-				</PopoverContent>
-			</Popover>
-		);
+export const ErrorColumn = ({ waybill }: ErrorColumnProps) => {
+	const {
+		error_message: downloadError = null,
+		print_error: printError = null,
+	} = waybill;
+
+	const hasErrors = downloadError || printError;
+
+	if (!hasErrors) {
+		return <div className='text-gray-400 text-xs'>-</div>;
 	}
 
-	// Return null for everything else
-	return null;
-};
+	return (
+		<Popover>
+			<PopoverTrigger asChild>
+				<Badge variant='outline' className='bg-red-50 border-red-200 text-red-700 cursor-pointer hover:bg-red-100'>
+					<AlertCircleIcon className='w-3.5 h-3.5 mr-1' />
+					<span className='text-xs'>Error</span>
+				</Badge>
+			</PopoverTrigger>
+			<PopoverContent className='w-96 p-4 max-h-96 overflow-y-auto' side='left'>
+				<div className='space-y-3'>
+					{downloadError && (
+						<div className='space-y-2'>
+							<div className='flex items-start gap-2'>
+								<AlertCircleIcon className='w-4 h-4 text-red-600 flex-shrink-0 mt-0.5' />
+								<div className='flex-1 min-w-0'>
+									<h5 className='font-semibold text-sm text-red-900'>Download Error</h5>
+									<p className='text-sm text-red-800 mt-1 break-words leading-relaxed'>{downloadError}</p>
+								</div>
+							</div>
+						</div>
+					)}
 
+					{printError && (
+						<div className='space-y-2'>
+							{downloadError && <div className='h-px bg-red-200'></div>}
+							<div className='flex items-start gap-2'>
+								<AlertCircleIcon className='w-4 h-4 text-red-600 flex-shrink-0 mt-0.5' />
+								<div className='flex-1 min-w-0'>
+									<h5 className='font-semibold text-sm text-red-900'>Print Error</h5>
+									<p className='text-sm text-red-800 mt-1 break-words leading-relaxed'>{printError}</p>
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+};

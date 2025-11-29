@@ -3,9 +3,12 @@ import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/compone
 import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
 import { PlatformBadge } from '@/modules/Home/components/WaybillColumns/components/PlatformBadge';
 import { AutoPrintColumn } from '@/modules/Home/components/WaybillColumns/components/AutoPrintColumn';
-import { ProgressColumn } from '@/modules/Home/components/WaybillColumns/components/ProgressColumn';
+import { ErrorColumn } from '@/modules/Home/components/WaybillColumns/components/ErrorColumn';
+import { DownloadStatusColumn } from '@/modules/Home/components/WaybillColumns/components/DownloadStatusColumn';
+import { PrintStatusColumn } from '@/modules/Home/components/WaybillColumns/components/PrintStatusColumn';
 import { FormattedDate } from '@/components/global';
 import { marketplaceIcons } from '@/modules/Home/constants/marketplaces';
+import { InfoIcon } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipTrigger,
@@ -126,8 +129,27 @@ export const getWaybillColumns = (
 		minSize: 100,
 	},
 	{
+		id: 'error',
+		header: 'Error Message',
+		cell: ({ row }) => <ErrorColumn waybill={row.original as Partial<WaybillPrint>} />,
+		size: 90,
+		minSize: 80,
+	},
+	{
 		accessorKey: 'auto_print',
-		header: 'Auto Print',
+		header: () => (
+			<div className='flex items-center justify-center gap-1'>
+				<span>Auto Print</span>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<InfoIcon className='w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help' />
+					</TooltipTrigger>
+					<TooltipContent>
+						<div className='text-sm'>Automatically prints after download completes</div>
+					</TooltipContent>
+				</Tooltip>
+			</div>
+		),
 		cell: ({ row }) => {
 			const autoPrint = row.original.auto_print;
 			return <AutoPrintColumn autoPrint={autoPrint} />;
@@ -136,11 +158,18 @@ export const getWaybillColumns = (
 		minSize: 100,
 	},
 	{
-		id: 'progress',
-		header: 'Progress',
-		cell: ({ row }) => <ProgressColumn waybill={row.original as Partial<WaybillPrint>} />,
-		size: 140,
-		minSize: 120,
+		id: 'download_status',
+		header: 'Download',
+		cell: ({ row }) => <DownloadStatusColumn waybill={row.original as Partial<WaybillPrint>} />,
+		size: 110,
+		minSize: 100,
+	},
+	{
+		id: 'print_status',
+		header: 'Print',
+		cell: ({ row }) => <PrintStatusColumn waybill={row.original as Partial<WaybillPrint>} />,
+		size: 110,
+		minSize: 100,
 	},
 	{
 		accessorKey: 'created_at',

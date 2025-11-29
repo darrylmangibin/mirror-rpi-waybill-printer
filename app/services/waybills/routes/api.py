@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, Response, current_app
+from flask import Blueprint, request, jsonify, Response, current_app, send_file
 from flask_sieve import validate
 from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest
 from app.services.waybills.controllers import WaybillPrintController
@@ -9,6 +9,7 @@ from app.utils.loggers import get_logger
 from app.database import db
 import json
 import time
+import os
 from datetime import datetime
 
 logger = get_logger(__name__)
@@ -101,6 +102,48 @@ def change_status(waybill_print):
     result = change_action(waybill_print, status)
     status_code = 200 if result.get('status') == 'success' else 400
     return jsonify(result), status_code
+
+
+@waybills_bp.route('/prints/<int:waybill_print>/preview', methods=['GET'])
+@get_model(WaybillPrint)
+def preview_file(waybill_print):
+    """Preview/download the waybill file (PDF)."""
+    if not waybill_print.local_file_path:
+        return jsonify({
+            'status': 'error',
+            'message': 'File not found - waybill has not been downloaded yet'
+        }), 404
+    
+    file_path = waybill_print.local_file_path
+    
+    # Check if file exists
+    if not os.path.exists(file_path):
+        logger.error(f"File not found at path: {file_path} for waybill {waybill_print.id}")
+        return jsonify({
+            'status': 'error',
+            'message': 'File not found on disk'
+        }), 404
+    
+    # Determine if it's a download request (query param) or preview
+    as_attachment = request.args.get('download', 'false').lower() == 'true'
+    
+    # Get filename for download
+    filename = os.path.basename(file_path)
+    
+    # Determine content type based on file extension
+    if file_path.lower().endswith('.pdf'):
+        mimetype = 'application/pdf'
+    elif file_path.lower().endswith('.png'):
+        mimetype = 'image/png'
+    else:
+        mimetype = 'application/octet-stream'
+    
+    return send_file(
+        file_path,
+        mimetype=mimetype,
+        as_attachment=as_attachment,
+        download_name=filename
+    )
 
 
 @waybills_bp.route('/prints/stream', methods=['GET'])

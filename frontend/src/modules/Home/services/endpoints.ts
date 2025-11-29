@@ -14,6 +14,10 @@ export const WAYBILL_ENDPOINTS = {
   DOWNLOAD_PRINT: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/download`),
   PRINT_PRINT: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/print`),
   UPDATE_STATUS: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/status`),
+  PREVIEW_FILE: (id: number, download?: boolean) => {
+    const url = buildApiUrl(`/api/waybills/prints/${id}/preview`);
+    return download ? `${url}?download=true` : url;
+  },
 } as const;
 
 export const NETWORK_ENDPOINTS = {
