@@ -57,8 +57,8 @@ export const PrintDetailsColumn = ({
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Badge variant='outline' className={cn('rounded-full cursor-pointer', getStatusGradientClass(printStatus))}>
-							<span className='flex items-center gap-1 w-full'>
-								<span>{statusDisplay}</span>
+							<span className='flex items-center gap-1'>
+								{statusDisplay}
 								{printError && <AlertCircleIcon className='w-3.5 h-3.5 text-red-600' />}
 							</span>
 						</Badge>

@@ -70,7 +70,7 @@ export const PrintStatusColumn = ({ waybill }: PrintStatusColumnProps) => {
 		<PopoverContent className='w-72 p-2' side='left'>
 			<div className='space-y-1.5'>
 				{printCompletedAt && (
-					<div className='text-xs text-gray-600 px-2 py-1'>
+					<div className='text-xs flex items-center gap-1 text-gray-600 px-2 py-1'>
 						<ClockIcon className='w-3 h-3 inline mr-1' />
 						<FormattedDate date={printCompletedAt} />
 					</div>
