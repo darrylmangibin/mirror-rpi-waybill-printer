@@ -39,6 +39,7 @@ class WaybillPrint(db.Model):
     printer_name = db.Column(db.String, nullable=True)  # Printer used for this job
     print_error = db.Column(db.Text, nullable=True)  # Error details if print fails
     print_completed_at = db.Column(db.DateTime, nullable=True)  # When printing actually completed
+    auto_print = db.Column(db.Boolean, default=True)  # Auto-print after download completes
     
     def __repr__(self):
         return f'<WaybillPrint {self.id}>'
@@ -63,6 +64,7 @@ class WaybillPrint(db.Model):
             'printer_name': self.printer_name,
             'print_error': self.print_error,
             'print_completed_at': self.print_completed_at.strftime('%Y-%m-%d %H:%M:%S') if self.print_completed_at else None,
+            'auto_print': self.auto_print,  # Include auto_print flag in responses
         }
 
 

@@ -18,7 +18,8 @@ class StoreWaybillRequest(FormRequest):
             'invoice_number': ['required', 'string'],
             'waybill_url': ['nullable', 'string'],
             'marketplace': ['nullable', 'string'],
-            'tenant_id': ['required', 'string']
+            'tenant_id': ['required', 'string'],
+            'auto_print': ['nullable', 'boolean']  # Optional flag, defaults to true
         }
     
     def messages(self):
@@ -34,5 +35,6 @@ class StoreWaybillRequest(FormRequest):
             'waybill_url.string': 'Waybill URL must be a string',
             'marketplace.string': 'Marketplace must be a string',
             'tenant_id.required': 'Tenant ID is required',
-            'tenant_id.string': 'Tenant ID must be a string'
+            'tenant_id.string': 'Tenant ID must be a string',
+            'auto_print.boolean': 'Auto print must be a boolean'  # New error message
         }

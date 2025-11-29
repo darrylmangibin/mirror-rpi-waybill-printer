@@ -24,6 +24,7 @@ class WaybillPrintService:
                 - waybill_url (str): URL of the waybill to print
                 - marketplace (str): Marketplace identifier (optional)
                 - tenant_id (int): Tenant ID for the waybill
+                - auto_print (bool): Whether to auto-print after download (optional, default: True)
         
         Returns:
             WaybillPrint: The created model instance
@@ -42,13 +43,15 @@ class WaybillPrintService:
             waybill_url = data.get('waybill_url')
             marketplace = data.get('marketplace')
             tenant_id = data.get('tenant_id')
+            auto_print = data.get('auto_print', True)  # Default to True if not provided
             
             # Create model instance
             waybill_print = WaybillPrint(
                 invoice_number=invoice_number,
                 waybill_url=waybill_url,
                 marketplace=marketplace,
-                tenant_id=tenant_id
+                tenant_id=tenant_id,
+                auto_print=auto_print  # Pass the auto_print flag
             )
             
             # Save to database
