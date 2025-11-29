@@ -12,6 +12,7 @@ import {
 	usePrintWaybill,
 	useWaybillStream,
 	useDeleteWaybill,
+	useClearTableSelection,
 } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
 import { CreateWaybillPrintDialog } from '@/modules/Home/components/CreateWaybillPrintDialog';
@@ -57,6 +58,8 @@ const Home = () => {
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
 	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting } =
 		useDeleteWaybill();
+
+	const { setTable, clearSelection } = useClearTableSelection();
 
 	// Auto-stop polling when download completes (status becomes "downloaded")
 	React.useEffect(() => {
@@ -137,13 +140,14 @@ const Home = () => {
 			await Promise.all(deletePromises);
 			toast.success(`Successfully deleted ${rows.length} waybill(s)`);
 			setSelectedRows([]);
+			clearSelection();
 			setBulkDeleteDialogOpen(false);
 			await actions.refetch();
 		} catch (error) {
 			console.error('Bulk delete failed:', error);
 			toast.error('Failed to delete some waybills');
 		}
-	}, [deleteWaybillAsync, actions]);
+	}, [deleteWaybillAsync, actions, clearSelection]);
 
 	const handleBulkDeleteClick = (rows: WaybillPrint[]) => {
 		setBulkDeleteDialogOpen(true);
@@ -222,16 +226,17 @@ const Home = () => {
 					</div>
 				</div>
 
-				<DataTable
-					columns={waybillColumns}
-					data={waybills}
-					pageSize={pagination.perPage}
-					onRowsSelected={handleRowsSelected}
-					currentPage={pagination.page}
-					totalPages={pagination.totalPages}
-					onPageChange={actions.goToPage}
-					isLoading={loading}
-				/>
+			<DataTable
+				columns={waybillColumns}
+				data={waybills}
+				pageSize={pagination.perPage}
+				onRowsSelected={handleRowsSelected}
+				onTableReady={setTable}
+				currentPage={pagination.page}
+				totalPages={pagination.totalPages}
+				onPageChange={actions.goToPage}
+				isLoading={loading}
+			/>
 
 				{/* DIALOGS / MODALS */}
 				{selectedWaybill && (

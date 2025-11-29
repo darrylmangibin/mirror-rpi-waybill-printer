@@ -7,3 +7,4 @@ export { useEditWaybill } from './useEditWaybill';
 export { useChangeWaybillStatus } from './useChangeWaybillStatus';
 export { useWaybillStream } from './useWaybillStream';
 export { useDeleteWaybill } from './useDeleteWaybill';
+export { useClearTableSelection } from './useClearTableSelection';
