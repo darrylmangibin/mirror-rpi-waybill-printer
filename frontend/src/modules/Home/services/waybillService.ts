@@ -19,6 +19,7 @@ export interface WaybillPrint {
   printer_name: string | null;
   print_error: string | null;
   print_completed_at: string | null;
+  auto_print: boolean | null;
 }
 
 export interface WaybillsResponse {

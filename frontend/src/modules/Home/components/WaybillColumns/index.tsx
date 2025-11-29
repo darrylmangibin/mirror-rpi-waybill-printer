@@ -1,13 +1,16 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { WaybillUrlBadge } from '@/modules/Home/components/WaybillColumns/components/WaybillUrlBadge';
 import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
 import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
-import { ErrorColumn } from '@/modules/Home/components/WaybillColumns/components/ErrorColumn';
 import { PlatformBadge } from '@/modules/Home/components/WaybillColumns/components/PlatformBadge';
-import { PrintDetailsColumn } from '@/modules/Home/components/WaybillColumns/components/PrintDetailsColumn';
-import { DownloadDetailsColumn } from '@/modules/Home/components/WaybillColumns/components/DownloadDetailsColumn';
+import { AutoPrintColumn } from '@/modules/Home/components/WaybillColumns/components/AutoPrintColumn';
+import { ProgressColumn } from '@/modules/Home/components/WaybillColumns/components/ProgressColumn';
 import { FormattedDate } from '@/components/global';
 import { marketplaceIcons } from '@/modules/Home/constants/marketplaces';
+import {
+	Tooltip,
+	TooltipTrigger,
+	TooltipContent,
+} from '@/components/ui/tooltip';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WaybillPrint } from '@/modules/Home/services';
 
@@ -79,17 +82,29 @@ export const getWaybillColumns = (
 			}
 
 			const invoiceUrl = `https://${tenantId}.fusiontech.asia/dashboard/live/invoices/${invoiceNumber}`;
+			const displayNumber = invoiceNumber.length > 15 
+				? `${invoiceNumber.substring(0, 15)}...` 
+				: invoiceNumber;
 
 			return (
-				<a
-					href={invoiceUrl}
-					target='_blank'
-					rel='noopener noreferrer'
-					className='text-xs text-blue-800 font-semibold transition-colors'>
-					{invoiceNumber}
-				</a>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<a
+							href={invoiceUrl}
+							target='_blank'
+							rel='noopener noreferrer'
+							className='text-xs text-blue-800 font-semibold transition-colors hover:underline'>
+							{displayNumber}
+						</a>
+					</TooltipTrigger>
+					<TooltipContent>
+						<div className='max-w-xs break-all'>{invoiceNumber}</div>
+					</TooltipContent>
+				</Tooltip>
 			);
 		},
+		size: 150,
+		minSize: 120,
 	},
 	{
 		accessorKey: 'status',
@@ -107,41 +122,25 @@ export const getWaybillColumns = (
 				/>
 			);
 		},
+		size: 120,
+		minSize: 100,
 	},
 	{
-		accessorKey: 'error_message',
-		header: 'Error',
+		accessorKey: 'auto_print',
+		header: 'Auto Print',
 		cell: ({ row }) => {
-			const errorMessage = row.getValue('error_message') as string | null;
-			return <ErrorColumn errorMessage={errorMessage} />;
+			const autoPrint = row.original.auto_print;
+			return <AutoPrintColumn autoPrint={autoPrint} />;
 		},
+		size: 110,
+		minSize: 100,
 	},
 	{
-		accessorKey: 'waybill_url',
-		header: 'Waybill URL',
-		cell: ({ row }) => {
-			const url = row.getValue('waybill_url') as string | null;
-			return <WaybillUrlBadge url={url} />;
-		},
-	},
-	{
-		id: 'download_details',
-		header: 'Download Details',
-		cell: ({ row }) => {
-			const localFilePath = row.original.local_file_path as string | null | undefined;
-			const downloadedAt = row.original.downloaded_at as string | null | undefined;
-			return (
-				<DownloadDetailsColumn
-					localFilePath={localFilePath || null}
-					downloadedAt={downloadedAt || null}
-				/>
-			);
-		},
-	},
-	{
-		id: 'print_details',
-		header: 'Print Details',
-		cell: ({ row }) => <PrintDetailsColumn waybill={row.original as Partial<WaybillPrint>} />,
+		id: 'progress',
+		header: 'Progress',
+		cell: ({ row }) => <ProgressColumn waybill={row.original as Partial<WaybillPrint>} />,
+		size: 140,
+		minSize: 120,
 	},
 	{
 		accessorKey: 'created_at',
@@ -150,6 +149,8 @@ export const getWaybillColumns = (
 			const date = row.getValue('created_at') as string | null;
 			return <FormattedDate date={date} />;
 		},
+		size: 140,
+		minSize: 120,
 	},
 	{
 		id: 'actions',
