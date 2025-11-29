@@ -44,7 +44,7 @@ def create_app():
     from app.commands import db as db_commands
     app.cli.add_command(routes)
     app.cli.add_command(db_commands)
-    # TEST CHANGES
+
     # Start background workers for waybill processing
     with app.app_context():
         from app.utils.loggers import get_logger
