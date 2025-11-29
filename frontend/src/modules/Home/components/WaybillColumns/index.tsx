@@ -151,7 +151,7 @@ export const getWaybillColumns = (
 	},
 	{
 		id: 'print_status',
-		header: 'Print',
+		header: 'Print Details',
 		cell: ({ row }) => <PrintStatusColumn waybill={row.original as Partial<WaybillPrint>} />,
 		size: 110,
 		minSize: 100,

@@ -53,47 +53,42 @@ export const PrintStatusColumn = ({ waybill }: PrintStatusColumnProps) => {
 
 	return (
 		<Popover>
-			<PopoverTrigger asChild>
-				<Badge 
-					variant='outline' 
-					className={cn('rounded-full cursor-pointer', getStatusBadgeClass(printStatusInfo.status))}
-				>
-					<span className='flex items-center gap-1'>
-						<PrintIcon className={cn(
-							'w-3.5 h-3.5',
-							printStatusInfo.status === 'printing' && 'animate-spin'
-						)} />
-						<span className='text-xs'>{printStatusInfo.label}</span>
-					</span>
-				</Badge>
-			</PopoverTrigger>
-			<PopoverContent className='w-80 p-3' side='left'>
-				<div className='space-y-2'>
-					{/* Status & Timestamp */}
-					<div className='flex items-center justify-between text-xs px-2 py-1 bg-gray-50 rounded'>
-						<div className='flex items-center gap-1.5'>
-							<PrintIcon className='w-3.5 h-3.5 text-gray-600' />
-							<span className='font-medium'>Status</span>
-						</div>
-						<Badge variant='outline' className={cn('text-xs px-1.5 py-0', getStatusBadgeClass(printStatusInfo.status))}>
-							{printStatusInfo.label}
-						</Badge>
+		<PopoverTrigger asChild>
+			<Badge 
+				variant='outline' 
+				className={cn('rounded-full cursor-pointer', getStatusBadgeClass(printStatusInfo.status))}
+			>
+				<span className='flex items-center gap-1'>
+					<PrintIcon className={cn(
+						'w-3.5 h-3.5',
+						printStatusInfo.status === 'printing' && 'animate-spin'
+					)} />
+					<span className='text-xs'>{printStatusInfo.label}</span>
+				</span>
+			</Badge>
+		</PopoverTrigger>
+		<PopoverContent className='w-72 p-2' side='left'>
+			<div className='space-y-1.5'>
+				{printCompletedAt && (
+					<div className='text-xs text-gray-600 px-2 py-1'>
+						<ClockIcon className='w-3 h-3 inline mr-1' />
+						<FormattedDate date={printCompletedAt} />
 					</div>
+				)}
 
-					{printCompletedAt && (
-						<div className='text-xs text-gray-600 px-2'>
-							<ClockIcon className='w-3 h-3 inline mr-1' />
-							<FormattedDate date={printCompletedAt} />
-						</div>
-					)}
+				{cupsJobId && (
+					<div className='text-xs text-gray-600 px-2 py-1'>
+						<span className='font-medium'>Job ID:</span> <span className='font-mono text-gray-700'>{cupsJobId}</span>
+					</div>
+				)}
 
-					{cupsJobId && (
-						<div className='text-xs text-gray-600 px-2'>
-							<span className='font-medium'>Job ID:</span> <span className='font-mono text-gray-700'>{cupsJobId}</span>
-						</div>
-					)}
-				</div>
-			</PopoverContent>
+				{!printCompletedAt && !cupsJobId && (
+					<div className='text-xs text-gray-400 px-2 py-1.5 italic'>
+						No details available
+					</div>
+				)}
+			</div>
+		</PopoverContent>
 		</Popover>
 	);
 };
