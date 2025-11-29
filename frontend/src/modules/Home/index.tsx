@@ -56,7 +56,7 @@ const Home = () => {
 		searchQuery
 	);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
-	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting } =
+	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting, reset: resetDeleteMutation } =
 		useDeleteWaybill();
 
 	const { setTable, clearSelection } = useClearTableSelection();
@@ -142,12 +142,13 @@ const Home = () => {
 			setSelectedRows([]);
 			clearSelection();
 			setBulkDeleteDialogOpen(false);
+			resetDeleteMutation();
 			await actions.refetch();
 		} catch (error) {
 			console.error('Bulk delete failed:', error);
 			toast.error('Failed to delete some waybills');
 		}
-	}, [deleteWaybillAsync, actions, clearSelection]);
+	}, [deleteWaybillAsync, actions, clearSelection, resetDeleteMutation]);
 
 	const handleBulkDeleteClick = (rows: WaybillPrint[]) => {
 		setBulkDeleteDialogOpen(true);
