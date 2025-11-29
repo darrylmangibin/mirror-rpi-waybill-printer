@@ -5,6 +5,7 @@ import { PlatformBadge } from '@/modules/Home/components/WaybillColumns/componen
 import { AutoPrintColumn } from '@/modules/Home/components/WaybillColumns/components/AutoPrintColumn';
 import { ErrorColumn } from '@/modules/Home/components/WaybillColumns/components/ErrorColumn';
 import { DownloadStatusColumn } from '@/modules/Home/components/WaybillColumns/components/DownloadStatusColumn';
+import { InvoiceNumberColumn } from '@/modules/Home/components/WaybillColumns/components/InvoiceNumberColumn';
 import { PrintStatusColumn } from '@/modules/Home/components/WaybillColumns/components/PrintStatusColumn';
 import { FormattedDate } from '@/components/global';
 import { marketplaceIcons } from '@/modules/Home/constants/marketplaces';
@@ -80,34 +81,10 @@ export const getWaybillColumns = (
 			const invoiceNumber = row.getValue('invoice_number') as string | null;
 			const tenantId = row.original.tenant_id;
 
-			if (!invoiceNumber) {
-				return <div className='text-gray-500 text-xs'>-</div>;
-			}
-
-			const invoiceUrl = `https://${tenantId}.fusiontech.asia/dashboard/live/invoices/${invoiceNumber}`;
-			const displayNumber = invoiceNumber.length > 15 
-				? `${invoiceNumber.substring(0, 15)}...` 
-				: invoiceNumber;
-
-			return (
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<a
-							href={invoiceUrl}
-							target='_blank'
-							rel='noopener noreferrer'
-							className='text-xs text-blue-800 font-semibold transition-colors hover:underline'>
-							{displayNumber}
-						</a>
-					</TooltipTrigger>
-					<TooltipContent>
-						<div className='max-w-xs break-all'>{invoiceNumber}</div>
-					</TooltipContent>
-				</Tooltip>
-			);
+			return <InvoiceNumberColumn invoiceNumber={invoiceNumber} tenantId={tenantId} />;
 		},
-		size: 150,
-		minSize: 120,
+		size: 200,
+		minSize: 150,
 	},
 	{
 		accessorKey: 'status',
