@@ -1,4 +1,4 @@
-import { Checkbox } from '@/components/ui/checkbox';
+import { PrimaryCheckbox } from '@/components/global';
 import { StatusDropdown } from '@/modules/Home/components/WaybillColumns/components/StatusDropdown';
 import { WaybillPrintActions } from '@/modules/Home/components/WaybillColumns/components/WaybillPrintActions';
 import { PlatformBadge } from '@/modules/Home/components/WaybillColumns/components/PlatformBadge';
@@ -33,7 +33,7 @@ export const getWaybillColumns = (
 	{
 		id: 'select',
 		header: ({ table }) => (
-			<Checkbox
+			<PrimaryCheckbox
 				checked={
 					table.getIsAllPageRowsSelected() ||
 					(table.getIsSomePageRowsSelected() && 'indeterminate')
@@ -43,7 +43,7 @@ export const getWaybillColumns = (
 			/>
 		),
 		cell: ({ row }) => (
-			<Checkbox
+			<PrimaryCheckbox
 				checked={row.getIsSelected()}
 				onCheckedChange={(value) => row.toggleSelected(!!value)}
 				aria-label='Select row'

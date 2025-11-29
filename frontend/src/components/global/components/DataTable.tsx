@@ -93,7 +93,7 @@ export function DataTable<TData, TValue>({
 				.rows.map((row) => row.original);
 			onRowsSelected(selectedRows);
 		}
-	}, [rowSelection, table, onRowsSelected]);
+	}, [rowSelection, onRowsSelected]);
 
 	// Call onTableReady if provided
 	React.useEffect(() => {

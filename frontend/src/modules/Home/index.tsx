@@ -19,6 +19,7 @@ import { EditWaybillPrintDialog } from '@/modules/Home/components/EditWaybillPri
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
 import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
 import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfirmationDialog';
+import { BulkActionsDropdown } from '@/modules/Home/components/BulkActionsDropdown';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -29,6 +30,7 @@ const Home = () => {
 	const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] =
 		React.useState<WaybillPrint | null>(null);
+	const [selectedRows, setSelectedRows] = React.useState<WaybillPrint[]>([]);
 
 	// Initialize Server-Sent Events stream for real-time updates
 	useWaybillStream();
@@ -122,9 +124,23 @@ const Home = () => {
 		[]
 	);
 
-	const handleRowsSelected = (rows: typeof waybills) => {
+	const handleRowsSelected = React.useCallback((rows: typeof waybills) => {
+		setSelectedRows(rows);
 		console.log('Selected rows:', rows);
-	};
+	}, []);
+
+	const handleBulkDelete = React.useCallback(async (rows: WaybillPrint[]) => {
+		try {
+			const deletePromises = rows.map((row) => deleteWaybillAsync(row.id));
+			await Promise.all(deletePromises);
+			toast.success(`Successfully deleted ${rows.length} waybill(s)`);
+			setSelectedRows([]);
+			await actions.refetch();
+		} catch (error) {
+			console.error('Bulk delete failed:', error);
+			toast.error('Failed to delete some waybills');
+		}
+	}, [deleteWaybillAsync, actions]);
 
 	const handleSearch = (query: string) => {
 		setSearchQuery(query);
@@ -178,6 +194,12 @@ const Home = () => {
 								</span>
 							</div>
 						)}
+						{/* Bulk Actions Dropdown */}
+						<BulkActionsDropdown
+							selectedRows={selectedRows}
+							onBulkDelete={handleBulkDelete}
+							isLoading={isDeleting}
+						/>
 					</div>
 					{/* Create Print Jobs */}
 					<div className='flex gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none'>
