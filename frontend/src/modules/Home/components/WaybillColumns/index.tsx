@@ -159,8 +159,16 @@ export const getWaybillColumns = (
 	},
 	{
 		id: 'download_status',
-		header: 'Download',
-		cell: ({ row }) => <DownloadStatusColumn waybill={row.original as Partial<WaybillPrint>} />,
+		header: () => (
+			<div className='flex items-center justify-center'>
+				<span>File</span>
+			</div>
+		),
+		cell: ({ row }) => (
+			<div className='flex items-center justify-center'>
+				<DownloadStatusColumn waybill={row.original as Partial<WaybillPrint>} />
+			</div>
+		),
 		size: 110,
 		minSize: 100,
 	},
