@@ -20,6 +20,7 @@ import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybill
 import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
 import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfirmationDialog';
 import { BulkActionsDropdown } from '@/modules/Home/components/BulkActionsDropdown';
+import { BulkDeleteConfirmationDialog } from '@/modules/Home/components/BulkDeleteConfirmationDialog';
 
 const Home = () => {
 	const [searchQuery, setSearchQuery] = React.useState('');
@@ -28,6 +29,7 @@ const Home = () => {
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+	const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] =
 		React.useState<WaybillPrint | null>(null);
 	const [selectedRows, setSelectedRows] = React.useState<WaybillPrint[]>([]);
@@ -135,12 +137,17 @@ const Home = () => {
 			await Promise.all(deletePromises);
 			toast.success(`Successfully deleted ${rows.length} waybill(s)`);
 			setSelectedRows([]);
+			setBulkDeleteDialogOpen(false);
 			await actions.refetch();
 		} catch (error) {
 			console.error('Bulk delete failed:', error);
 			toast.error('Failed to delete some waybills');
 		}
 	}, [deleteWaybillAsync, actions]);
+
+	const handleBulkDeleteClick = (rows: WaybillPrint[]) => {
+		setBulkDeleteDialogOpen(true);
+	};
 
 	const handleSearch = (query: string) => {
 		setSearchQuery(query);
@@ -197,7 +204,7 @@ const Home = () => {
 						{/* Bulk Actions Dropdown */}
 						<BulkActionsDropdown
 							selectedRows={selectedRows}
-							onBulkDelete={handleBulkDelete}
+							onDeleteClick={handleBulkDeleteClick}
 							isLoading={isDeleting}
 						/>
 					</div>
@@ -290,7 +297,16 @@ const Home = () => {
 						/>
 					</>
 				)}
-			</div>
+
+			{/* Bulk Delete Confirmation Dialog */}
+			<BulkDeleteConfirmationDialog
+				waybills={selectedRows}
+				open={bulkDeleteDialogOpen}
+				onOpenChange={setBulkDeleteDialogOpen}
+				onConfirm={handleBulkDelete}
+				isLoading={isDeleting}
+			/>
+		</div>
 		</>
 	);
 };

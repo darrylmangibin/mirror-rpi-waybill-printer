@@ -13,13 +13,13 @@ import type { WaybillPrint } from '@/modules/Home/services';
 
 interface BulkActionsDropdownProps {
 	selectedRows: WaybillPrint[];
-	onBulkDelete: (rows: WaybillPrint[]) => Promise<void>;
+	onDeleteClick: (rows: WaybillPrint[]) => void;
 	isLoading?: boolean;
 }
 
 export const BulkActionsDropdown = ({
 	selectedRows,
-	onBulkDelete,
+	onDeleteClick,
 	isLoading = false,
 }: BulkActionsDropdownProps) => {
 	const isDisabled = selectedRows.length === 0 || isLoading;
@@ -47,7 +47,7 @@ export const BulkActionsDropdown = ({
 
 				{/* Delete Action */}
 				<DropdownMenuItem
-					onClick={() => onBulkDelete(selectedRows)}
+					onClick={() => onDeleteClick(selectedRows)}
 					disabled={isLoading}
 					className='p-0! transition-colors'>
 					<Button
