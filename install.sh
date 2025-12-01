@@ -323,6 +323,17 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     apt install -y nginx certbot python3-certbot-nginx
     echo -e "${GREEN}✅ Nginx and Certbot installed${NC}\n"
     
+    # Generate self-signed certificate FIRST (before nginx test)
+    echo -e "${YELLOW}Generating self-signed SSL certificate...${NC}"
+    RPI_IP=$(hostname -I | awk '{print $1}')
+    mkdir -p /etc/letsencrypt/live/rpi-waybill-printer
+    openssl req -x509 -nodes -days 365 \
+        -newkey rsa:2048 \
+        -keyout /etc/letsencrypt/live/rpi-waybill-printer/privkey.pem \
+        -out /etc/letsencrypt/live/rpi-waybill-printer/fullchain.pem \
+        -subj "/C=US/ST=State/L=City/O=Organization/CN=$RPI_IP" 2>/dev/null
+    echo -e "${GREEN}✅ SSL certificate generated${NC}\n"
+    
     # Setup nginx configuration
     echo -e "${YELLOW}Configuring nginx...${NC}"
     mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
@@ -343,17 +354,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${RED}❌ Nginx configuration error${NC}"
         exit 1
     fi
-    
-    # Generate self-signed certificate
-    echo -e "${YELLOW}Generating self-signed SSL certificate...${NC}"
-    RPI_IP=$(hostname -I | awk '{print $1}')
-    mkdir -p /etc/letsencrypt/live/rpi-waybill-printer
-    openssl req -x509 -nodes -days 365 \
-        -newkey rsa:2048 \
-        -keyout /etc/letsencrypt/live/rpi-waybill-printer/privkey.pem \
-        -out /etc/letsencrypt/live/rpi-waybill-printer/fullchain.pem \
-        -subj "/C=US/ST=State/L=City/O=Organization/CN=$RPI_IP" 2>/dev/null
-    echo -e "${GREEN}✅ SSL certificate generated${NC}\n"
     
     # Install systemd services
     echo -e "${YELLOW}Installing systemd services...${NC}"
