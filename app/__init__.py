@@ -78,9 +78,17 @@ def create_app():
             use_https = True
         
         protocol = "https" if use_https else "http"
+        local_ip = get_local_ip()
+        
+        # If using HTTPS through nginx, don't include port (443 is default)
+        if use_https:
+            api_url = f"{protocol}://{local_ip}"
+        else:
+            api_url = f"{protocol}://{local_ip}:5000"
+        
         return {
-            "local_ip": get_local_ip(),
-            "api_url": f"{protocol}://{get_local_ip()}:5000",
+            "local_ip": local_ip,
+            "api_url": api_url,
             "status": "success"
         }
     
