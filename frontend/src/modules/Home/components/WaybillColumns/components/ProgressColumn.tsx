@@ -47,7 +47,6 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 		return ext || 'PDF'; // Default to PDF if no extension
 	};
 
-	const _fileFormat = getFileFormat(localFilePath);
 	const previewUrl = waybillId ? WAYBILL_ENDPOINTS.PREVIEW_FILE(waybillId) : null;
 
 	// Copy URL to clipboard
