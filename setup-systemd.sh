@@ -18,27 +18,45 @@ fi
 
 # Get the actual user (when running with sudo)
 ACTUAL_USER=${SUDO_USER:-$(whoami)}
-HOME_DIR=$(eval echo ~$ACTUAL_USER)
-PROJECT_DIR="$HOME_DIR/inspire-projects/rpi-waybill-printer"
+
+# Try to determine project directory
+# First, try using the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/run.py" ] && [ -f "$SCRIPT_DIR/requirements.txt" ]; then
+    PROJECT_DIR="$SCRIPT_DIR"
+else
+    # Fallback: assume standard location
+    HOME_DIR=$(eval echo ~$ACTUAL_USER)
+    PROJECT_DIR="$HOME_DIR/inspire-projects/rpi-waybill-printer"
+fi
 
 echo -e "${GREEN}✅ User: $ACTUAL_USER${NC}"
-echo -e "${GREEN}✅ Home: $HOME_DIR${NC}"
 echo -e "${GREEN}✅ Project: $PROJECT_DIR${NC}\n"
 
 # Verify project directory exists
 if [ ! -d "$PROJECT_DIR" ]; then
     echo -e "${RED}❌ Project directory not found: $PROJECT_DIR${NC}"
+    echo -e "${YELLOW}Please run this script from the project root directory.${NC}"
+    exit 1
+fi
+
+# Verify it's the correct project
+if [ ! -f "$PROJECT_DIR/run.py" ] || [ ! -f "$PROJECT_DIR/requirements.txt" ]; then
+    echo -e "${RED}❌ This doesn't appear to be the rpi-waybill-printer project${NC}"
+    echo -e "${YELLOW}Missing run.py or requirements.txt${NC}"
     exit 1
 fi
 
 # Verify systemd service files exist
 if [ ! -f "$PROJECT_DIR/rpi-waybill-printer-backend.service" ]; then
-    echo -e "${RED}❌ Backend service file not found: $PROJECT_DIR/rpi-waybill-printer-backend.service${NC}"
+    echo -e "${RED}❌ Backend service file not found${NC}"
+    echo -e "${YELLOW}Expected: $PROJECT_DIR/rpi-waybill-printer-backend.service${NC}"
     exit 1
 fi
 
 if [ ! -f "$PROJECT_DIR/rpi-waybill-printer-frontend.service" ]; then
-    echo -e "${RED}❌ Frontend service file not found: $PROJECT_DIR/rpi-waybill-printer-frontend.service${NC}"
+    echo -e "${RED}❌ Frontend service file not found${NC}"
+    echo -e "${YELLOW}Expected: $PROJECT_DIR/rpi-waybill-printer-frontend.service${NC}"
     exit 1
 fi
 
