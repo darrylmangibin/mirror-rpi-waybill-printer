@@ -7,9 +7,9 @@ Wants=rpi-waybill-printer-frontend.service
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/inspire-projects/rpi-waybill-printer
-Environment="PATH=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin"
+Environment="PATH=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="USE_HTTPS=true"
-ExecStart=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin/python3 run.py
+ExecStart=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin/python3 /home/pi/inspire-projects/rpi-waybill-printer/run.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
