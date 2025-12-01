@@ -6,8 +6,8 @@ Before=rpi-waybill-printer.service
 [Service]
 Type=simple
 User=pi
-WorkingDirectory=/home/pi/inspire-projects/rpi-waybill-printer/frontend
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/npm"
+WorkingDirectory=/home/pi/rpi-waybill-printer/frontend
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=/usr/bin/npm run preview
 Restart=on-failure
 RestartSec=10
