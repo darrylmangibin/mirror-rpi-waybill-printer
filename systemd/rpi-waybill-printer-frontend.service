@@ -8,6 +8,7 @@ Type=simple
 User=pi
 WorkingDirectory=/home/pi/rpi-waybill-printer/frontend
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VITE_API_URL=https://localhost:5000"
 ExecStart=/usr/bin/npm run preview
 Restart=on-failure
 RestartSec=10
