@@ -306,6 +306,13 @@ echo -e "${BLUE}  2. Run: sudo lpadmin -p PRINTER_NAME -E -v 'usb://Xprinter/XP-
 echo -e "${BLUE}  3. Set default: sudo lpadmin -d PRINTER_NAME${NC}"
 echo -e "\n${YELLOW}Important - Log out and log back in for group changes:${NC}"
 echo -e "${BLUE}  Or run: newgrp lpadmin${NC}"
+echo -e "\n${YELLOW}Setting up systemd services for auto-start...${NC}"
+chmod +x setup-systemd.sh
+sudo ./setup-systemd.sh
+
 echo -e "\n${YELLOW}Start the application:${NC}"
 echo -e "${GREEN}  ./run.sh     - Start backend only${NC}"
 echo -e "${GREEN}  ./dev.sh     - Start both backend + frontend${NC}"
+echo -e "\n${BLUE}Or use systemd services (auto-start on boot):${NC}"
+echo -e "${GREEN}  sudo systemctl start rpi-waybill-printer-backend.service${NC}"
+echo -e "${GREEN}  sudo systemctl start rpi-waybill-printer-frontend.service${NC}"

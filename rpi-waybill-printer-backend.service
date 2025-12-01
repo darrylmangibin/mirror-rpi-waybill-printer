@@ -1,0 +1,21 @@
+[Unit]
+Description=RPI Waybill Printer Backend (Flask API)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/inspire-projects/rpi-waybill-printer
+Environment="PATH=/home/%i/inspire-projects/rpi-waybill-printer/venv/bin"
+Environment="FLASK_APP=run:app"
+Environment="FLASK_ENV=production"
+ExecStart=/home/%i/inspire-projects/rpi-waybill-printer/venv/bin/python run.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

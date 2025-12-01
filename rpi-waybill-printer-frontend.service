@@ -1,0 +1,18 @@
+[Unit]
+Description=RPI Waybill Printer Frontend (React + Vite Dev Server)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/inspire-projects/rpi-waybill-printer/frontend
+Environment="PATH=/home/%i/inspire-projects/rpi-waybill-printer/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
