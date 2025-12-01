@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=%i
-WorkingDirectory=/home/%i/inspire-projects/rpi-waybill-printer/frontend
-Environment="PATH=/home/%i/inspire-projects/rpi-waybill-printer/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+WorkingDirectory=%PROJECT_DIR%/frontend
+Environment="PATH=%PROJECT_DIR%/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
 ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0
 Restart=on-failure
 RestartSec=10

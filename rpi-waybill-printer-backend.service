@@ -6,11 +6,11 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=%i
-WorkingDirectory=/home/%i/inspire-projects/rpi-waybill-printer
-Environment="PATH=/home/%i/inspire-projects/rpi-waybill-printer/venv/bin"
+WorkingDirectory=%PROJECT_DIR%
+Environment="PATH=%PROJECT_DIR%/venv/bin"
 Environment="FLASK_APP=run:app"
 Environment="FLASK_ENV=production"
-ExecStart=/home/%i/inspire-projects/rpi-waybill-printer/venv/bin/python run.py
+ExecStart=%PROJECT_DIR%/venv/bin/python run.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal

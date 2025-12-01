@@ -60,16 +60,16 @@ if [ ! -f "$PROJECT_DIR/rpi-waybill-printer-frontend.service" ]; then
     exit 1
 fi
 
-# Create systemd service files with user substitution
+# Create systemd service files with user and project path substitution
 echo -e "${YELLOW}📋 Installing systemd service files...${NC}"
 
 # Backend service
-BACKEND_SERVICE_CONTENT=$(cat "$PROJECT_DIR/rpi-waybill-printer-backend.service" | sed "s/%i/$ACTUAL_USER/g")
+BACKEND_SERVICE_CONTENT=$(cat "$PROJECT_DIR/rpi-waybill-printer-backend.service" | sed "s|%i|$ACTUAL_USER|g" | sed "s|%PROJECT_DIR%|$PROJECT_DIR|g")
 echo "$BACKEND_SERVICE_CONTENT" > /etc/systemd/system/rpi-waybill-printer-backend.service
 echo -e "${GREEN}✅ Backend service installed${NC}"
 
 # Frontend service
-FRONTEND_SERVICE_CONTENT=$(cat "$PROJECT_DIR/rpi-waybill-printer-frontend.service" | sed "s/%i/$ACTUAL_USER/g")
+FRONTEND_SERVICE_CONTENT=$(cat "$PROJECT_DIR/rpi-waybill-printer-frontend.service" | sed "s|%i|$ACTUAL_USER|g" | sed "s|%PROJECT_DIR%|$PROJECT_DIR|g")
 echo "$FRONTEND_SERVICE_CONTENT" > /etc/systemd/system/rpi-waybill-printer-frontend.service
 echo -e "${GREEN}✅ Frontend service installed${NC}"
 
