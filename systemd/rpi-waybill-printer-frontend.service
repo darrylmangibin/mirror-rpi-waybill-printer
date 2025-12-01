@@ -1,0 +1,19 @@
+[Unit]
+Description=RPI Waybill Printer - React Frontend
+After=network.target
+Before=rpi-waybill-printer.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/inspire-projects/rpi-waybill-printer/frontend
+Environment="PATH=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin"
+ExecStart=/usr/bin/npm run preview
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

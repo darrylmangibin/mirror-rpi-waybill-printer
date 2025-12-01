@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sieve import Sieve
@@ -70,9 +70,17 @@ def create_app():
     
     @app.route('/api/network/local-ip')
     def get_network_info():
+        # Check if HTTPS is enabled via environment variable or proxy headers
+        use_https = os.getenv('USE_HTTPS', 'false').lower() == 'true'
+        
+        # Also check for X-Forwarded-Proto header (set by nginx reverse proxy)
+        if request.headers.get('X-Forwarded-Proto') == 'https':
+            use_https = True
+        
+        protocol = "https" if use_https else "http"
         return {
             "local_ip": get_local_ip(),
-            "api_url": f"http://{get_local_ip()}:5000",
+            "api_url": f"{protocol}://{get_local_ip()}:5000",
             "status": "success"
         }
     

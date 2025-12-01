@@ -309,3 +309,87 @@ echo -e "${BLUE}  Or run: newgrp lpadmin${NC}"
 echo -e "\n${YELLOW}Start the application:${NC}"
 echo -e "${GREEN}  ./run.sh     - Start backend only${NC}"
 echo -e "${GREEN}  ./dev.sh     - Start both backend + frontend${NC}"
+
+# Ask about HTTPS setup
+echo -e "\n${BLUE}════════════════════════════════════════════════════════════════${NC}"
+read -p "Do you want to set up HTTPS for production? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${BLUE}🔒 Setting up HTTPS (Nginx reverse proxy on port 443)${NC}\n"
+    
+    # Install nginx and certbot
+    echo -e "${YELLOW}Installing nginx and certbot...${NC}"
+    apt update
+    apt install -y nginx certbot python3-certbot-nginx
+    echo -e "${GREEN}✅ Nginx and Certbot installed${NC}\n"
+    
+    # Setup nginx configuration
+    echo -e "${YELLOW}Configuring nginx...${NC}"
+    mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
+    cp nginx/waybill-printer.conf /etc/nginx/sites-available/waybill-printer.conf
+    
+    if [ -L /etc/nginx/sites-enabled/waybill-printer.conf ]; then
+        rm /etc/nginx/sites-enabled/waybill-printer.conf
+    fi
+    ln -s /etc/nginx/sites-available/waybill-printer.conf /etc/nginx/sites-enabled/waybill-printer.conf
+    
+    if [ -L /etc/nginx/sites-enabled/default ]; then
+        rm /etc/nginx/sites-enabled/default
+    fi
+    
+    if nginx -t; then
+        echo -e "${GREEN}✅ Nginx configuration valid${NC}\n"
+    else
+        echo -e "${RED}❌ Nginx configuration error${NC}"
+        exit 1
+    fi
+    
+    # Generate self-signed certificate
+    echo -e "${YELLOW}Generating self-signed SSL certificate...${NC}"
+    RPI_IP=$(hostname -I | awk '{print $1}')
+    mkdir -p /etc/letsencrypt/live/rpi-waybill-printer
+    openssl req -x509 -nodes -days 365 \
+        -newkey rsa:2048 \
+        -keyout /etc/letsencrypt/live/rpi-waybill-printer/privkey.pem \
+        -out /etc/letsencrypt/live/rpi-waybill-printer/fullchain.pem \
+        -subj "/C=US/ST=State/L=City/O=Organization/CN=$RPI_IP" 2>/dev/null
+    echo -e "${GREEN}✅ SSL certificate generated${NC}\n"
+    
+    # Install systemd services
+    echo -e "${YELLOW}Installing systemd services...${NC}"
+    cp systemd/rpi-waybill-printer.service /etc/systemd/system/
+    cp systemd/rpi-waybill-printer-frontend.service /etc/systemd/system/
+    cp systemd/nginx.service /etc/systemd/system/
+    
+    systemctl daemon-reload
+    echo -e "${GREEN}✅ Systemd services installed${NC}\n"
+    
+    # Enable and start services
+    echo -e "${YELLOW}Starting HTTPS services...${NC}"
+    systemctl enable nginx
+    systemctl enable rpi-waybill-printer-frontend.service
+    systemctl enable rpi-waybill-printer.service
+    
+    systemctl start nginx
+    sleep 1
+    systemctl start rpi-waybill-printer-frontend.service
+    sleep 2
+    systemctl start rpi-waybill-printer.service
+    
+    echo -e "${GREEN}✅ HTTPS services started${NC}\n"
+    
+    # Verify
+    if systemctl is-active --quiet nginx && \
+       systemctl is-active --quiet rpi-waybill-printer.service; then
+        echo -e "${GREEN}✅ HTTPS Setup Complete!${NC}"
+        echo -e "${BLUE}Access: https://$RPI_IP${NC}"
+        echo -e "${YELLOW}Note: Browser may warn about certificate (normal for self-signed)${NC}"
+        echo -e "${YELLOW}      Click 'Advanced' → 'Proceed anyway' to continue${NC}"
+    else
+        echo -e "${RED}❌ Some services failed to start${NC}"
+        echo -e "${YELLOW}Check with: sudo systemctl status nginx${NC}"
+    fi
+else
+    echo -e "${YELLOW}⏭️  Skipping HTTPS setup${NC}"
+    echo -e "${BLUE}You can set it up later by running: sudo bash setup-https.sh${NC}"
+fi

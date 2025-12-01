@@ -2,6 +2,20 @@
 
 A local printing solution using Flask backend and React frontend for Raspberry Pi 5.
 
+## 🔒 HTTPS Setup (Optional)
+
+For production HTTPS with automatic QR code HTTPS display:
+
+```bash
+# From your computer:
+./deploy-https.sh pi@<your-pi-ip>
+
+# Or manually on the Pi:
+sudo bash setup-https.sh
+```
+
+This configures nginx reverse proxy on port 443 (HTTPS) and automatically makes QR codes show `https://` URLs.
+
 ## Project Structure
 
 ```text

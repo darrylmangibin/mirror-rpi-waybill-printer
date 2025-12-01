@@ -1,0 +1,19 @@
+[Unit]
+Description=Nginx - HTTPS Reverse Proxy for Waybill Printer
+After=network.target
+Wants=rpi-waybill-printer.service rpi-waybill-printer-frontend.service
+
+[Service]
+Type=forking
+PIDFile=/var/run/nginx.pid
+ExecStartPre=/usr/sbin/nginx -t
+ExecStart=/usr/sbin/nginx
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

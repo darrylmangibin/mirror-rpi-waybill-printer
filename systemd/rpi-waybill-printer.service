@@ -1,0 +1,20 @@
+[Unit]
+Description=RPI Waybill Printer - Flask Backend + React Frontend
+After=network.target
+Wants=rpi-waybill-printer-frontend.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/inspire-projects/rpi-waybill-printer
+Environment="PATH=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin"
+Environment="USE_HTTPS=true"
+ExecStart=/home/pi/inspire-projects/rpi-waybill-printer/venv/bin/python3 run.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
