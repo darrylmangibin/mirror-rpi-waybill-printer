@@ -8,7 +8,7 @@ Type=simple
 User=%i
 WorkingDirectory=%PROJECT_DIR%/frontend
 Environment="PATH=%PROJECT_DIR%/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
-ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0
+ExecStart=/bin/bash -c "cd %PROJECT_DIR%/frontend && npm run dev -- --host 0.0.0.0"
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
