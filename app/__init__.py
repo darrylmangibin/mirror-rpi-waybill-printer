@@ -1,11 +1,10 @@
 import os
-from flask import Flask, request
+from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sieve import Sieve
 from app.database import db
 from app.utils.network import get_local_ip
-from app.utils.loggers import get_logger
 from app.services.waybills.jobs.download_waybill_job import start_workers
 from app.services.waybills.jobs.print_waybill_job import start_print_workers
 from app.services.waybills.jobs.monitor_print_job import start_monitor_workers
@@ -30,18 +29,6 @@ def create_app():
     
     # Initialize Flask-Sieve for request validation
     Sieve(app)
-    
-    # Add request logging middleware - logs all incoming requests
-    logger = get_logger(__name__)
-    
-    @app.before_request
-    def log_incoming_request():
-        """Log all incoming requests with device IP and details"""
-        device_ip = request.remote_addr
-        user_agent = request.headers.get('User-Agent', 'Unknown')
-        method = request.method
-        path = request.path
-        logger.info(f"📱 Request from device - IP: {device_ip}, Method: {method}, Path: {path}, User-Agent: {user_agent}")
     
     # Register blueprints
     from app.services.waybills.routes.api import waybills_bp

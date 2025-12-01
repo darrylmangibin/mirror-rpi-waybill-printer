@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from app.services.health.services.HealthCheckService import HealthCheckService
 from app.utils.loggers import get_logger
 
@@ -20,6 +20,11 @@ def check_connection():
     Returns:
         JSON response with connection status and message.
     """
+    # Log device request
+    device_ip = request.remote_addr
+    user_agent = request.headers.get('User-Agent', 'Unknown')
+    logger.info(f"📱 Health check request from device - IP: {device_ip}, User-Agent: {user_agent}")
+    
     result = health_service.check_connection()
     status_code = 200 if result.get('status') == 'success' else 500
     return jsonify(result), status_code
