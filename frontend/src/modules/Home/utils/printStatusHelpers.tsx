@@ -1,4 +1,5 @@
-import { PrintStatus, PrintStatuses } from '../constants/printStatuses';
+import type { PrintStatus } from '../constants/printStatuses';
+import { PrintStatuses } from '../constants/printStatuses';
 import {
   PrinterIcon,
   Loader2Icon,
