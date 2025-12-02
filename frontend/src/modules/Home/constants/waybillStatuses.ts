@@ -10,6 +10,7 @@ export const WaybillPrintStatuses = {
   PRINTING: 'printing',
   COMPLETED: 'completed',
   ERROR: 'error',
+  CANCELLED: 'cancelled',
 } as const;
 
 export type WaybillPrintStatus = 
@@ -18,7 +19,8 @@ export type WaybillPrintStatus =
   | typeof WaybillPrintStatuses.DOWNLOADED
   | typeof WaybillPrintStatuses.PRINTING
   | typeof WaybillPrintStatuses.COMPLETED
-  | typeof WaybillPrintStatuses.ERROR;
+  | typeof WaybillPrintStatuses.ERROR
+  | typeof WaybillPrintStatuses.CANCELLED;
 
 /**
  * Helper to get human-readable status labels
@@ -30,6 +32,7 @@ export const statusLabels: Record<WaybillPrintStatus, string> = {
   [WaybillPrintStatuses.PRINTING]: 'Printing',
   [WaybillPrintStatuses.COMPLETED]: 'Completed',
   [WaybillPrintStatuses.ERROR]: 'Error',
+  [WaybillPrintStatuses.CANCELLED]: 'Cancelled',
 };
 
 /**
@@ -42,5 +45,6 @@ export const statusColors: Record<WaybillPrintStatus, string> = {
   [WaybillPrintStatuses.PRINTING]: 'bg-purple-100 text-purple-800',
   [WaybillPrintStatuses.COMPLETED]: 'bg-green-100 text-green-800',
   [WaybillPrintStatuses.ERROR]: 'bg-red-100 text-red-800',
+  [WaybillPrintStatuses.CANCELLED]: 'bg-orange-100 text-orange-800',
 };
 
