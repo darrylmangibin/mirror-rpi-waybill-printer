@@ -4,6 +4,7 @@ export { useGetPrintJobQREndPoint } from './useGetPrintJobQREndPoint';
 export { useDownloadWaybill } from './useDownloadWaybill';
 export { usePrintWaybill } from './usePrintWaybill';
 export { useCancelPrintWaybill } from './useCancelPrintWaybill';
+export { useCancelPrintByInvoice } from './useCancelPrintByInvoice';
 export { useEditWaybill } from './useEditWaybill';
 export { useChangeWaybillStatus } from './useChangeWaybillStatus';
 export { useWaybillStream } from './useWaybillStream';
