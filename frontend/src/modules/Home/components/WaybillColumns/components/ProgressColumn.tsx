@@ -38,13 +38,6 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 		print_completed_at: printCompletedAt = null,
 		waybill_url: waybillUrl = null,
 	} = waybill;
-
-	// Get file format from path
-	const getFileFormat = (filePath: string | null): string => {
-		if (!filePath) return '';
-		const ext = filePath.split('.').pop()?.toUpperCase() || '';
-		return ext || 'PDF'; // Default to PDF if no extension
-	};
 	const previewUrl = waybillId ? WAYBILL_ENDPOINTS.PREVIEW_FILE(waybillId) : null;
 
 	// Copy URL to clipboard
