@@ -1,12 +1,9 @@
 import os
-import random
 from datetime import datetime
 from PIL import Image
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
-from app.config.helper import get
-from app.config import printing as printing_config
 
 # Optional CUPS import - for development environments where CUPS isn't available
 try:
@@ -16,8 +13,6 @@ except ImportError:
 
 logger = get_logger(__name__)
 
-# Load printing config
-MOCK_MODE = get(printing_config.config, 'mock.enabled')
 
 # XPrinter thermal printer default dimensions (in mm)
 DEFAULT_LABEL_WIDTH = 100  # Standard thermal label width
@@ -185,28 +180,22 @@ class PrintWaybillService:
             
             label_size = f"{width}x{height}mm"
             
-            if MOCK_MODE:
-                # MOCK MODE: Simulate print job without touching CUPS
-                job_id = random.randint(1000, 9999)
-                printer_name = get(printing_config.config, 'printer.name')
-                logger.info(f"[MOCK PRINT] Simulated CUPS job - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}, Label size: {label_size}, Scaling: {scale}%")
-            else:
-                # REAL MODE: Submit actual print job to CUPS
-                # Get CUPS connection and printer
-                conn, printer_name = self._get_cups_connection()
-                
-                # Create print options dictionary for XPrinter thermal printer
-                print_options = {
-                    "media": f"Custom.{width}x{height}mm",  # Custom label size for XPrinter
-                    "scaling": str(scale),  # Scaling percentage
-                    "fit-to-page": "true"  # Ensure content fits the label
-                }
-                
-                # Submit print job to CUPS
-                job_title = f"Waybill-{invoice_number}"
-                job_id = conn.printFile(printer_name, local_file_path, job_title, print_options)
-                
-                logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}, Label size: {label_size}, Scaling: {scale}%")
+            # Submit actual print job to CUPS
+            # Get CUPS connection and printer
+            conn, printer_name = self._get_cups_connection()
+            
+            # Create print options dictionary for XPrinter thermal printer
+            print_options = {
+                "media": f"Custom.{width}x{height}mm",  # Custom label size for XPrinter
+                "scaling": str(scale),  # Scaling percentage
+                "fit-to-page": "true"  # Ensure content fits the label
+            }
+            
+            # Submit print job to CUPS
+            job_title = f"Waybill-{invoice_number}"
+            job_id = conn.printFile(printer_name, local_file_path, job_title, print_options)
+            
+            logger.info(f"Print job submitted to CUPS - JobID: {job_id}, Invoice: {invoice_number}, Printer: {printer_name}, Label size: {label_size}, Scaling: {scale}%")
             
             # Update status to "printing" after successful submission to CUPS
             waybill_print.status = WaybillPrintStatuses.PRINTING.value
@@ -298,11 +287,6 @@ class PrintWaybillService:
             dict: {'success': bool, 'error': str (if failed)}
         """
         try:
-            if MOCK_MODE:
-                logger.info(f"[MOCK CANCEL] Simulated CUPS cancel - JobID: {job_id}, Printer: {printer_name}")
-                return {'success': True}
-            
-            # Real CUPS mode
             if cups is None:
                 raise Exception("CUPS module is not installed. Cannot cancel print job.")
             

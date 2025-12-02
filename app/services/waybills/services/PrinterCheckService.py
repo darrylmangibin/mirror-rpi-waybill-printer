@@ -13,8 +13,6 @@ from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
-from app.config.helper import get
-from app.config import printing as printing_config
 
 # Optional CUPS import
 try:
@@ -25,7 +23,6 @@ except ImportError:
 logger = get_logger(__name__)
 
 # Config
-MOCK_MODE = get(printing_config.config, 'mock.enabled')
 STUCK_JOB_TIMEOUT = 300  # 5 minutes in seconds - consider job stuck if waiting this long
 
 
@@ -66,10 +63,6 @@ class PrinterCheckService:
         Returns:
             bool: True if printer is online, False if offline or error
         """
-        if MOCK_MODE:
-            logger.info(f"[MOCK] Checking printer '{printer_name}' - assuming online")
-            return True
-        
         try:
             self._ensure_connection()
             if not self.conn:

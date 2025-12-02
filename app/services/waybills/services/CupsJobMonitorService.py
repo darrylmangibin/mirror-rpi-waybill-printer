@@ -1,7 +1,4 @@
-import random
 from app.utils.loggers import get_logger
-from app.config.helper import get
-from app.config import printing as printing_config
 from app.services.waybills.enums.CupsJobStateReasons import CupsJobStateReasons, CupsJobStateGroups
 
 # Optional CUPS import - for development environments where CUPS isn't available
@@ -12,8 +9,6 @@ except ImportError:
 
 logger = get_logger(__name__)
 
-# Load printing config
-MOCK_MODE = get(printing_config.config, 'mock.enabled')
 
 
 class CupsJobMonitorService:
@@ -93,38 +88,15 @@ class CupsJobMonitorService:
             # Ensure job_id is an integer (CUPS API requirement)
             job_id_int = int(job_id)
             
-            if MOCK_MODE:
-                # MOCK MODE: Simulate job progression without touching actual CUPS
-                logger.info(f"[MOCK MONITOR] Checking simulated job {job_id_int}")
-                
-                # Track checks per job to simulate state progression
-                check_key = f'_mock_checks_{job_id_int}'
-                checks_count = getattr(self, check_key, 0)
-                setattr(self, check_key, checks_count + 1)
-                
-                # Simulate job progression: pending → processing → completed
-                pending_threshold = get(printing_config.config, 'mock_simulation.pending_checks')
-                processing_threshold = get(printing_config.config, 'mock_simulation.processing_checks')
-                
-                if checks_count < pending_threshold:
-                    job_state = 1  # pending
-                    logger.debug(f"[MOCK] Job {job_id_int} check #{checks_count + 1} → pending")
-                elif checks_count < processing_threshold:
-                    job_state = 3  # processing
-                    logger.debug(f"[MOCK] Job {job_id_int} check #{checks_count + 1} → processing")
-                else:
-                    job_state = 7  # completed
-                    logger.debug(f"[MOCK] Job {job_id_int} check #{checks_count + 1} → completed ✅")
-            else:
-                # REAL MODE: Query actual CUPS daemon
-                logger.debug(f"[CUPS DEBUG] Calling getJobAttributes with job_id={job_id_int} (type: {type(job_id_int).__name__})")
-                
-                # Call CUPS to get job attributes - CUPS API only needs job_id
-                job_attrs = self.conn.getJobAttributes(job_id_int)
-                job_state = job_attrs.get('job-state', None)
-                
-                # DEBUG: Log all available job attributes to understand job state better
-                logger.info(f"[CUPS RAW ATTRIBUTES] JobID: {job_id_int}, All attrs: {job_attrs}")
+            # Query actual CUPS daemon
+            logger.debug(f"[CUPS DEBUG] Calling getJobAttributes with job_id={job_id_int} (type: {type(job_id_int).__name__})")
+            
+            # Call CUPS to get job attributes - CUPS API only needs job_id
+            job_attrs = self.conn.getJobAttributes(job_id_int)
+            job_state = job_attrs.get('job-state', None)
+            
+            # DEBUG: Log all available job attributes to understand job state better
+            logger.info(f"[CUPS RAW ATTRIBUTES] JobID: {job_id_int}, All attrs: {job_attrs}")
             
             # Translate CUPS state to our status
             state_name = self.JOB_STATES.get(job_state, 'unknown')
