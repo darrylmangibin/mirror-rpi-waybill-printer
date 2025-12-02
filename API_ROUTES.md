@@ -439,3 +439,138 @@ All success responses follow this format:
   "data": {}
 }
 ```
+
+---
+
+## 6. Check Printer Status
+
+**GET** `/api/health/printer-status`
+
+Check if the printer is online and detect any stuck print jobs waiting on an offline printer.
+
+### Response (Success - Printer Online)
+
+```json
+{
+  "status": "success",
+  "data": {
+    "printer_name": "XP410B",
+    "is_online": true,
+    "active_job_count": 2,
+    "stuck_job_count": 0,
+    "stuck_jobs": []
+  }
+}
+```
+
+### Response (Success - Printer Offline with Stuck Jobs)
+
+```json
+{
+  "status": "success",
+  "data": {
+    "printer_name": "XP410B",
+    "is_online": false,
+    "active_job_count": 3,
+    "stuck_job_count": 2,
+    "stuck_jobs": [
+      {
+        "waybill_id": 1,
+        "invoice_number": "INV-12345",
+        "print_status": "printing",
+        "elapsed_seconds": 320
+      },
+      {
+        "waybill_id": 2,
+        "invoice_number": "INV-12346",
+        "print_status": "pending",
+        "elapsed_seconds": 380
+      }
+    ]
+  }
+}
+```
+
+### Example Usage
+
+```bash
+curl http://localhost:5000/api/health/printer-status
+```
+
+---
+
+## 7. Manually Check & Handle Printer Offline
+
+**POST** `/api/health/printer-check`
+
+Manually trigger a printer check and automatically cancel jobs if printer is offline and jobs are stuck.
+The system does this automatically every 30 seconds, but you can trigger it manually.
+
+### Response (Success - Printer Online, No Action)
+
+```json
+{
+  "status": "success",
+  "message": "Printer is online",
+  "data": {
+    "printer_online": true,
+    "cancelled_count": 0,
+    "cancelled_jobs": []
+  }
+}
+```
+
+### Response (Success - Printer Offline, Jobs Cancelled)
+
+```json
+{
+  "status": "success",
+  "message": "Printer offline - cancelled 2 stuck jobs",
+  "data": {
+    "printer_online": false,
+    "cancelled_count": 2,
+    "cancelled_jobs": [
+      {
+        "waybill_id": 1,
+        "invoice_number": "INV-12345",
+        "cups_job_id": 1234,
+        "elapsed_seconds": 320
+      },
+      {
+        "waybill_id": 2,
+        "invoice_number": "INV-12346",
+        "cups_job_id": 1235,
+        "elapsed_seconds": 380
+      }
+    ]
+  }
+}
+```
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:5000/api/health/printer-check
+```
+
+### How It Works
+
+1. Checks if the configured printer is online via CUPS
+2. If printer is **offline**:
+   - Finds all print jobs stuck waiting on the printer (pending/printing status)
+   - Jobs waiting longer than 5 minutes are considered stuck
+   - Cancels stuck jobs automatically
+   - Updates waybill status to `error` with message "Printer is offline - job waiting timeout cancelled"
+3. If printer is **online**:
+   - No action taken
+   - Returns online status
+
+### Automatic Background Monitoring
+
+The system runs a background printer checker every 30 seconds that:
+- Monitors the configured printer status
+- Detects when it goes offline
+- Automatically cancels stuck jobs (>5 min waiting)
+- Logs all actions
+
+This ensures jobs don't hang indefinitely when the printer is turned off or disconnected.

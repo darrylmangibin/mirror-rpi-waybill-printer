@@ -8,6 +8,7 @@ from app.utils.network import get_local_ip
 from app.services.waybills.jobs.download_waybill_job import start_workers
 from app.services.waybills.jobs.print_waybill_job import start_print_workers
 from app.services.waybills.jobs.monitor_print_job import start_monitor_workers
+from app.services.waybills.jobs.printer_check_job import start_printer_check_worker
 
 def create_app():
     # Set custom instance path to keep database inside app directory
@@ -67,6 +68,12 @@ def create_app():
             logger.info("✓ Monitor workers initialized successfully")
         except Exception as e:
             logger.error(f"Failed to start monitor workers: {str(e)}", exc_info=True)
+        
+        try:
+            start_printer_check_worker()           # NEW: Printer status checker (detects offline printer, cancels stuck jobs)
+            logger.info("✓ Printer check worker initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to start printer check worker: {str(e)}", exc_info=True)
     
     @app.route('/api/network/local-ip')
     def get_network_info():
