@@ -207,23 +207,7 @@ class WaybillDownloadService:
         try:
             logger.info(f"Validating PDF content - Invoice: {invoice_number}, File: {filepath}")
             
-            # Step 1: Check file size
-            file_size = os.path.getsize(filepath)
-            if file_size < 20000:  # Less than 20KB = probably placeholder
-                logger.warning(f"PDF too small - Invoice: {invoice_number}, Size: {file_size} bytes")
-                return {
-                    'is_valid': False,
-                    'reason': f'PDF too small ({file_size} bytes) - likely placeholder. Retrying soon.',
-                    'details': {
-                        'file_size': file_size,
-                        'content_length': 0,
-                        'has_forbidden_keywords': False,
-                        'has_shipping_keywords': False,
-                        'confidence': 'high'
-                    }
-                }
-            
-            # Step 2: Extract text from PDF
+            # Step 1: Extract text from PDF
             try:
                 reader = PdfReader(filepath)
                 full_text = ""
@@ -251,7 +235,7 @@ class WaybillDownloadService:
                     }
                 }
             
-            # Step 3: Check for forbidden keywords (generating, etc.)
+            # Step 2: Check for forbidden keywords (generating, etc.)
             forbidden_keywords = [
                 'generating',
                 'please wait',
@@ -279,7 +263,7 @@ class WaybillDownloadService:
                     }
                 }
             
-            # Step 4: Check for shipping/waybill keywords (confirms it's real)
+            # Step 3: Check for shipping/waybill keywords (confirms it's real)
             shipping_keywords = [
                 'tracking',
                 'tracking number',
