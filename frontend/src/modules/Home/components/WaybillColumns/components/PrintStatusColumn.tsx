@@ -27,6 +27,9 @@ export const PrintStatusColumn = ({ waybill }: PrintStatusColumnProps) => {
 		print_completed_at: printCompletedAt = null,
 	} = waybill;
 
+	// Debug: Log the print_status value
+	console.log('PrintStatusColumn - print_status:', printStatus, 'waybill:', waybill);
+
 	const getPrintStatus = () => {
 		if (printError) return { status: 'error', label: 'Failed', icon: AlertCircleIcon };
 		if (printCompletedAt) return { status: 'completed', label: 'Printed', icon: CheckCircle2Icon };
