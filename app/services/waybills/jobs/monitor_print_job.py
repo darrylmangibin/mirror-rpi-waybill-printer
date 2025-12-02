@@ -3,6 +3,7 @@ import time
 from queue import Queue as ThreadQueue
 from datetime import datetime
 from app.utils.loggers import get_logger
+from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 
 logger = get_logger(__name__)
 
@@ -61,12 +62,14 @@ def monitor_worker():
                         if not printer_check_service.is_printer_online(printer_name):
                             # Printer is offline - fail the job immediately
                             logger.error(f"[PRINT FAILED] Printer '{printer_name}' is offline - Invoice: {invoice_number}, WaybillID: {waybill_id}")
+                            waybill.status = WaybillPrintStatuses.ERROR.value
                             waybill.print_status = 'error'
+                            waybill.error_message = "Printer is offline"
                             waybill.print_error = "Printer is offline"
                             failed_time = datetime.now().replace(microsecond=0)
                             waybill.print_completed_at = failed_time
                             db.session.commit()
-                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: Printer offline")
+                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, status: '{WaybillPrintStatuses.ERROR.value}', print_status: 'error', error_message: Printer offline")
                             # Send SSE event to notify frontend
                             from app.services.sse_service import notify_waybill_update
                             notify_waybill_update(waybill_id)
@@ -79,11 +82,14 @@ def monitor_worker():
                         if status['is_completed']:
                             # Job completed successfully ✅
                             logger.info(f"[PRINT COMPLETED] Invoice: {invoice_number}, WaybillID: {waybill_id}, CUPS JobID: {cups_job_id}")
+                            waybill.status = WaybillPrintStatuses.COMPLETED.value
                             waybill.print_status = 'completed'
+                            waybill.error_message = None
+                            waybill.print_error = None
                             completed_time = datetime.now().replace(microsecond=0)
                             waybill.print_completed_at = completed_time
                             db.session.commit()
-                            logger.info(f"[PRINT COMPLETED SAVED] Invoice: {invoice_number}, print_status: 'completed', print_completed_at: {completed_time}")
+                            logger.info(f"[PRINT COMPLETED SAVED] Invoice: {invoice_number}, status: '{WaybillPrintStatuses.COMPLETED.value}', print_status: 'completed', print_completed_at: {completed_time}")
                             # Send SSE event to notify frontend
                             from app.services.sse_service import notify_waybill_update
                             notify_waybill_update(waybill_id)
@@ -93,12 +99,14 @@ def monitor_worker():
                             # Job failed/aborted ❌
                             error_msg = f"CUPS job {status['state_name']}"
                             logger.error(f"[PRINT FAILED] Invoice: {invoice_number}, WaybillID: {waybill_id}, CUPS JobID: {cups_job_id}: {error_msg}")
+                            waybill.status = WaybillPrintStatuses.ERROR.value
                             waybill.print_status = 'error'
+                            waybill.error_message = error_msg
                             waybill.print_error = error_msg
                             failed_time = datetime.now().replace(microsecond=0)
                             waybill.print_completed_at = failed_time
                             db.session.commit()
-                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: {error_msg}, print_completed_at: {failed_time}")
+                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, status: '{WaybillPrintStatuses.ERROR.value}', print_status: 'error', error_message: {error_msg}, print_error: {error_msg}, print_completed_at: {failed_time}")
                             # Send SSE event to notify frontend
                             from app.services.sse_service import notify_waybill_update
                             notify_waybill_update(waybill_id)
@@ -127,13 +135,15 @@ def monitor_worker():
                 # Check if we hit timeout
                 if check_count >= max_checks:
                     logger.warning(f"[MONITOR TIMEOUT] Invoice: {invoice_number}, WaybillID: {waybill_id}, CUPS JobID: {cups_job_id} - Exceeded maximum monitoring time ({max_checks * 5} seconds)")
+                    waybill.status = WaybillPrintStatuses.ERROR.value
                     waybill.print_status = 'error'
                     timeout_msg = "Print job monitoring timeout - status unknown"
+                    waybill.error_message = timeout_msg
                     waybill.print_error = timeout_msg
                     timeout_time = datetime.now().replace(microsecond=0)
                     waybill.print_completed_at = timeout_time
                     db.session.commit()
-                    logger.warning(f"[MONITOR TIMEOUT SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: {timeout_msg}, print_completed_at: {timeout_time}")
+                    logger.warning(f"[MONITOR TIMEOUT SAVED] Invoice: {invoice_number}, status: '{WaybillPrintStatuses.ERROR.value}', print_status: 'error', error_message: {timeout_msg}, print_error: {timeout_msg}, print_completed_at: {timeout_time}")
                     # Send SSE event to notify frontend
                     from app.services.sse_service import notify_waybill_update
                     notify_waybill_update(waybill_id)
