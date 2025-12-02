@@ -32,7 +32,7 @@ curl http://localhost:5000/api/health/check
 
 **POST** `/api/waybills/prints`
 
-Creates a waybill print request. Automatically downloads and prints the waybill.
+Creates a waybill print request. Automatically downloads the waybill after creation, and optionally prints it based on the `auto_print` flag.
 
 ### Request Body
 
@@ -41,7 +41,8 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
   "tenant_id": "1",
   "marketplace": "shopee",
   "invoice_number": "INV-12345",
-  "waybill_url": "https://example.com/waybill.pdf" // optional
+  "waybill_url": "https://example.com/waybill.pdf",
+  "auto_print": false
 }
 ```
 
@@ -54,37 +55,40 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
 
 - `waybill_url` (string)
 - `marketplace` (string)
+- `auto_print` (boolean) - Whether to automatically print after download completes (defaults to `false`)
 
 ### Examples
 
-**Example 1: Lazada (no waybill_url)**
+**Example 1: Lazada (no waybill_url, manual print required)**
 
 ```json
 {
   "tenant_id": "herbofilipinas",
-  "marketplace": "lazada", // tiktok, lazada, shopee, zalora
+  "marketplace": "lazada",
   "invoice_number": "1048623601548335"
 }
 ```
 
-**Example 2: Shopify (no waybill_url)**
+**Example 2: Shopify (no waybill_url, auto-print enabled)**
 
 ```json
 {
   "tenant_id": "havaianas",
-  "marketplace": "shopify", // specific case for shopify, still no waybill_url
-  "invoice_number": "6306203598961"
+  "marketplace": "shopify",
+  "invoice_number": "6306203598961",
+  "auto_print": true
 }
 ```
 
-**Example 3: Janio (with waybill_url)**
+**Example 3: Janio (with waybill_url, auto-print enabled)**
 
 ```json
 {
-  "tenant_id": "janio", // this process is for janio only
+  "tenant_id": "janio",
   "marketplace": "no_marketplace",
   "invoice_number": "SH456789123",
-  "waybill_url": "https://example.com/waybill.pdf" // optional
+  "waybill_url": "https://example.com/waybill.pdf",
+  "auto_print": true
 }
 ```
 
@@ -100,6 +104,7 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
     "tenant_id": 1,
     "status": "pending",
     "print_status": "idle",
+    "auto_print": false,
     "created_at": "2024-01-15 10:30:00"
   }
 }
@@ -112,14 +117,16 @@ Use Postman or similar API client to test the endpoint. Set the base URL to eith
 - `http://localhost:5000` (local)
 - `http://192.168.1.100:5000` (network - replace with actual IP)
 
-### Note
+### Automatic Workflow
 
 After creating a waybill print, the system automatically:
 
-1. Downloads the waybill file
-2. Prints the waybill
+1. **Immediately queues for download** - The download task is queued as soon as the print request is created
+2. **Downloads the waybill file** - Background worker processes the download asynchronously
+3. **Conditionally queues for printing** - If `auto_print` is `true`, printing is automatically queued after successful download
+   - If `auto_print` is `false`, download completes but manual printing is required via `/api/waybills/prints/<id>/print` endpoint
 
-No additional API calls needed.
+No additional API calls needed for automatic download. The print step only occurs automatically if `auto_print` is enabled.
 
 ## Get Waybill Status
 
