@@ -2,12 +2,13 @@
 
 ## Quick Reference
 
-| # | Endpoint | Method | Purpose |
-|---|----------|--------|---------|
-| 1 | `/api/health/check` | GET | Health check - verify server connection |
-| 2 | `/api/waybills/prints` | POST | Create & download waybill request |
-| 3 | `/api/waybills/prints/by-invoice/print` | POST | Print by invoice number (tenant-specific) |
-| 4 | `/api/waybills/prints/by-invoice/status` | GET | Get status by invoice number (tenant-specific) |
+|| # | Endpoint | Method | Purpose |
+||---|----------|--------|---------|
+|| 1 | `/api/health/check` | GET | Health check - verify server connection |
+|| 2 | `/api/waybills/prints` | POST | Create & download waybill request |
+|| 3 | `/api/waybills/prints/by-invoice/print` | POST | Print by invoice number (tenant-specific) |
+|| 4 | `/api/waybills/prints/by-invoice/status` | GET | Get status by invoice number (tenant-specific) |
+|| 5 | `/api/waybills/prints/by-invoice/cancel` | POST | Cancel print by invoice number (tenant-specific) |
 
 ---
 
@@ -318,14 +319,99 @@ curl "http://localhost:5000/api/waybills/prints/by-invoice/status?invoice_number
 
 ---
 
+## 5. Cancel Waybill Print by Invoice Number
+
+**POST** `/api/waybills/prints/by-invoice/cancel`
+
+Cancels an active print job by invoice number for a specific tenant. Automatically retrieves the latest waybill matching the invoice number and tenant, then cancels its CUPS print job.
+
+### Request Body
+
+```json
+{
+  "invoice_number": "INV-12345",
+  "tenant_id": "tenant123"
+}
+```
+
+**Required:**
+
+- `invoice_number` - The invoice number to search for
+- `tenant_id` - Ensures tenant data isolation
+
+### Response (Success)
+
+```json
+{
+  "status": "success",
+  "message": "Print job cancelled successfully",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345",
+    "cups_job_id": 12345
+  }
+}
+```
+
+### Response (Error - No Active Job)
+
+```json
+{
+  "status": "error",
+  "message": "No active print job to cancel",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345"
+  }
+}
+```
+
+### Response (Error - Not Found)
+
+```json
+{
+  "status": "error",
+  "message": "No waybill found with invoice number: INV-12345 for tenant: tenant123"
+}
+```
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:5000/api/waybills/prints/by-invoice/cancel \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_number": "INV-12345",
+    "tenant_id": "tenant123"
+  }'
+```
+
+### How It Works
+
+1. Extract `invoice_number` and `tenant_id` from request body
+2. Query for the latest waybill matching both `invoice_number` AND `tenant_id` (ordered by `created_at DESC`)
+3. If found and has an active print job, cancel the CUPS job
+4. Update waybill status to "error" with cancellation message
+5. Return the cancellation details
+6. If not found or no active job, return appropriate error message
+
+### Notes
+
+- Only cancels jobs with status `pending` or `printing`
+- Jobs already completed or errored cannot be cancelled
+- Automatically called when creating a new waybill with the same invoice number
+- Also called before printing a new job to prevent duplicate prints
+
+---
+
 ## HTTP Status Codes Reference
 
-| Code | Meaning | Used In |
-|------|---------|---------|
-| 200 | OK - Request succeeded | All successful operations |
-| 400 | Bad Request - Invalid/missing parameters | Missing required fields |
-| 404 | Not Found - Resource doesn't exist | Waybill not found |
-| 500 | Server Error - Internal server error | Unexpected exceptions |
+|| Code | Meaning | Used In |
+||------|---------|---------|
+|| 200 | OK - Request succeeded | All successful operations |
+|| 400 | Bad Request - Invalid/missing parameters | Missing required fields |
+|| 404 | Not Found - Resource doesn't exist | Waybill not found |
+|| 500 | Server Error - Internal server error | Unexpected exceptions |
 
 ---
 

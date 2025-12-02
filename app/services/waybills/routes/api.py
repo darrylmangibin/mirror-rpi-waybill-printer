@@ -398,3 +398,46 @@ def get_status_by_invoice_number():
             'status': 'error',
             'message': str(e)
         }), 500
+
+
+@waybills_bp.route('/prints/by-invoice/cancel', methods=['POST'])
+def cancel_by_invoice_number():
+    """Cancel the latest waybill print job by invoice number (tenant-specific)."""
+    try:
+        data = request.get_json()
+        invoice_number = data.get('invoice_number')
+        tenant_id = data.get('tenant_id')
+        
+        if not invoice_number:
+            return jsonify({
+                'status': 'error',
+                'message': 'invoice_number is required in request body'
+            }), 400
+        
+        if not tenant_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'tenant_id is required in request body'
+            }), 400
+        
+        waybill_print = get_waybill_by_invoice_number(invoice_number, tenant_id)
+        
+        if not waybill_print:
+            return jsonify({
+                'status': 'error',
+                'message': f'No waybill found with invoice number: {invoice_number} for tenant: {tenant_id}'
+            }), 404
+        
+        # Cancel the print job using the existing action
+        cancel_action = CancelPrintWaybillAction()
+        result = cancel_action(waybill_print)
+        
+        status_code = 200 if result.get('status') == 'success' else 400
+        return jsonify(result), status_code
+        
+    except Exception as e:
+        logger.error(f"Error cancelling waybill by invoice number: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
