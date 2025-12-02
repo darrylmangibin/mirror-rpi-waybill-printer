@@ -13,6 +13,7 @@ export const WAYBILL_ENDPOINTS = {
   DELETE_PRINT: (id: number) => buildApiUrl(`/api/waybills/prints/${id}`),
   DOWNLOAD_PRINT: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/download`),
   PRINT_PRINT: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/print`),
+  CANCEL_PRINT: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/cancel`),
   UPDATE_STATUS: (id: number) => buildApiUrl(`/api/waybills/prints/${id}/status`),
   PREVIEW_FILE: (id: number, download?: boolean) => {
     const url = buildApiUrl(`/api/waybills/prints/${id}/preview`);

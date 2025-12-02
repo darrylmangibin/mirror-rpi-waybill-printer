@@ -161,6 +161,26 @@ const waybillService = {
   },
 
   /**
+   * Cancel an ongoing print job
+   * @param waybillId - ID of the waybill print job to cancel
+   * @returns Promise with cancel result
+   */
+  async cancelPrintWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.CANCEL_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to cancel print: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Update an existing waybill print
    * @param waybillId - ID of the waybill to update
    * @param invoiceNumber - Updated invoice number

@@ -285,4 +285,39 @@ class PrintWaybillService:
                     'invoice_number': waybill_print.invoice_number
                 }
             }
+    
+    def cancel_cups_job(self, printer_name: str, job_id: int) -> dict:
+        """
+        Cancel a CUPS print job.
+        
+        Args:
+            printer_name (str): Name of the printer
+            job_id (int): CUPS job ID to cancel
+        
+        Returns:
+            dict: {'success': bool, 'error': str (if failed)}
+        """
+        try:
+            if MOCK_MODE:
+                logger.info(f"[MOCK CANCEL] Simulated CUPS cancel - JobID: {job_id}, Printer: {printer_name}")
+                return {'success': True}
+            
+            # Real CUPS mode
+            if cups is None:
+                raise Exception("CUPS module is not installed. Cannot cancel print job.")
+            
+            conn = cups.Connection()
+            
+            # Cancel the job
+            conn.cancelJob(job_id)
+            
+            logger.info(f"CUPS job cancelled successfully - JobID: {job_id}, Printer: {printer_name}")
+            return {'success': True}
+        
+        except Exception as e:
+            logger.error(f"Failed to cancel CUPS job {job_id}: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
 

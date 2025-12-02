@@ -216,3 +216,69 @@ curl http://localhost:5000/api/waybills/prints/1/status
   "message": "Waybill not found"
 }
 ```
+
+## Cancel Print Job
+
+**POST** `/api/waybills/prints/<id>/cancel`
+
+Cancels an ongoing or queued print job. The print job must be in `pending` or `printing` state. Only active print jobs can be cancelled; completed or already-cancelled jobs will return an error.
+
+### Path Parameters
+
+- `id` (integer) - The waybill print ID
+
+### Response (Success)
+
+```json
+{
+  "status": "success",
+  "message": "Print job cancelled successfully",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345",
+    "cups_job_id": 12345
+  }
+}
+```
+
+### Response (Error Cases)
+
+**No active print job:**
+
+```json
+{
+  "status": "error",
+  "message": "No active print job to cancel",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345"
+  }
+}
+```
+
+**Already completed or cancelled:**
+
+```json
+{
+  "status": "error",
+  "message": "Cannot cancel - print job is already completed",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345"
+  }
+}
+```
+
+### Behavior
+
+- Cancels the CUPS print job using the stored `cups_job_id`
+- Updates the waybill's `print_status` to `error` with reason "Print job was cancelled by user"
+- Only works for jobs in `pending` or `printing` state
+- Completed, failed, or idle jobs cannot be cancelled
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:5000/api/waybills/prints/1/cancel
+```
+
