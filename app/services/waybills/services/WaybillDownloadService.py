@@ -180,6 +180,185 @@ class WaybillDownloadService:
             logger.warning(f"Error checking if content is HTML: {str(e)}")
             return False
     
+    def _is_valid_waybill_pdf(self, filepath: str, invoice_number: str) -> dict:
+        """
+        Validate that a PDF is actually a waybill, not a placeholder.
+        
+        Comprehensive checks:
+        1. File size (not too small)
+        2. Forbidden keywords (generating, please wait, etc.)
+        3. Shipping-related keywords (confirms it's a waybill)
+        4. Reasonable content length
+        
+        Returns:
+            dict: {
+                'is_valid': bool,
+                'reason': str,
+                'details': {
+                    'file_size': int,
+                    'content_length': int,
+                    'has_forbidden_keywords': bool,
+                    'has_shipping_keywords': bool,
+                    'confidence': str,
+                    'shipping_keywords_found': list
+                }
+            }
+        """
+        try:
+            logger.info(f"Validating PDF content - Invoice: {invoice_number}, File: {filepath}")
+            
+            # Step 1: Check file size
+            file_size = os.path.getsize(filepath)
+            if file_size < 20000:  # Less than 20KB = probably placeholder
+                logger.warning(f"PDF too small - Invoice: {invoice_number}, Size: {file_size} bytes")
+                return {
+                    'is_valid': False,
+                    'reason': f'PDF too small ({file_size} bytes) - likely placeholder. Retrying soon.',
+                    'details': {
+                        'file_size': file_size,
+                        'content_length': 0,
+                        'has_forbidden_keywords': False,
+                        'has_shipping_keywords': False,
+                        'confidence': 'high'
+                    }
+                }
+            
+            # Step 2: Extract text from PDF
+            try:
+                reader = PdfReader(filepath)
+                full_text = ""
+                page_count = len(reader.pages)
+                
+                for page in reader.pages:
+                    full_text += page.extract_text()
+                
+                full_text_lower = full_text.lower()
+                content_length = len(full_text.strip())
+                
+                logger.info(f"PDF extracted - Invoice: {invoice_number}, Pages: {page_count}, Content length: {content_length} chars")
+                
+            except Exception as e:
+                logger.error(f"Failed to extract PDF text - Invoice: {invoice_number}: {str(e)}")
+                return {
+                    'is_valid': False,
+                    'reason': f'Could not read PDF content: {str(e)}',
+                    'details': {
+                        'file_size': file_size,
+                        'content_length': 0,
+                        'has_forbidden_keywords': False,
+                        'has_shipping_keywords': False,
+                        'confidence': 'low'
+                    }
+                }
+            
+            # Step 3: Check for forbidden keywords (generating, etc.)
+            forbidden_keywords = [
+                'generating',
+                'please wait',
+                'processing',
+                'loading',
+                'preparing',
+                'waitingfor',
+                'wait for',
+                'is being generated'
+            ]
+            
+            found_forbidden = [kw for kw in forbidden_keywords if kw in full_text_lower]
+            
+            if found_forbidden:
+                logger.warning(f"Forbidden keywords found - Invoice: {invoice_number}, Keywords: {found_forbidden}")
+                return {
+                    'is_valid': False,
+                    'reason': f'Waybill still generating. Found: {", ".join(found_forbidden)}',
+                    'details': {
+                        'file_size': file_size,
+                        'content_length': content_length,
+                        'has_forbidden_keywords': True,
+                        'has_shipping_keywords': False,
+                        'confidence': 'high'
+                    }
+                }
+            
+            # Step 4: Check for shipping/waybill keywords (confirms it's real)
+            shipping_keywords = [
+                'tracking',
+                'tracking number',
+                'tracking id',
+                'shipment',
+                'recipient',
+                'sender',
+                'address',
+                'phone',
+                'weight',
+                'dimensions',
+                'shipping',
+                'delivery',
+                'package',
+                'order',
+                'waybill',
+                'label'
+            ]
+            
+            found_shipping = [kw for kw in shipping_keywords if kw in full_text_lower]
+            has_shipping_keywords = len(found_shipping) > 0
+            
+            logger.info(f"Shipping keywords found - Invoice: {invoice_number}, Keywords: {found_shipping}")
+            
+            # Step 5: Check minimum content
+            if content_length < 100:
+                logger.warning(f"PDF content too short - Invoice: {invoice_number}, Length: {content_length} chars")
+                return {
+                    'is_valid': False,
+                    'reason': f'PDF content too short ({content_length} chars) - appears blank or incomplete',
+                    'details': {
+                        'file_size': file_size,
+                        'content_length': content_length,
+                        'has_forbidden_keywords': False,
+                        'has_shipping_keywords': has_shipping_keywords,
+                        'confidence': 'high'
+                    }
+                }
+            
+            # Step 6: Confidence check
+            if has_shipping_keywords:
+                confidence = 'high'
+                is_valid = True
+            elif content_length > 500 and not found_forbidden:
+                confidence = 'medium'
+                is_valid = True
+            else:
+                confidence = 'low'
+                is_valid = True  # Allow with caution
+            
+            logger.info(f"✓ PDF validation PASSED - Invoice: {invoice_number}, Confidence: {confidence}, Shipping keywords: {len(found_shipping)}")
+            
+            return {
+                'is_valid': is_valid,
+                'reason': f'Waybill validated (confidence: {confidence})',
+                'details': {
+                    'file_size': file_size,
+                    'content_length': content_length,
+                    'has_forbidden_keywords': False,
+                    'has_shipping_keywords': has_shipping_keywords,
+                    'confidence': confidence,
+                    'shipping_keywords_found': found_shipping[:5]  # Top 5
+                }
+            }
+        
+        except Exception as e:
+            logger.error(f"Validation error - Invoice: {invoice_number}: {str(e)}", exc_info=True)
+            return {
+                'is_valid': False,
+                'reason': f'Validation error: {str(e)}',
+                'details': {
+                    'file_size': 0,
+                    'content_length': 0,
+                    'has_forbidden_keywords': False,
+                    'has_shipping_keywords': False,
+                    'confidence': 'low'
+                }
+            }
+
     def _validate_waybill_content(self, filepath: str, invoice_number: str) -> dict:
         """
         Validate that the downloaded waybill file contains actual waybill content,
@@ -526,6 +705,34 @@ class WaybillDownloadService:
                     
                     file_size = os.path.getsize(filepath)
                     
+                    # Validate waybill content BEFORE saving to database
+                    validation = self._is_valid_waybill_pdf(filepath, invoice_number)
+                    if not validation['is_valid']:
+                        # File is invalid - DELETE the invalid file from disk
+                        try:
+                            os.remove(filepath)
+                            logger.info(f"Invalid waybill (from Playwright) deleted from disk - Invoice: {invoice_number}, File: {filepath}")
+                        except Exception as delete_error:
+                            logger.warning(f"Could not delete invalid Playwright PDF - Invoice: {invoice_number}: {str(delete_error)}")
+                        
+                        # Update database with error status BUT NOT local_file_path
+                        waybill_print.status = WaybillPrintStatuses.ERROR.value
+                        waybill_print.error_message = validation['reason']
+                        db.session.commit()
+                        
+                        logger.warning(f"[VALIDATION FAILED] Playwright PDF invalid - Invoice: {invoice_number}: {validation['reason']}")
+                        
+                        return {
+                            "status": "error",
+                            "message": validation['reason'],
+                            "data": {
+                                "waybill_id": waybill_print.id,
+                                "invoice_number": invoice_number,
+                                "details": validation['details']
+                            }
+                        }
+                    
+                    # ✅ Only save to database if validation passed
                     # Update database record
                     waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
                     waybill_print.local_file_path = filepath
@@ -624,10 +831,19 @@ class WaybillDownloadService:
             
             file_size = os.path.getsize(filepath)
             
-            # Validate waybill content - check if file is not a placeholder/generating message
-            validation = self._validate_waybill_content(filepath, invoice_number)
+            # Validate waybill content BEFORE saving to database
+            # Check if file is not a placeholder/generating message
+            validation = self._is_valid_waybill_pdf(filepath, invoice_number)
             if not validation['is_valid']:
                 # File is invalid (still generating or blank)
+                # DELETE the invalid file from disk (do NOT save filepath to DB)
+                try:
+                    os.remove(filepath)
+                    logger.info(f"Invalid waybill deleted from disk - Invoice: {invoice_number}, File: {filepath}")
+                except Exception as delete_error:
+                    logger.warning(f"Could not delete invalid PDF - Invoice: {invoice_number}: {str(delete_error)}")
+                
+                # Update database with error status BUT NOT local_file_path
                 waybill_print.status = WaybillPrintStatuses.ERROR.value
                 waybill_print.error_message = validation['reason']
                 db.session.commit()
@@ -639,10 +855,12 @@ class WaybillDownloadService:
                     "message": validation['reason'],
                     "data": {
                         "waybill_id": waybill_print.id,
-                        "invoice_number": invoice_number
+                        "invoice_number": invoice_number,
+                        "details": validation['details']
                     }
                 }
             
+            # ✅ Only save to database if validation passed
             # Update database record with download status
             waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
             waybill_print.local_file_path = filepath
