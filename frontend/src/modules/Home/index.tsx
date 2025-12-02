@@ -12,7 +12,7 @@ import {
 	usePrintWaybill,
 	useWaybillStream,
 	useDeleteWaybill,
-	useCancelPrintByInvoice,
+	useCancelPrintWaybill,
 	useClearTableSelection,
 } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
@@ -59,7 +59,7 @@ const Home = () => {
 		searchQuery
 	);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
-	const { mutateAsync: cancelPrintAsync, isPending: isCancelling } = useCancelPrintByInvoice();
+	const { mutateAsync: cancelPrintAsync, isPending: isCancelling } = useCancelPrintWaybill();
 	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting, reset: resetDeleteMutation } =
 		useDeleteWaybill();
 
@@ -114,11 +114,7 @@ const Home = () => {
 
 	const handleCancelConfirm = async (waybill: WaybillPrint) => {
 		try {
-			if (!waybill.invoice_number) return;
-			await cancelPrintAsync({
-				invoiceNumber: waybill.invoice_number,
-				tenantId: String(waybill.tenant_id),
-			});
+			await cancelPrintAsync(waybill.id);
 			setCancelDialogOpen(false);
 			setSelectedWaybill(null);
 			toast.success('Print job cancelled successfully');

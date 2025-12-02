@@ -32,29 +32,23 @@ class CancelPrintWaybillAction:
             cups_job_id = waybill_print.cups_job_id
             printer_name = waybill_print.printer_name
             
-            # Check if there's a print job to cancel
-            if not cups_job_id or waybill_print.print_status == PrintStatuses.IDLE.value:
-                logger.warning(f"No active print job to cancel - Invoice: {invoice_number} (ID: {waybill_print.id})")
+            # Check if there's a CUPS job to cancel
+            # Allow canceling if cups_job_id exists, regardless of print_status
+            # (job might be marked as error but still stuck in CUPS queue)
+            if not cups_job_id:
+                logger.warning(f"No CUPS job to cancel - Invoice: {invoice_number} (ID: {waybill_print.id}), print_status: {waybill_print.print_status}")
                 return {
                     "status": "error",
-                    "message": "No active print job to cancel",
+                    "message": "No CUPS job to cancel (job was never sent to printer)",
                     "data": {
                         "waybill_id": waybill_print.id,
                         "invoice_number": invoice_number
                     }
                 }
             
-            # Only allow canceling if job is pending or printing
-            if waybill_print.print_status not in [PrintStatuses.PENDING.value, PrintStatuses.PRINTING.value]:
-                logger.warning(f"Cannot cancel - print job is already {waybill_print.print_status} - Invoice: {invoice_number}")
-                return {
-                    "status": "error",
-                    "message": f"Cannot cancel - print job is already {waybill_print.print_status}",
-                    "data": {
-                        "waybill_id": waybill_print.id,
-                        "invoice_number": invoice_number
-                    }
-                }
+            # Allow canceling jobs in any state if they have a CUPS job ID
+            # This handles cases where job is marked as error/idle but still queued in CUPS
+            logger.info(f"Canceling CUPS job - Invoice: {invoice_number}, WaybillID: {waybill_print.id}, CUPS JobID: {cups_job_id}, Current status: {waybill_print.print_status}")
             
             # Cancel the CUPS job
             result = self.print_service.cancel_cups_job(printer_name, cups_job_id)
