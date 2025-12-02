@@ -263,7 +263,7 @@ def stream_waybills():
 
 @waybills_bp.route('/prints/by-invoice/print', methods=['POST'])
 def print_by_invoice_number():
-    """Print the latest waybill by invoice number (tenant-specific). Returns full status after printing."""
+    """Print the latest waybill by invoice number (tenant-specific). Cancels previous print jobs before initiating new print."""
     try:
         data = request.get_json()
         invoice_number = data.get('invoice_number')
@@ -289,7 +289,16 @@ def print_by_invoice_number():
                 'message': f'No waybill found with invoice number: {invoice_number} for tenant: {tenant_id}'
             }), 404
         
-        # Trigger print action
+        # Cancel any previous print job if it exists
+        if waybill_print.cups_job_id:
+            try:
+                cancel_action = CancelPrintWaybillAction()
+                cancel_action(waybill_print)
+                logger.info(f"Cancelled previous print job {waybill_print.cups_job_id} for invoice {invoice_number}")
+            except Exception as e:
+                logger.warning(f"Could not cancel previous job {waybill_print.cups_job_id}: {str(e)}")
+        
+        # Trigger new print action
         print_action = PrintWaybillAction()
         print_result = print_action(waybill_print)
         
@@ -306,7 +315,7 @@ def print_by_invoice_number():
             status_code = 200
             return jsonify({
                 'status': 'success',
-                'message': 'Print job initiated',
+                'message': 'Print job initiated (previous jobs cancelled)',
                 'data': status_result.get('data', {})
             }), status_code
         else:
