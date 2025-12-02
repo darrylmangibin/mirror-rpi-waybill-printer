@@ -291,22 +291,7 @@ class WaybillDownloadService:
             
             logger.info(f"Shipping keywords found - Invoice: {invoice_number}, Keywords: {found_shipping}")
             
-            # Step 5: Check minimum content
-            if content_length < 100:
-                logger.warning(f"PDF content too short - Invoice: {invoice_number}, Length: {content_length} chars")
-                return {
-                    'is_valid': False,
-                    'reason': f'PDF content too short ({content_length} chars) - appears blank or incomplete',
-                    'details': {
-                        'file_size': file_size,
-                        'content_length': content_length,
-                        'has_forbidden_keywords': False,
-                        'has_shipping_keywords': has_shipping_keywords,
-                        'confidence': 'high'
-                    }
-                }
-            
-            # Step 6: Confidence check
+            # Step 5: Confidence check
             if has_shipping_keywords:
                 confidence = 'high'
                 is_valid = True
