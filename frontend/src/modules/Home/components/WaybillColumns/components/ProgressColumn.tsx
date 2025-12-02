@@ -34,7 +34,6 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 		downloaded_at: downloadedAt = null,
 		error_message: errorMessage = null,
 		print_status: printStatus = null,
-		cups_job_id: cupsJobId = null,
 		print_error: printError = null,
 		print_completed_at: printCompletedAt = null,
 		waybill_url: waybillUrl = null,
@@ -46,8 +45,6 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 		const ext = filePath.split('.').pop()?.toUpperCase() || '';
 		return ext || 'PDF'; // Default to PDF if no extension
 	};
-
-	const fileFormat = getFileFormat(localFilePath);
 	const previewUrl = waybillId ? WAYBILL_ENDPOINTS.PREVIEW_FILE(waybillId) : null;
 
 	// Copy URL to clipboard

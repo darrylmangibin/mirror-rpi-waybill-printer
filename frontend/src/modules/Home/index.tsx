@@ -176,7 +176,7 @@ const Home = () => {
 		}
 	}, [deleteWaybillAsync, actions, clearSelection, resetDeleteMutation]);
 
-	const handleBulkDeleteClick = (rows: WaybillPrint[]) => {
+	const handleBulkDeleteClick = (_rows: WaybillPrint[]) => {
 		setBulkDeleteDialogOpen(true);
 	};
 

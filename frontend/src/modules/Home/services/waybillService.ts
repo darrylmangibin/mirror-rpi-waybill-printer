@@ -245,6 +245,35 @@ const waybillService = {
   },
 
   /**
+   * Cancel a print job by invoice number (tenant-specific)
+   * @param invoiceNumber - Invoice number for the waybill
+   * @param tenantId - Tenant ID for the waybill (as string)
+   * @returns Promise with cancel result
+   */
+  async cancelPrintByInvoice(
+    invoiceNumber: string,
+    tenantId: string
+  ): Promise<WaybillsResponse> {
+    try {
+      const payload = {
+        invoice_number: invoiceNumber,
+        tenant_id: tenantId,
+      };
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.CANCEL_BY_INVOICE(),
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to cancel print: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Fetch network information for print job QR endpoint
    * @returns Promise with network info containing local IP and API URL
    */
