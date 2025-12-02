@@ -180,6 +180,112 @@ class WaybillDownloadService:
             logger.warning(f"Error checking if content is HTML: {str(e)}")
             return False
     
+    def _validate_waybill_content(self, filepath: str, invoice_number: str) -> dict:
+        """
+        Validate that the downloaded waybill file contains actual waybill content,
+        not placeholder text like "Generating waybill please wait".
+        
+        Checks:
+        - PDF: Extract text and check for "Generating" keywords
+        - Image (PNG/JPG): Check file size (too small = probably placeholder)
+        
+        Returns:
+            dict: {
+                'is_valid': bool,
+                'reason': str,
+                'keywords_found': list
+            }
+        """
+        try:
+            forbidden_keywords = [
+                'generating',
+                'please wait',
+                'processing',
+                'loading',
+                'preparing'
+            ]
+            
+            # Handle PDF files
+            if filepath.lower().endswith('.pdf'):
+                try:
+                    reader = PdfReader(filepath)
+                    
+                    # Extract text from all pages
+                    full_text = ""
+                    for page in reader.pages:
+                        full_text += page.extract_text().lower()
+                    
+                    # Check for forbidden keywords
+                    found_keywords = [kw for kw in forbidden_keywords if kw in full_text]
+                    
+                    if found_keywords:
+                        logger.warning(f"Waybill still generating - Invoice: {invoice_number}, Found: {found_keywords}")
+                        return {
+                            'is_valid': False,
+                            'reason': f"Waybill still generating. Found: {', '.join(found_keywords)}",
+                            'keywords_found': found_keywords
+                        }
+                    
+                    # Check if PDF has actual content (not just blank pages)
+                    if len(full_text.strip()) < 10:
+                        return {
+                            'is_valid': False,
+                            'reason': "PDF appears to be blank or empty",
+                            'keywords_found': []
+                        }
+                    
+                    logger.info(f"PDF content validated successfully - Invoice: {invoice_number}")
+                    return {
+                        'is_valid': True,
+                        'reason': 'PDF content validated successfully',
+                        'keywords_found': []
+                    }
+                
+                except Exception as e:
+                    logger.error(f"PDF validation failed - Invoice: {invoice_number}: {str(e)}")
+                    # Assume valid if can't read (might be encrypted, corrupted but valid)
+                    return {
+                        'is_valid': True,
+                        'reason': f'Could not fully validate PDF: {str(e)}',
+                        'keywords_found': []
+                    }
+            
+            # Handle image files
+            elif filepath.lower().endswith(('.png', '.jpg', '.jpeg')):
+                # For images, check file size (too small = probably placeholder)
+                file_size = os.path.getsize(filepath)
+                if file_size < 5000:  # Less than 5KB = probably placeholder
+                    logger.warning(f"Image file too small - Invoice: {invoice_number}, Size: {file_size} bytes")
+                    return {
+                        'is_valid': False,
+                        'reason': f"Image file too small ({file_size} bytes) - likely placeholder. Please wait and retry.",
+                        'keywords_found': []
+                    }
+                
+                logger.info(f"Image file size validated - Invoice: {invoice_number}, Size: {file_size} bytes")
+                return {
+                    'is_valid': True,
+                    'reason': 'Image file size validated',
+                    'keywords_found': []
+                }
+            
+            # Unknown format - assume valid
+            logger.info(f"Unknown file type, skipping validation - Invoice: {invoice_number}")
+            return {
+                'is_valid': True,
+                'reason': 'Unknown file type - skipping validation',
+                'keywords_found': []
+            }
+        
+        except Exception as e:
+            logger.error(f"Validation error - Invoice: {invoice_number}: {str(e)}")
+            # On error, assume valid to not break the download process
+            return {
+                'is_valid': True,
+                'reason': f'Validation error (assuming valid): {str(e)}',
+                'keywords_found': []
+            }
+    
     async def _convert_webpage_to_pdf(self, url: str, invoice_number: str, output_path: str) -> bool:
         """
         Convert a webpage (HTML) to PDF using headless browser (Playwright).
@@ -517,6 +623,25 @@ class WaybillDownloadService:
                 logger.info(f"PDF skipping crop (not Zalora/Shopify) - Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace}")
             
             file_size = os.path.getsize(filepath)
+            
+            # Validate waybill content - check if file is not a placeholder/generating message
+            validation = self._validate_waybill_content(filepath, invoice_number)
+            if not validation['is_valid']:
+                # File is invalid (still generating or blank)
+                waybill_print.status = WaybillPrintStatuses.ERROR.value
+                waybill_print.error_message = validation['reason']
+                db.session.commit()
+                
+                logger.warning(f"[VALIDATION FAILED] Waybill content invalid - Invoice: {invoice_number}: {validation['reason']}")
+                
+                return {
+                    "status": "error",
+                    "message": validation['reason'],
+                    "data": {
+                        "waybill_id": waybill_print.id,
+                        "invoice_number": invoice_number
+                    }
+                }
             
             # Update database record with download status
             waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
