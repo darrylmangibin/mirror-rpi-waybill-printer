@@ -59,8 +59,9 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 	// Print status
 	const getPrintStatus = () => {
 		if (printStatus === 'cancelled') return { status: 'cancelled', label: 'Cancelled', icon: AlertCircleIcon };
+		if (printStatus === 'error') return { status: 'error', label: 'Failed', icon: AlertCircleIcon };
 		if (printError) return { status: 'error', label: 'Failed', icon: AlertCircleIcon };
-		if (printCompletedAt) return { status: 'completed', label: 'Printed', icon: CheckCircle2Icon };
+		if (printStatus === 'completed') return { status: 'completed', label: 'Printed', icon: CheckCircle2Icon };
 		if (printStatus === 'printing') return { status: 'printing', label: 'Printing', icon: Loader2Icon };
 		if (printStatus === 'pending') return { status: 'pending', label: 'Queued', icon: ClockIcon };
 		return { status: 'idle', label: 'Idle', icon: PrinterIcon };

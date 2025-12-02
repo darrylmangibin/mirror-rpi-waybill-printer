@@ -55,6 +55,23 @@ def monitor_worker():
                 
                 while check_count < max_checks:
                     try:
+                        # Check if printer is online - fail immediately if offline
+                        from app.services.waybills.services.PrinterCheckService import PrinterCheckService
+                        printer_check_service = PrinterCheckService()
+                        if not printer_check_service.is_printer_online(printer_name):
+                            # Printer is offline - fail the job immediately
+                            logger.error(f"[PRINT FAILED] Printer '{printer_name}' is offline - Invoice: {invoice_number}, WaybillID: {waybill_id}")
+                            waybill.print_status = 'error'
+                            waybill.print_error = "Printer is offline"
+                            failed_time = datetime.now().replace(microsecond=0)
+                            waybill.print_completed_at = failed_time
+                            db.session.commit()
+                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: Printer offline")
+                            # Send SSE event to notify frontend
+                            from app.services.sse_service import notify_waybill_update
+                            notify_waybill_update(waybill_id)
+                            break
+                        
                         # Check job status from CUPS
                         status = monitor_service.check_job_status(printer_name, cups_job_id)
                         logger.info(f"[DEBUG MONITOR] Check #{check_count+1}/{max_checks} - State: {status['state_name']}, is_completed: {status['is_completed']}, is_failed: {status['is_failed']}, is_processing: {status['is_processing']}")
