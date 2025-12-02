@@ -327,7 +327,7 @@ def print_by_invoice_number():
         waybill_print.error_message = None
         waybill_print.print_error = None
         waybill_print.status = WaybillPrintStatuses.PRINTING.value
-        waybill_print.print_status = PrintStatuses.IDLE.value  # Using enum for consistency
+        waybill_print.print_status = PrintStatuses.PRINTING.value
         db.session.commit()
         logger.info(f"Reset error state for invoice {invoice_number} before new print attempt - status: {WaybillPrintStatuses.PRINTING.value}, print_status: {PrintStatuses.IDLE.value}")
         
