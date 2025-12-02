@@ -293,12 +293,16 @@ def print_by_invoice_number():
         print_action = PrintWaybillAction()
         print_result = print_action(waybill_print)
         
-        # Get comprehensive status after printing for visual feedback
+        # Give background worker time to process and update status
+        import time
+        time.sleep(1)
+        
+        # Get updated status after background worker processes
         get_status_action = GetStatusAction()
         status_result = get_status_action(waybill_print)
         
         if print_result.get('status') == 'success':
-            # Return status information for visual feedback
+            # Return updated status for visual feedback on mobile
             status_code = 200
             return jsonify({
                 'status': 'success',
