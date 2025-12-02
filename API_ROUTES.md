@@ -147,7 +147,7 @@ To print a waybill after creation, use **endpoint #3** (Print by invoice number)
 
 **POST** `/api/waybills/prints/by-invoice/print`
 
-Prints the latest waybill by invoice number for a specific tenant. Automatically retrieves the most recent waybill (by `created_at`) with the given invoice number and prints it.
+Prints the latest waybill by invoice number for a specific tenant. Automatically retrieves the most recent waybill (by `created_at`) with the given invoice number and prints it. Returns the full waybill status for visual feedback on the print progress.
 
 ### Request Body
 
@@ -165,15 +165,31 @@ Prints the latest waybill by invoice number for a specific tenant. Automatically
 
 ### Response (Success)
 
+Returns comprehensive status information with download and print details for real-time visual feedback:
+
 ```json
 {
   "status": "success",
-  "message": "Print job queued successfully",
+  "message": "Print job initiated",
   "data": {
     "id": 1,
     "invoice_number": "INV-12345",
+    "marketplace": "zalora",
+    "download_status": "downloaded",
+    "download_error": null,
+    "downloaded_at": "2025-11-28 14:25:30",
+    "local_file_path": "/path/to/file.pdf",
     "print_status": "pending",
-    "cups_job_id": 12345
+    "print_error": null,
+    "print_completed_at": null,
+    "cups_job_id": 12345,
+    "printer_name": "Brother_QL_810W",
+    "created_at": "2025-11-28 14:20:00",
+    "updated_at": "2025-11-28 14:25:35",
+    "is_download_stuck": false,
+    "is_print_stuck": false,
+    "download_elapsed_seconds": 330,
+    "print_elapsed_seconds": 5
   }
 }
 ```
@@ -184,24 +200,6 @@ Prints the latest waybill by invoice number for a specific tenant. Automatically
 {
   "status": "error",
   "message": "No waybill found with invoice number: INV-12345 for tenant: tenant123"
-}
-```
-
-### Response (Error - Missing Field)
-
-```json
-{
-  "status": "error",
-  "message": "invoice_number is required in request body"
-}
-```
-
-Or:
-
-```json
-{
-  "status": "error",
-  "message": "tenant_id is required in request body"
 }
 ```
 
@@ -221,8 +219,19 @@ curl -X POST http://localhost:5000/api/waybills/prints/by-invoice/print \
 1. Extract `invoice_number` and `tenant_id` from request body
 2. Query for the latest waybill matching both `invoice_number` AND `tenant_id` (ordered by `created_at DESC`)
 3. If found, trigger the print action
-4. Return the result with print job details
-5. If not found, return 404 with descriptive error message
+4. Retrieve comprehensive status information for visual feedback
+5. Return the full status data showing print_status, timestamps, and other details
+6. If not found, return 404 with descriptive error message
+
+### Visual Feedback
+
+The response includes real-time status fields for mobile app UI:
+
+- `print_status` - Current print status (`idle`, `pending`, `printing`, `completed`, `error`)
+- `print_error` - Error message if printing failed
+- `print_elapsed_seconds` - How long the print has been in progress
+- `is_print_stuck` - Flag indicating if print job is stuck
+- `cups_job_id` - CUPS job ID for tracking
 
 ---
 

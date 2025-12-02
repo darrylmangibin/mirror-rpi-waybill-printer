@@ -263,7 +263,7 @@ def stream_waybills():
 
 @waybills_bp.route('/prints/by-invoice/print', methods=['POST'])
 def print_by_invoice_number():
-    """Print the latest waybill by invoice number (tenant-specific)."""
+    """Print the latest waybill by invoice number (tenant-specific). Returns full status after printing."""
     try:
         data = request.get_json()
         invoice_number = data.get('invoice_number')
@@ -289,10 +289,25 @@ def print_by_invoice_number():
                 'message': f'No waybill found with invoice number: {invoice_number} for tenant: {tenant_id}'
             }), 404
         
+        # Trigger print action
         print_action = PrintWaybillAction()
-        result = print_action(waybill_print)
-        status_code = 200 if result.get('status') == 'success' else 400
-        return jsonify(result), status_code
+        print_result = print_action(waybill_print)
+        
+        # Get comprehensive status after printing for visual feedback
+        get_status_action = GetStatusAction()
+        status_result = get_status_action(waybill_print)
+        
+        if print_result.get('status') == 'success':
+            # Return status information for visual feedback
+            status_code = 200
+            return jsonify({
+                'status': 'success',
+                'message': 'Print job initiated',
+                'data': status_result.get('data', {})
+            }), status_code
+        else:
+            status_code = 400
+            return jsonify(print_result), status_code
         
     except Exception as e:
         logger.error(f"Error printing waybill by invoice number: {str(e)}", exc_info=True)
