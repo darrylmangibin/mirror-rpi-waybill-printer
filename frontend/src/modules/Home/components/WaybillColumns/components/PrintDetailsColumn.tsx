@@ -8,6 +8,8 @@ import {
 	TooltipContent,
 } from '@/components/ui/tooltip';
 import type { WaybillPrint } from '@/modules/Home/services';
+import { PrintStatuses, printStatusLabels, printStatusGradients, type PrintStatus } from '@/modules/Home/constants';
+import { getPrintStatusIcon } from '@/modules/Home/utils';
 
 interface PrintDetailsColumnProps {
 	waybill: Partial<WaybillPrint>;
@@ -23,27 +25,25 @@ export const PrintDetailsColumn = ({
 		print_completed_at: printCompletedAt = null 
 	} = waybill;
 
-	const statusDisplay = printStatus
-		? printStatus.charAt(0).toUpperCase() + printStatus.slice(1)
-		: 'Idle';
+	const statusDisplay = printStatus && (printStatus as PrintStatus) in printStatusLabels 
+		? printStatusLabels[printStatus as PrintStatus]
+		: printStatusLabels[PrintStatuses.IDLE];
 
-	// Map status to gradient styling
 	const getStatusGradientClass = (status: string | null) => {
-		switch (status) {
-			case 'completed':
-				return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200';
-			case 'error':
-				return 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border-red-200';
-			default:
-				return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border-gray-200';
+		if (status && (status as PrintStatus) in printStatusGradients) {
+			return printStatusGradients[status as PrintStatus];
 		}
+		return printStatusGradients[PrintStatuses.IDLE];
 	};
 
 	if (!cupsJobId && !printCompletedAt && !printError) {
 		return (
 			<div className='space-y-1'>
 				<Badge variant='outline' className={cn('rounded-full', getStatusGradientClass(printStatus))}>
-					{statusDisplay}
+					<span className='flex items-center gap-1'>
+						{getPrintStatusIcon(printStatus as PrintStatus)}
+						{statusDisplay}
+					</span>
 				</Badge>
 				<div className='text-gray-500 text-xs'>-</div>
 			</div>
@@ -52,14 +52,14 @@ export const PrintDetailsColumn = ({
 
 	return (
 		<div className='space-y-1.5'>
-			{/* Printer Icon + Status Badge - Top Line */}
+			{/* Status Badge - Top Line */}
 			<div className='flex items-center gap-1.5'>
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Badge variant='outline' className={cn('rounded-full cursor-pointer', getStatusGradientClass(printStatus))}>
 							<span className='flex items-center gap-1'>
+								{getPrintStatusIcon(printStatus as PrintStatus)}
 								{statusDisplay}
-								{printError && <AlertCircleIcon className='w-3.5 h-3.5 text-red-600' />}
 							</span>
 						</Badge>
 					</TooltipTrigger>
