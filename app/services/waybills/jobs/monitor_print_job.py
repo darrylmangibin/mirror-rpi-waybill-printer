@@ -67,6 +67,9 @@ def monitor_worker():
                             waybill.print_completed_at = completed_time
                             db.session.commit()
                             logger.info(f"[PRINT COMPLETED SAVED] Invoice: {invoice_number}, print_status: 'completed', print_completed_at: {completed_time}")
+                            # Send SSE event to notify frontend
+                            from app.services.sse_service import notify_waybill_update
+                            notify_waybill_update(waybill_id)
                             break
                         
                         elif status['is_failed']:
@@ -79,6 +82,9 @@ def monitor_worker():
                             waybill.print_completed_at = failed_time
                             db.session.commit()
                             logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: {error_msg}, print_completed_at: {failed_time}")
+                            # Send SSE event to notify frontend
+                            from app.services.sse_service import notify_waybill_update
+                            notify_waybill_update(waybill_id)
                             break
                         
                         elif status['is_processing']:
@@ -111,6 +117,9 @@ def monitor_worker():
                     waybill.print_completed_at = timeout_time
                     db.session.commit()
                     logger.warning(f"[MONITOR TIMEOUT SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: {timeout_msg}, print_completed_at: {timeout_time}")
+                    # Send SSE event to notify frontend
+                    from app.services.sse_service import notify_waybill_update
+                    notify_waybill_update(waybill_id)
                 
                 logger.info(f"[MONITOR COMPLETE] Invoice: {invoice_number}, WaybillID: {waybill_id}, Final print_status: {waybill.print_status}")
             
