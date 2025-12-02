@@ -34,20 +34,10 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 		downloaded_at: downloadedAt = null,
 		error_message: errorMessage = null,
 		print_status: printStatus = null,
-		cups_job_id: cupsJobId = null,
 		print_error: printError = null,
 		print_completed_at: printCompletedAt = null,
 		waybill_url: waybillUrl = null,
 	} = waybill;
-
-	// Get file format from path
-	const getFileFormat = (filePath: string | null): string => {
-		if (!filePath) return '';
-		const ext = filePath.split('.').pop()?.toUpperCase() || '';
-		return ext || 'PDF'; // Default to PDF if no extension
-	};
-
-	const fileFormat = getFileFormat(localFilePath);
 	const previewUrl = waybillId ? WAYBILL_ENDPOINTS.PREVIEW_FILE(waybillId) : null;
 
 	// Copy URL to clipboard
@@ -68,8 +58,10 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 
 	// Print status
 	const getPrintStatus = () => {
+		if (printStatus === 'cancelled') return { status: 'cancelled', label: 'Cancelled', icon: AlertCircleIcon };
+		if (printStatus === 'error') return { status: 'error', label: 'Failed', icon: AlertCircleIcon };
 		if (printError) return { status: 'error', label: 'Failed', icon: AlertCircleIcon };
-		if (printCompletedAt) return { status: 'completed', label: 'Printed', icon: CheckCircle2Icon };
+		if (printStatus === 'completed') return { status: 'completed', label: 'Printed', icon: CheckCircle2Icon };
 		if (printStatus === 'printing') return { status: 'printing', label: 'Printing', icon: Loader2Icon };
 		if (printStatus === 'pending') return { status: 'pending', label: 'Queued', icon: ClockIcon };
 		return { status: 'idle', label: 'Idle', icon: PrinterIcon };
@@ -84,6 +76,8 @@ export const ProgressColumn = ({ waybill }: ProgressColumnProps) => {
 				return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border-green-200';
 			case 'error':
 				return 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border-red-200';
+			case 'cancelled':
+				return 'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border-orange-200';
 			case 'downloading':
 			case 'printing':
 				return 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200';

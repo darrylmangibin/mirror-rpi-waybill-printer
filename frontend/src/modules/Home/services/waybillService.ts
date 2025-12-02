@@ -14,7 +14,7 @@ export interface WaybillPrint {
   error_message: string | null;
   downloaded_at: string | null;
   // Print-related fields
-  print_status: 'idle' | 'pending' | 'printing' | 'completed' | 'error';
+  print_status: 'idle' | 'pending' | 'printing' | 'completed' | 'error' | 'cancelled';
   cups_job_id: number | null;
   printer_name: string | null;
   print_error: string | null;
@@ -161,6 +161,26 @@ const waybillService = {
   },
 
   /**
+   * Cancel an ongoing print job
+   * @param waybillId - ID of the waybill print job to cancel
+   * @returns Promise with cancel result
+   */
+  async cancelPrintWaybill(waybillId: string | number): Promise<WaybillsResponse> {
+    try {
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.CANCEL_PRINT(Number(waybillId))
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to cancel print: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
    * Update an existing waybill print
    * @param waybillId - ID of the waybill to update
    * @param invoiceNumber - Updated invoice number
@@ -218,6 +238,35 @@ const waybillService = {
     } catch (error) {
       throw new Error(
         `Failed to delete waybill: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
+
+  /**
+   * Cancel a print job by invoice number (tenant-specific)
+   * @param invoiceNumber - Invoice number for the waybill
+   * @param tenantId - Tenant ID for the waybill (as string)
+   * @returns Promise with cancel result
+   */
+  async cancelPrintByInvoice(
+    invoiceNumber: string,
+    tenantId: string
+  ): Promise<WaybillsResponse> {
+    try {
+      const payload = {
+        invoice_number: invoiceNumber,
+        tenant_id: tenantId,
+      };
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.CANCEL_BY_INVOICE(),
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to cancel print: ${
           error instanceof Error ? error.message : 'Unknown error'
         }`
       );

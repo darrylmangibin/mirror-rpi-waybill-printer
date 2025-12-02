@@ -43,13 +43,9 @@ def worker():
                     
                     logger.info(f"[DOWNLOAD COMPLETE] Invoice: {invoice}, Status: {result.get('status')}")
                     
-                    # AUTO-QUEUE FOR PRINTING: Only if download was successful AND auto_print is enabled
-                    if result.get('status') == 'success' and waybill.auto_print:
-                        from app.services.waybills.jobs.print_waybill_job import queue_print
-                        queue_print(waybill.id)
-                        logger.info(f"[AUTO-QUEUE PRINT] Invoice: {invoice} - Queued for printing after successful download")
-                    elif result.get('status') == 'success' and not waybill.auto_print:
-                        logger.info(f"[AUTO-PRINT DISABLED] Invoice: {invoice} - Download complete but auto_print is disabled. Manual print required.")
+                    # Note: Auto-printing is disabled by default. Manual printing is required via the UI.
+                    if result.get('status') == 'success':
+                        logger.info(f"[DOWNLOAD SUCCESS] Invoice: {invoice} - Download complete. Manual print required via UI.")
                 except Exception as e:
                     logger.error(f"[DOWNLOAD ERROR] Invoice: {invoice}: {str(e)}", exc_info=True)
             

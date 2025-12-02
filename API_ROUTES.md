@@ -1,5 +1,17 @@
 # API Routes - Printing
 
+## Quick Reference
+
+| # | Endpoint | Method | Purpose |
+|---|----------|--------|---------|
+| 1 | `/api/health/check` | GET | Health check - verify server connection |
+| 2 | `/api/waybills/prints` | POST | Create & download waybill request |
+| 3 | `/api/waybills/prints/by-invoice/print` | POST | Print by invoice number (tenant-specific) |
+| 4 | `/api/waybills/prints/by-invoice/status` | GET | Get status by invoice number (tenant-specific) |
+| 5 | `/api/waybills/prints/by-invoice/cancel` | POST | Cancel print by invoice number (tenant-specific) |
+
+---
+
 ## Base URL
 
 The base URL is dynamic and depends on the device's IP address:
@@ -7,7 +19,9 @@ The base URL is dynamic and depends on the device's IP address:
 - Local: `http://localhost:5000`
 - Network: `http://192.168.1.100:5000` (replace with actual IP address)
 
-## Health Check
+---
+
+## 1. Health Check
 
 **GET** `/api/health/check`
 
@@ -28,11 +42,13 @@ Check if the server is reachable and the base URL is valid. Used by mobile devic
 curl http://localhost:5000/api/health/check
 ```
 
-## Create & Print Waybill
+---
+
+## 2. Create & Download Waybill
 
 **POST** `/api/waybills/prints`
 
-Creates a waybill print request. Automatically downloads and prints the waybill.
+Creates a waybill request and automatically downloads the waybill file. By default, printing is disabled (`auto_print: false`). To print, use the invoice number routes after creation.
 
 ### Request Body
 
@@ -41,7 +57,8 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
   "tenant_id": "1",
   "marketplace": "shopee",
   "invoice_number": "INV-12345",
-  "waybill_url": "https://example.com/waybill.pdf" // optional
+  "waybill_url": "https://example.com/waybill.pdf",
+  "auto_print": false
 }
 ```
 
@@ -54,6 +71,7 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
 
 - `waybill_url` (string)
 - `marketplace` (string)
+- `auto_print` (boolean) - Whether to automatically print after download completes (defaults to `false`)
 
 ### Examples
 
@@ -62,17 +80,17 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
 ```json
 {
   "tenant_id": "herbofilipinas",
-  "marketplace": "lazada", // tiktok, lazada, shopee, zalora
+  "marketplace": "lazada",
   "invoice_number": "1048623601548335"
 }
 ```
 
-**Example 2: Shopify (no waybill_url)**
+**Example 2: Shopify (with waybill_url)**
 
 ```json
 {
   "tenant_id": "havaianas",
-  "marketplace": "shopify", // specific case for shopify, still no waybill_url
+  "marketplace": "shopify",
   "invoice_number": "6306203598961"
 }
 ```
@@ -81,10 +99,10 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
 
 ```json
 {
-  "tenant_id": "janio", // this process is for janio only
+  "tenant_id": "janio",
   "marketplace": "no_marketplace",
   "invoice_number": "SH456789123",
-  "waybill_url": "https://example.com/waybill.pdf" // optional
+  "waybill_url": "https://example.com/waybill.pdf"
 }
 ```
 
@@ -100,6 +118,7 @@ Creates a waybill print request. Automatically downloads and prints the waybill.
     "tenant_id": 1,
     "status": "pending",
     "print_status": "idle",
+    "auto_print": false,
     "created_at": "2024-01-15 10:30:00"
   }
 }
@@ -112,26 +131,123 @@ Use Postman or similar API client to test the endpoint. Set the base URL to eith
 - `http://localhost:5000` (local)
 - `http://192.168.1.100:5000` (network - replace with actual IP)
 
-### Note
+### Automatic Workflow
 
-After creating a waybill print, the system automatically:
+After creating a waybill:
 
-1. Downloads the waybill file
-2. Prints the waybill
+1. **Immediately queues for download** - The download task is queued as soon as the request is created
+2. **Downloads the waybill file** - Background worker processes the download asynchronously
+3. **Auto-print (optional)** - If `auto_print` is `true`, printing is automatically queued after successful download
+   - If `auto_print` is `false` (default), use endpoint #3 to print by invoice number
 
-No additional API calls needed.
+To print a waybill after creation, use **endpoint #3** (Print by invoice number) with the same invoice number.
 
-## Get Waybill Status
+---
 
-**GET** `/api/waybills/prints/<id>/status`
+## 3. Print Waybill by Invoice Number
 
-Retrieves comprehensive status information for a waybill print job. Useful for mobile/remote monitoring to check download progress, print status, error messages, and detect stuck jobs.
+**POST** `/api/waybills/prints/by-invoice/print`
 
-### Path Parameters
+Prints the latest waybill by invoice number for a specific tenant. Automatically retrieves the most recent waybill (by `created_at`) with the given invoice number and prints it. Returns the full waybill status for visual feedback on the print progress.
 
-- `id` (integer) - The waybill print ID
+### Request Body
 
-### Response
+```json
+{
+  "invoice_number": "INV-12345",
+  "tenant_id": "tenant123"
+}
+```
+
+**Required:**
+
+- `invoice_number` - The invoice number to search for
+- `tenant_id` - Ensures tenant data isolation
+
+### Response (Success)
+
+Returns comprehensive status information with download and print details for real-time visual feedback:
+
+```json
+{
+  "status": "success",
+  "message": "Print job initiated",
+  "data": {
+    "id": 1,
+    "invoice_number": "INV-12345",
+    "marketplace": "zalora",
+    "download_status": "downloaded",
+    "download_error": null,
+    "downloaded_at": "2025-11-28 14:25:30",
+    "local_file_path": "/path/to/file.pdf",
+    "print_status": "pending",
+    "print_error": null,
+    "print_completed_at": null,
+    "cups_job_id": 12345,
+    "printer_name": "Brother_QL_810W",
+    "created_at": "2025-11-28 14:20:00",
+    "updated_at": "2025-11-28 14:25:35",
+    "is_download_stuck": false,
+    "is_print_stuck": false,
+    "download_elapsed_seconds": 330,
+    "print_elapsed_seconds": 5
+  }
+}
+```
+
+### Response (Error - Not Found)
+
+```json
+{
+  "status": "error",
+  "message": "No waybill found with invoice number: INV-12345 for tenant: tenant123"
+}
+```
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:5000/api/waybills/prints/by-invoice/print \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_number": "INV-12345",
+    "tenant_id": "tenant123"
+  }'
+```
+
+### How It Works
+
+1. Extract `invoice_number` and `tenant_id` from request body
+2. Query for the latest waybill matching both `invoice_number` AND `tenant_id` (ordered by `created_at DESC`)
+3. If found, trigger the print action
+4. Retrieve comprehensive status information for visual feedback
+5. Return the full status data showing print_status, timestamps, and other details
+6. If not found, return 404 with descriptive error message
+
+### Visual Feedback
+
+The response includes real-time status fields for mobile app UI:
+
+- `print_status` - Current print status (`idle`, `pending`, `printing`, `completed`, `error`)
+- `print_error` - Error message if printing failed
+- `print_elapsed_seconds` - How long the print has been in progress
+- `is_print_stuck` - Flag indicating if print job is stuck
+- `cups_job_id` - CUPS job ID for tracking
+
+---
+
+## 4. Get Waybill Status by Invoice Number
+
+**GET** `/api/waybills/prints/by-invoice/status`
+
+Retrieves comprehensive status information for the latest waybill by invoice number for a specific tenant. Automatically finds the most recent waybill (by `created_at`) matching both the invoice number and tenant ID.
+
+### Query Parameters
+
+- `invoice_number` (string, required) - The invoice number to search for
+- `tenant_id` (string, required) - Ensures tenant data isolation
+
+### Response (Success)
 
 ```json
 {
@@ -160,52 +276,301 @@ Retrieves comprehensive status information for a waybill print job. Useful for m
 }
 ```
 
-### Response Fields
-
-**Basic Info:**
-
-- `id` - WaybillPrint ID
-- `invoice_number` - Invoice identifier
-- `marketplace` - Marketplace name
-
-**Download Status:**
-
-- `download_status` - Current download status (`pending`, `downloading`, `downloaded`, `error`)
-- `download_error` - Error message if download failed (null if successful)
-- `downloaded_at` - Timestamp when download completed (null if not completed)
-- `local_file_path` - Path to downloaded file (null if not downloaded)
-
-**Print Status:**
-
-- `print_status` - Current print status (`idle`, `pending`, `printing`, `completed`, `error`)
-- `print_error` - Error message if print failed (null if successful)
-- `print_completed_at` - Timestamp when print completed (null if not completed)
-- `cups_job_id` - CUPS job ID for tracking (null if not printing)
-- `printer_name` - Printer used for this job (null if not printing)
-
-**Timestamps:**
-
-- `created_at` - When job was created
-- `updated_at` - Last update time
-
-**Stuck Detection:**
-
-- `is_download_stuck` - Boolean flag if download is stuck (> 60 seconds in "downloading" state)
-- `is_print_stuck` - Boolean flag if print is stuck (> 10 minutes in "printing" state)
-- `download_elapsed_seconds` - Seconds elapsed since download started (null if not started)
-- `print_elapsed_seconds` - Seconds elapsed since print started (null if not started)
-
-### Example Usage
-
-```bash
-curl http://localhost:5000/api/waybills/prints/1/status
-```
-
-### Error Response
+### Response (Error - Not Found)
 
 ```json
 {
   "status": "error",
-  "message": "Waybill not found"
+  "message": "No waybill found with invoice number: INV-12345 for tenant: tenant123"
 }
 ```
+
+### Response (Error - Missing Parameter)
+
+```json
+{
+  "status": "error",
+  "message": "invoice_number is required as query parameter"
+}
+```
+
+Or:
+
+```json
+{
+  "status": "error",
+  "message": "tenant_id is required as query parameter"
+}
+```
+
+### Example Usage
+
+```bash
+curl "http://localhost:5000/api/waybills/prints/by-invoice/status?invoice_number=INV-12345&tenant_id=tenant123"
+```
+
+### How It Works
+
+1. Extract `invoice_number` and `tenant_id` from query parameters
+2. Query for the latest waybill matching both `invoice_number` AND `tenant_id` (ordered by `created_at DESC`)
+3. If found, retrieve comprehensive status information
+4. Return the status data with all download and print details
+5. If not found, return 404 with descriptive error message
+
+---
+
+## 5. Cancel Waybill Print by Invoice Number
+
+**POST** `/api/waybills/prints/by-invoice/cancel`
+
+Cancels an active print job by invoice number for a specific tenant. Automatically retrieves the latest waybill matching the invoice number and tenant, then cancels its CUPS print job.
+
+### Request Body
+
+```json
+{
+  "invoice_number": "INV-12345",
+  "tenant_id": "tenant123"
+}
+```
+
+**Required:**
+
+- `invoice_number` - The invoice number to search for
+- `tenant_id` - Ensures tenant data isolation
+
+### Response (Success)
+
+```json
+{
+  "status": "success",
+  "message": "Print job cancelled successfully",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345",
+    "cups_job_id": 12345
+  }
+}
+```
+
+### Response (Error - No Active Job)
+
+```json
+{
+  "status": "error",
+  "message": "No active print job to cancel",
+  "data": {
+    "waybill_id": 1,
+    "invoice_number": "INV-12345"
+  }
+}
+```
+
+### Response (Error - Not Found)
+
+```json
+{
+  "status": "error",
+  "message": "No waybill found with invoice number: INV-12345 for tenant: tenant123"
+}
+```
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:5000/api/waybills/prints/by-invoice/cancel \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_number": "INV-12345",
+    "tenant_id": "tenant123"
+  }'
+```
+
+### How It Works
+
+1. Extract `invoice_number` and `tenant_id` from request body
+2. Query for the latest waybill matching both `invoice_number` AND `tenant_id` (ordered by `created_at DESC`)
+3. If found and has an active print job, cancel the CUPS job
+4. Update waybill status to "error" with cancellation message
+5. Return the cancellation details
+6. If not found or no active job, return appropriate error message
+
+### Notes
+
+- Only cancels jobs with status `pending` or `printing`
+- Jobs already completed or errored cannot be cancelled
+- Automatically called when creating a new waybill with the same invoice number
+- Also called before printing a new job to prevent duplicate prints
+
+---
+
+## HTTP Status Codes Reference
+
+|| Code | Meaning | Used In |
+||------|---------|---------|
+|| 200 | OK - Request succeeded | All successful operations |
+|| 400 | Bad Request - Invalid/missing parameters | Missing required fields |
+|| 404 | Not Found - Resource doesn't exist | Waybill not found |
+|| 500 | Server Error - Internal server error | Unexpected exceptions |
+
+---
+
+## Error Response Format
+
+All error responses follow this format:
+
+```json
+{
+  "status": "error",
+  "message": "Description of what went wrong"
+}
+```
+
+---
+
+## Success Response Format
+
+All success responses follow this format:
+
+```json
+{
+  "status": "success",
+  "message": "Description of what was done",
+  "data": {}
+}
+```
+
+---
+
+## 6. Check Printer Status
+
+**GET** `/api/health/printer-status`
+
+Check if the printer is online and detect any stuck print jobs waiting on an offline printer.
+
+### Response (Success - Printer Online)
+
+```json
+{
+  "status": "success",
+  "data": {
+    "printer_name": "XP410B",
+    "is_online": true,
+    "active_job_count": 2,
+    "stuck_job_count": 0,
+    "stuck_jobs": []
+  }
+}
+```
+
+### Response (Success - Printer Offline with Stuck Jobs)
+
+```json
+{
+  "status": "success",
+  "data": {
+    "printer_name": "XP410B",
+    "is_online": false,
+    "active_job_count": 3,
+    "stuck_job_count": 2,
+    "stuck_jobs": [
+      {
+        "waybill_id": 1,
+        "invoice_number": "INV-12345",
+        "print_status": "printing",
+        "elapsed_seconds": 320
+      },
+      {
+        "waybill_id": 2,
+        "invoice_number": "INV-12346",
+        "print_status": "pending",
+        "elapsed_seconds": 380
+      }
+    ]
+  }
+}
+```
+
+### Example Usage
+
+```bash
+curl http://localhost:5000/api/health/printer-status
+```
+
+---
+
+## 7. Manually Check & Handle Printer Offline
+
+**POST** `/api/health/printer-check`
+
+Manually trigger a printer check and automatically cancel jobs if printer is offline and jobs are stuck.
+The system does this automatically every 30 seconds, but you can trigger it manually.
+
+### Response (Success - Printer Online, No Action)
+
+```json
+{
+  "status": "success",
+  "message": "Printer is online",
+  "data": {
+    "printer_online": true,
+    "cancelled_count": 0,
+    "cancelled_jobs": []
+  }
+}
+```
+
+### Response (Success - Printer Offline, Jobs Cancelled)
+
+```json
+{
+  "status": "success",
+  "message": "Printer offline - cancelled 2 stuck jobs",
+  "data": {
+    "printer_online": false,
+    "cancelled_count": 2,
+    "cancelled_jobs": [
+      {
+        "waybill_id": 1,
+        "invoice_number": "INV-12345",
+        "cups_job_id": 1234,
+        "elapsed_seconds": 320
+      },
+      {
+        "waybill_id": 2,
+        "invoice_number": "INV-12346",
+        "cups_job_id": 1235,
+        "elapsed_seconds": 380
+      }
+    ]
+  }
+}
+```
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:5000/api/health/printer-check
+```
+
+### How It Works
+
+1. Checks if the configured printer is online via CUPS
+2. If printer is **offline**:
+   - Finds all print jobs stuck waiting on the printer (pending/printing status)
+   - Jobs waiting longer than 5 minutes are considered stuck
+   - Cancels stuck jobs automatically
+   - Updates waybill status to `error` with message "Printer is offline - job waiting timeout cancelled"
+3. If printer is **online**:
+   - No action taken
+   - Returns online status
+
+### Automatic Background Monitoring
+
+The system runs a background printer checker every 30 seconds that:
+- Monitors the configured printer status
+- Detects when it goes offline
+- Automatically cancels stuck jobs (>5 min waiting)
+- Logs all actions
+
+This ensures jobs don't hang indefinitely when the printer is turned off or disconnected.

@@ -24,6 +24,7 @@ export interface WaybillColumnsContext {
 	onEditClick: (waybill: WaybillPrint) => void;
 	onDownloadClick: (waybill: WaybillPrint) => void;
 	onPrintClick: (waybill: WaybillPrint) => void;
+	onCancelClick: (waybill: WaybillPrint) => void;
 	onDeleteClick: (waybill: WaybillPrint) => void;
 }
 
@@ -178,6 +179,7 @@ export const getWaybillColumns = (
 					onEditClick={context.onEditClick}
 					onDownloadClick={context.onDownloadClick}
 					onPrintClick={context.onPrintClick}
+					onCancelClick={context.onCancelClick}
 					onDeleteClick={context.onDeleteClick}
 				/>
 			);
