@@ -321,6 +321,13 @@ def print_by_invoice_number():
             except Exception as e:
                 logger.warning(f"Could not cancel previous job {waybill_print.cups_job_id}: {str(e)}")
         
+        # Reset error fields for a fresh print attempt
+        waybill_print.error_message = None
+        waybill_print.print_error = None
+        waybill_print.print_status = 'idle'
+        db.session.commit()
+        logger.info(f"Reset error state for invoice {invoice_number} before new print attempt")
+        
         # Trigger new print action
         print_action = PrintWaybillAction()
         print_result = print_action(waybill_print)
