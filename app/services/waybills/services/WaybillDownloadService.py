@@ -207,6 +207,9 @@ class WaybillDownloadService:
         try:
             logger.info(f"Validating PDF content - Invoice: {invoice_number}, File: {filepath}")
             
+            # Get file size for reporting
+            file_size = os.path.getsize(filepath)
+            
             # Step 1: Extract text from PDF
             try:
                 reader = PdfReader(filepath)
