@@ -2,13 +2,13 @@
 
 ## Quick Reference
 
-|| # | Endpoint | Method | Purpose |
-||---|----------|--------|---------|
-|| 1 | `/api/health/check` | GET | Health check - verify server connection |
-|| 2 | `/api/waybills/prints` | POST | Create & download waybill request |
-|| 3 | `/api/waybills/prints/by-invoice/print` | POST | Print by invoice number (tenant-specific) |
-|| 4 | `/api/waybills/prints/by-invoice/status` | GET | Get status by invoice number (tenant-specific) |
-|| 5 | `/api/waybills/prints/by-invoice/cancel` | POST | Cancel print by invoice number (tenant-specific) |
+| # | Endpoint | Method | Purpose |
+|---|----------|--------|---------|
+| 1 | `/api/health/check` | GET | Health check - verify server connection |
+| 2 | `/api/waybills/prints` | POST | Create & download waybill request |
+| 3 | `/api/waybills/prints/by-invoice/print` | POST | Print by invoice number (tenant-specific) |
+| 4 | `/api/waybills/prints/by-invoice/status` | GET | Get status by invoice number (tenant-specific) |
+| 5 | `/api/waybills/prints/by-invoice/cancel` | POST | Cancel print by invoice number (tenant-specific) |
 
 ---
 
