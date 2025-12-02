@@ -3,12 +3,12 @@ from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sieve import Sieve
+from apscheduler.schedulers.background import BackgroundScheduler
 from app.database import db
 from app.utils.network import get_local_ip
 from app.services.waybills.jobs.download_waybill_job import start_workers
 from app.services.waybills.jobs.print_waybill_job import start_print_workers
-from app.services.waybills.jobs.monitor_print_job import start_monitor_workers
-from app.services.waybills.jobs.printer_check_job import start_printer_check_worker
+from app.services.waybills.jobs.print_job_monitor_cron import start_print_monitor_cron
 
 def create_app():
     # Set custom instance path to keep database inside app directory
@@ -20,6 +20,15 @@ def create_app():
     # Database configuration (now uses instance folder inside app/)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fusion_printer.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Connection pooling optimization for RPi
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 5,                    # RPi: smaller pool
+        'max_overflow': 10,                # Allow overflow to 15 total
+        'pool_recycle': 3600,              # Recycle connections every hour
+        'pool_pre_ping': True,             # Test connection before use
+        'echo': False,                     # No SQL logging (saves RPi CPU)
+    }
     
     # Initialize extensions
     db.init_app(app)
@@ -46,7 +55,7 @@ def create_app():
     app.cli.add_command(routes)
     app.cli.add_command(db_commands)
 
-    # Start background workers for waybill processing
+    # Start background workers and CRON jobs
     with app.app_context():
         from app.utils.loggers import get_logger
         logger = get_logger(__name__)
@@ -63,17 +72,14 @@ def create_app():
         except Exception as e:
             logger.error(f"Failed to start print workers: {str(e)}", exc_info=True)
         
+        # Initialize APScheduler for CRON jobs
         try:
-            start_monitor_workers(num_workers=1)   # NEW: Monitor worker thread (checks CUPS job status)
-            logger.info("✓ Monitor workers initialized successfully")
+            scheduler = BackgroundScheduler(daemon=True)
+            start_print_monitor_cron(scheduler)    # Unified CRON job (replaces monitor_print_job + printer_check_job)
+            scheduler.start()
+            logger.info("✓ APScheduler initialized with print monitor CRON job")
         except Exception as e:
-            logger.error(f"Failed to start monitor workers: {str(e)}", exc_info=True)
-        
-        try:
-            start_printer_check_worker()           # NEW: Printer status checker (detects offline printer, cancels stuck jobs)
-            logger.info("✓ Printer check worker initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to start printer check worker: {str(e)}", exc_info=True)
+            logger.error(f"Failed to start APScheduler: {str(e)}", exc_info=True)
     
     @app.route('/api/network/local-ip')
     def get_network_info():

@@ -335,11 +335,7 @@ def print_by_invoice_number():
         print_action = PrintWaybillAction()
         print_result = print_action(waybill_print)
         
-        # Give background worker time to process and update status
-        import time
-        time.sleep(1)
-        
-        # Get updated status after background worker processes
+        # Get current status (CRON job will monitor and update)
         get_status_action = GetStatusAction()
         status_result = get_status_action(waybill_print)
         
