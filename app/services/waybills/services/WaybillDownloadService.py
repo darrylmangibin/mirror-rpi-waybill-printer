@@ -92,24 +92,70 @@ class WaybillDownloadService:
         Generate fallback waybill URL from third-party API based on marketplace.
         Used when no waybill_url is provided from the initial response.
         
-        Uses FusionTech hosted URL as universal fallback for all marketplaces with Shopify crop offsets.
+        Routes to marketplace-specific URL generators:
+        - Shopify: Uses FusionTech hosted service
+        - All others (Shopee, Lazada, TikTok, Zalora): Uses leados-api
         
         Args:
             waybill_print: WaybillPrint model instance (contains tenant_id, marketplace)
             invoice_number (str): Invoice number for the waybill
         
         Returns:
-            tuple: (fallback_url, crop_marketplace) where crop_marketplace is always Shopify for consistent crop offsets
+            tuple: (fallback_url, crop_marketplace)
+        """
+        marketplace = waybill_print.marketplace
+        
+        if marketplace and marketplace.lower() == Marketplaces.SHOPIFY.value:
+            return self._get_shopify_fallback_url(waybill_print, invoice_number)
+        else:
+            return self._get_leados_api_fallback_url(waybill_print, invoice_number)
+    
+    def _get_shopify_fallback_url(self, waybill_print, invoice_number: str) -> tuple:
+        """
+        Generate Shopify fallback URL from FusionTech hosted service.
+        Only used when no waybill_url is provided for Shopify orders.
+        
+        Args:
+            waybill_print: WaybillPrint model instance
+            invoice_number (str): Invoice number
+        
+        Returns:
+            tuple: (fallback_url, crop_marketplace)
+        """
+        tenant_id = waybill_print.tenant_id
+        
+        fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
+        logger.info(f"Using Shopify FusionTech fallback URL - Invoice: {invoice_number}, Tenant: {tenant_id}, URL: {fallback_url}")
+        
+        # Shopify uses Shopify crop offsets (4x6 inches)
+        return (fallback_url, Marketplaces.SHOPIFY.value)
+    
+    def _get_leados_api_fallback_url(self, waybill_print, invoice_number: str) -> tuple:
+        """
+        Generate leados-api fallback URL for non-Shopify marketplaces.
+        Used for Shopee, Lazada, TikTok, Zalora when no waybill_url is provided.
+        
+        The leados-api handles marketplace-specific logic internally:
+        - Shopee: Calls ShopeeFulfillmentService.generateWaybill()
+        - Lazada: Calls LazadaPrintWaybillService.getUrl()
+        - TikTok: Calls TikTokFulfillmentService.getWaybill()
+        - Zalora: Calls ZaloraFulfillmentService.getWaybill()
+        
+        Args:
+            waybill_print: WaybillPrint model instance
+            invoice_number (str): Invoice number
+        
+        Returns:
+            tuple: (fallback_url, crop_marketplace)
         """
         tenant_id = waybill_print.tenant_id
         marketplace = waybill_print.marketplace
         
-        # Use FusionTech hosted pattern for all marketplaces as universal fallback
-        fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
-        logger.info(f"Using FusionTech fallback URL for invoice {invoice_number} (tenant: {tenant_id}, marketplace: {marketplace}), applying Shopify crop offsets")
+        fallback_url = f"https://fusion-production-api-{tenant_id}.up.railway.app/api/waybills/{invoice_number}/print-waybill"
+        logger.info(f"Using leados-api fallback URL - Invoice: {invoice_number}, Tenant: {tenant_id}, Marketplace: {marketplace}, URL: {fallback_url}")
         
-        # Always use Shopify offsets for consistent PDF cropping across all marketplaces
-        return (fallback_url, Marketplaces.SHOPIFY.value)
+        # Use actual marketplace for cropping (no cropping for non-Shopify/Zalora)
+        return (fallback_url, marketplace)
     
     def _should_crop_pdf(self, marketplace: str = None) -> bool:
         """
