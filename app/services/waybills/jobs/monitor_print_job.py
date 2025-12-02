@@ -63,11 +63,10 @@ def monitor_worker():
                             # Job completed successfully ✅
                             logger.info(f"[PRINT COMPLETED] Invoice: {invoice_number}, WaybillID: {waybill_id}, CUPS JobID: {cups_job_id}")
                             waybill.print_status = 'completed'
-                            waybill.status = 'completed'  # Overall status is also completed
                             completed_time = datetime.now().replace(microsecond=0)
                             waybill.print_completed_at = completed_time
                             db.session.commit()
-                            logger.info(f"[PRINT COMPLETED SAVED] Invoice: {invoice_number}, print_status: 'completed', status: 'completed', print_completed_at: {completed_time}")
+                            logger.info(f"[PRINT COMPLETED SAVED] Invoice: {invoice_number}, print_status: 'completed', print_completed_at: {completed_time}")
                             break
                         
                         elif status['is_failed']:
@@ -75,12 +74,11 @@ def monitor_worker():
                             error_msg = f"CUPS job {status['state_name']}"
                             logger.error(f"[PRINT FAILED] Invoice: {invoice_number}, WaybillID: {waybill_id}, CUPS JobID: {cups_job_id}: {error_msg}")
                             waybill.print_status = 'error'
-                            waybill.status = 'error'  # Overall status is also error
                             waybill.print_error = error_msg
                             failed_time = datetime.now().replace(microsecond=0)
                             waybill.print_completed_at = failed_time
                             db.session.commit()
-                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, print_status: 'error', status: 'error', print_error: {error_msg}, print_completed_at: {failed_time}")
+                            logger.error(f"[PRINT FAILED SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: {error_msg}, print_completed_at: {failed_time}")
                             break
                         
                         elif status['is_processing']:
@@ -107,13 +105,12 @@ def monitor_worker():
                 if check_count >= max_checks:
                     logger.warning(f"[MONITOR TIMEOUT] Invoice: {invoice_number}, WaybillID: {waybill_id}, CUPS JobID: {cups_job_id} - Exceeded maximum monitoring time ({max_checks * 5} seconds)")
                     waybill.print_status = 'error'
-                    waybill.status = 'error'
                     timeout_msg = "Print job monitoring timeout - status unknown"
                     waybill.print_error = timeout_msg
                     timeout_time = datetime.now().replace(microsecond=0)
                     waybill.print_completed_at = timeout_time
                     db.session.commit()
-                    logger.warning(f"[MONITOR TIMEOUT SAVED] Invoice: {invoice_number}, print_status: 'error', status: 'error', print_error: {timeout_msg}, print_completed_at: {timeout_time}")
+                    logger.warning(f"[MONITOR TIMEOUT SAVED] Invoice: {invoice_number}, print_status: 'error', print_error: {timeout_msg}, print_completed_at: {timeout_time}")
                 
                 logger.info(f"[MONITOR COMPLETE] Invoice: {invoice_number}, WaybillID: {waybill_id}, Final print_status: {waybill.print_status}")
             
