@@ -4,6 +4,8 @@ from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequ
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction, GetStatusAction, CancelPrintWaybillAction
+from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
+from app.services.waybills.enums.PrintStatuses import PrintStatuses
 from app.utils.decorators import get_model
 from app.utils.loggers import get_logger
 from app.database import db
@@ -324,9 +326,10 @@ def print_by_invoice_number():
         # Reset error fields for a fresh print attempt
         waybill_print.error_message = None
         waybill_print.print_error = None
-        waybill_print.print_status = 'idle'
+        waybill_print.status = WaybillPrintStatuses.PRINTING.value
+        waybill_print.print_status = PrintStatuses.IDLE.value
         db.session.commit()
-        logger.info(f"Reset error state for invoice {invoice_number} before new print attempt")
+        logger.info(f"Reset error state for invoice {invoice_number} before new print attempt - status: {WaybillPrintStatuses.PRINTING.value}, print_status: {PrintStatuses.IDLE.value}")
         
         # Trigger new print action
         print_action = PrintWaybillAction()
