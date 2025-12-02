@@ -34,7 +34,7 @@ class WaybillPrint(db.Model):
     downloaded_at = db.Column(db.DateTime, nullable=True)  # When download completed
     
     # Print Management (NEW)
-    print_status = db.Column(db.String, default='idle')  # 'idle', 'pending', 'printing', 'completed', 'error'
+    print_status = db.Column(db.String, default='idle')  # 'idle', 'pending', 'printing', 'completed', 'error', 'cancelled'
     cups_job_id = db.Column(db.Integer, nullable=True)  # CUPS job ID for tracking
     printer_name = db.Column(db.String, nullable=True)  # Printer used for this job
     print_error = db.Column(db.Text, nullable=True)  # Error details if print fails

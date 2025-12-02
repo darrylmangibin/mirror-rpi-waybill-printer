@@ -192,21 +192,21 @@ class PrinterCheckService:
     
     def _cancel_stuck_job(self, waybill: WaybillPrint) -> None:
         """
-        Cancel a stuck job and update waybill status.
+        Mark a stuck job as failed and update waybill status.
         
         Args:
-            waybill (WaybillPrint): The waybill to cancel
+            waybill (WaybillPrint): The waybill to mark as failed
         """
-        error_msg = "Printer is offline - job waiting timeout cancelled"
+        error_msg = "Printer offline - job waiting timeout (5 minutes)"
         
-        waybill.print_status = WaybillPrintStatuses.ERROR.value
-        waybill.status = WaybillPrintStatuses.ERROR.value
+        waybill.print_status = 'error'  # Mark as error, not cancelled (user didn't cancel it)
+        waybill.status = 'error'
         waybill.print_error = error_msg
         waybill.print_completed_at = datetime.now().replace(microsecond=0)
         
         db.session.commit()
         
-        logger.info(f"[STUCK JOB CANCELLED] Invoice: {waybill.invoice_number}, WaybillID: {waybill.id}, Error: {error_msg}")
+        logger.info(f"[STUCK JOB FAILED] Invoice: {waybill.invoice_number}, WaybillID: {waybill.id}, Error: {error_msg}")
     
     def get_printer_status_report(self, printer_name: str) -> dict:
         """

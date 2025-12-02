@@ -14,7 +14,7 @@ export interface WaybillPrint {
   error_message: string | null;
   downloaded_at: string | null;
   // Print-related fields
-  print_status: 'idle' | 'pending' | 'printing' | 'completed' | 'error';
+  print_status: 'idle' | 'pending' | 'printing' | 'completed' | 'error' | 'cancelled';
   cups_job_id: number | null;
   printer_name: string | null;
   print_error: string | null;

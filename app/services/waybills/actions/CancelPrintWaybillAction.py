@@ -54,8 +54,8 @@ class CancelPrintWaybillAction:
             result = self.print_service.cancel_cups_job(printer_name, cups_job_id)
             
             if result.get('success'):
-                # Update waybill status to cancelled/error
-                waybill_print.print_status = PrintStatuses.ERROR.value
+                # Update waybill status to cancelled
+                waybill_print.print_status = 'cancelled'
                 waybill_print.print_error = "Print job was cancelled by user"
                 db.session.commit()
                 
