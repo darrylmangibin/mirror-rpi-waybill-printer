@@ -22,6 +22,7 @@ from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
+from app.services.waybills.enums.PrintStatuses import PrintStatuses
 from app.services.waybills.services.CupsJobMonitorService import CupsJobMonitorService
 from app.services.waybills.services.PrinterCheckService import PrinterCheckService
 
@@ -80,7 +81,7 @@ def monitor_all_printing_jobs():
                         # Mark as error - stuck waiting for offline printer
                         logger.error(f"[MONITOR CRON] Printer offline for {elapsed}s - Marking as error: Invoice {invoice}")
                         waybill.status = WaybillPrintStatuses.ERROR.value
-                        waybill.print_status = 'error'
+                        waybill.print_status = PrintStatuses.ERROR.value
                         waybill.error_message = "Printer is offline - timeout waiting for printer"
                         waybill.print_error = "Printer is offline - timeout waiting for printer"
                         waybill.print_completed_at = now.replace(microsecond=0)
@@ -102,7 +103,7 @@ def monitor_all_printing_jobs():
                 if cups_status['is_completed']:
                     logger.info(f"[MONITOR CRON] ✅ COMPLETED - Invoice: {invoice}, WaybillID: {waybill.id}")
                     waybill.status = WaybillPrintStatuses.COMPLETED.value
-                    waybill.print_status = 'completed'
+                    waybill.print_status = PrintStatuses.COMPLETED.value
                     waybill.error_message = None
                     waybill.print_error = None
                     waybill.print_completed_at = now.replace(microsecond=0)
@@ -114,7 +115,7 @@ def monitor_all_printing_jobs():
                     error_msg = f"CUPS job {cups_status['state_name']}"
                     logger.error(f"[MONITOR CRON] ❌ FAILED - Invoice: {invoice}, Error: {error_msg}")
                     waybill.status = WaybillPrintStatuses.ERROR.value
-                    waybill.print_status = 'error'
+                    waybill.print_status = PrintStatuses.ERROR.value
                     waybill.error_message = error_msg
                     waybill.print_error = error_msg
                     waybill.print_completed_at = now.replace(microsecond=0)
@@ -123,9 +124,9 @@ def monitor_all_printing_jobs():
                 
                 # Handle processing jobs (update print_status to 'printing')
                 elif cups_status['is_processing']:
-                    if waybill.print_status != 'printing':
+                    if waybill.print_status != PrintStatuses.PRINTING.value:
                         logger.info(f"[MONITOR CRON] 🖨️  IN PROGRESS - Invoice: {invoice}")
-                        waybill.print_status = 'printing'
+                        waybill.print_status = PrintStatuses.PRINTING.value
                         jobs_updated += 1
                 
             except Exception as e:

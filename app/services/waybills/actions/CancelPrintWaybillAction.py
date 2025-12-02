@@ -55,7 +55,7 @@ class CancelPrintWaybillAction:
             
             if result.get('success'):
                 # Update waybill status to cancelled
-                waybill_print.print_status = 'cancelled'
+                waybill_print.print_status = PrintStatuses.CANCELLED.value
                 waybill_print.print_error = None  # Clear error message - cancelled is intentional, not an error
                 waybill_print.print_completed_at = None  # Clear completed timestamp when cancelled
                 db.session.commit()

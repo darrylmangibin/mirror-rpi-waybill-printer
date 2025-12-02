@@ -4,6 +4,7 @@ from PIL import Image
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
+from app.services.waybills.enums.PrintStatuses import PrintStatuses
 
 # Optional CUPS import - for development environments where CUPS isn't available
 try:
@@ -199,7 +200,7 @@ class PrintWaybillService:
             
             # Update status to "printing" after successful submission to CUPS
             waybill_print.status = WaybillPrintStatuses.PRINTING.value
-            waybill_print.print_status = 'pending'      # NEW: Initial print status (pending submission to CUPS)
+            waybill_print.print_status = PrintStatuses.PENDING.value
             waybill_print.cups_job_id = job_id          # NEW: Store CUPS job ID for tracking
             waybill_print.printer_name = printer_name   # NEW: Store which printer was used
             db.session.commit()
