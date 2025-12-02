@@ -21,6 +21,36 @@ waybills_bp = Blueprint('waybills', __name__, url_prefix='/api/waybills')
 controller = WaybillPrintController()
 
 
+# ============================================================================
+# Helper Functions for Invoice Number Routes
+# ============================================================================
+
+def get_waybill_by_invoice_number(invoice_number: str, tenant_id):
+    """
+    Retrieve the latest WaybillPrint record by invoice_number and tenant_id, ordered by created_at DESC.
+    
+    Ensures tenant data isolation - each tenant can only access their own waybills.
+    
+    Args:
+        invoice_number: The invoice number to search for
+        tenant_id: The tenant ID for data isolation
+        
+    Returns:
+        WaybillPrint: The latest matching record, or None if not found
+    """
+    waybill = WaybillPrint.query.filter_by(
+        invoice_number=invoice_number,
+        tenant_id=tenant_id
+    ).order_by(
+        WaybillPrint.created_at.desc()
+    ).first()
+    return waybill
+
+
+# ============================================================================
+# Standard Routes (by WaybillPrintID)
+# ============================================================================
+
 @waybills_bp.route('/prints', methods=['GET'])
 def index():
     """Retrieve all waybill prints."""
@@ -225,3 +255,88 @@ def stream_waybills():
             'Content-Type': 'text/event-stream; charset=utf-8'
         }
     )
+
+
+# ============================================================================
+# Routes by Invoice Number - Print Only
+# ============================================================================
+
+@waybills_bp.route('/prints/by-invoice/print', methods=['POST'])
+def print_by_invoice_number():
+    """Print the latest waybill by invoice number (tenant-specific)."""
+    try:
+        data = request.get_json()
+        invoice_number = data.get('invoice_number')
+        tenant_id = data.get('tenant_id')
+        
+        if not invoice_number:
+            return jsonify({
+                'status': 'error',
+                'message': 'invoice_number is required in request body'
+            }), 400
+        
+        if not tenant_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'tenant_id is required in request body'
+            }), 400
+        
+        waybill_print = get_waybill_by_invoice_number(invoice_number, tenant_id)
+        
+        if not waybill_print:
+            return jsonify({
+                'status': 'error',
+                'message': f'No waybill found with invoice number: {invoice_number} for tenant: {tenant_id}'
+            }), 404
+        
+        print_action = PrintWaybillAction()
+        result = print_action(waybill_print)
+        status_code = 200 if result.get('status') == 'success' else 400
+        return jsonify(result), status_code
+        
+    except Exception as e:
+        logger.error(f"Error printing waybill by invoice number: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+
+@waybills_bp.route('/prints/by-invoice/status', methods=['GET'])
+def get_status_by_invoice_number():
+    """Get the status of the latest waybill by invoice number (tenant-specific)."""
+    try:
+        invoice_number = request.args.get('invoice_number')
+        tenant_id = request.args.get('tenant_id')
+        
+        if not invoice_number:
+            return jsonify({
+                'status': 'error',
+                'message': 'invoice_number is required as query parameter'
+            }), 400
+        
+        if not tenant_id:
+            return jsonify({
+                'status': 'error',
+                'message': 'tenant_id is required as query parameter'
+            }), 400
+        
+        waybill_print = get_waybill_by_invoice_number(invoice_number, tenant_id)
+        
+        if not waybill_print:
+            return jsonify({
+                'status': 'error',
+                'message': f'No waybill found with invoice number: {invoice_number} for tenant: {tenant_id}'
+            }), 404
+        
+        get_status_action = GetStatusAction()
+        result = get_status_action(waybill_print)
+        status_code = 200 if result.get('status') == 'success' else 500
+        return jsonify(result), status_code
+        
+    except Exception as e:
+        logger.error(f"Error getting status for waybill by invoice number: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500

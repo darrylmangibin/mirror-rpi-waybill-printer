@@ -19,6 +19,10 @@ export const WAYBILL_ENDPOINTS = {
     const url = buildApiUrl(`/api/waybills/prints/${id}/preview`);
     return download ? `${url}?download=true` : url;
   },
+  
+  // Routes by Invoice Number - Print Only
+  PRINT_BY_INVOICE: () => buildApiUrl(`/api/waybills/prints/by-invoice/print`),
+  GET_STATUS_BY_INVOICE: (invoiceNumber: string, tenantId: string) => buildApiUrl(`/api/waybills/prints/by-invoice/status?invoice_number=${invoiceNumber}&tenant_id=${tenantId}`),
 } as const;
 
 export const NETWORK_ENDPOINTS = {
