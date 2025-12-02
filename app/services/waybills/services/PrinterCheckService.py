@@ -200,7 +200,6 @@ class PrinterCheckService:
         error_msg = "Printer offline - job waiting timeout (5 minutes)"
         
         waybill.print_status = 'error'  # Mark as error, not cancelled (user didn't cancel it)
-        waybill.status = 'error'
         waybill.print_error = error_msg
         waybill.print_completed_at = datetime.now().replace(microsecond=0)
         

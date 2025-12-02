@@ -57,6 +57,7 @@ class CancelPrintWaybillAction:
                 # Update waybill status to cancelled
                 waybill_print.print_status = 'cancelled'
                 waybill_print.print_error = "Print job was cancelled by user"
+                waybill_print.print_completed_at = None  # Clear completed timestamp when cancelled
                 db.session.commit()
                 
                 logger.info(f"[CANCEL SUCCESS] Invoice: {invoice_number}, JobID: {cups_job_id}, Printer: {printer_name}")
