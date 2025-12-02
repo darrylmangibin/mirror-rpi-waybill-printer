@@ -33,8 +33,11 @@ export const WaybillPrintActions = ({
 	onCancelClick,
 	onDeleteClick,
 }: WaybillPrintActionsProps) => {
-	// Check if print job is active
-	const hasActivePrintJob = waybill.print_status === 'pending' || waybill.print_status === 'printing';
+	// Check if there's a CUPS job that can be cancelled
+	// Show cancel button if cups_job_id exists and job isn't already completed
+	const hasCupsJob = waybill.cups_job_id !== null && waybill.cups_job_id !== undefined;
+	const isCompleted = waybill.print_status === 'completed';
+	const canCancel = hasCupsJob && !isCompleted;
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -94,7 +97,7 @@ export const WaybillPrintActions = ({
 					</div>
 				</Button>
 			</DropdownMenuItem>
-			{hasActivePrintJob && (
+			{canCancel && (
 				<DropdownMenuItem
 					onClick={() => onCancelClick(waybill)}
 					className='p-0! transition-colors'>
