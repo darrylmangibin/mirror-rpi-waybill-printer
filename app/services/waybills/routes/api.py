@@ -62,12 +62,35 @@ def index():
 @waybills_bp.route('/prints', methods=['POST'])
 @validate(StoreWaybillRequest)
 def store():
-    """Store a waybill print request."""
-    # Get validated data from the request
-    data = request.get_json()
-    result = controller.store(data)
-    status_code = 200 if result.get('status') == 'success' else 500
-    return jsonify(result), status_code
+    """Store a waybill print request. Cancels any previous print jobs for the same invoice."""
+    try:
+        # Get validated data from the request
+        data = request.get_json()
+        invoice_number = data.get('invoice_number')
+        tenant_id = data.get('tenant_id')
+        
+        # Check if a waybill with the same invoice already exists and cancel it
+        if invoice_number and tenant_id:
+            existing_waybill = get_waybill_by_invoice_number(invoice_number, tenant_id)
+            if existing_waybill and existing_waybill.cups_job_id:
+                try:
+                    cancel_action = CancelPrintWaybillAction()
+                    cancel_action(existing_waybill)
+                    logger.info(f"Cancelled previous print job {existing_waybill.cups_job_id} for invoice {invoice_number}")
+                except Exception as e:
+                    logger.warning(f"Could not cancel previous job for invoice {invoice_number}: {str(e)}")
+        
+        # Create new waybill
+        result = controller.store(data)
+        status_code = 200 if result.get('status') == 'success' else 500
+        return jsonify(result), status_code
+        
+    except Exception as e:
+        logger.error(f"Error storing waybill: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 
 @waybills_bp.route('/prints/<int:waybill_print>', methods=['PUT'])
