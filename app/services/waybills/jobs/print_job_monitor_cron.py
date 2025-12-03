@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 
 # Configuration
 STUCK_JOB_TIMEOUT = 300  # 5 minutes in seconds
-CHECK_INTERVAL = 5  # 5 seconds between checks (via APScheduler)
+CHECK_INTERVAL = 2  # 2 seconds between checks (via APScheduler)
 
 
 def monitor_all_printing_jobs():

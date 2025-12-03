@@ -56,7 +56,9 @@ sudo apt install python3-venv
 
 ### Running the Application
 
-After installation, you can start the services:
+You have two options for running the application:
+
+#### Option 1: Manual Start (Development Mode)
 
 ```bash
 # Start backend only (Flask API on port 5000)
@@ -70,6 +72,24 @@ The `dev.sh` script runs:
 
 - Backend: [http://localhost:5000](http://localhost:5000)
 - Frontend: [http://localhost:5173](http://localhost:5173)
+
+#### Option 2: Auto-Start with Systemd (Production)
+
+To run the services automatically on system boot:
+
+```bash
+# First-time setup: Install and enable systemd services
+sudo ./setup-systemd.sh
+
+# Then you can use systemctl to manage services
+systemctl status rpi-waybill-printer-backend.service
+systemctl status rpi-waybill-printer-frontend.service
+```
+
+**Note:** After running `setup-systemd.sh`, the services will auto-start on boot and you can access them at:
+
+- Backend: http://[pi-ip]:5000
+- Frontend: http://[pi-ip]:5173
 
 ## Database Migrations
 
@@ -119,4 +139,71 @@ flask db status
 ```bash
 source venv/bin/activate
 export FLASK_APP=run:app
+```
+
+## Checking Service Logs
+
+When running as systemd services, both backend and frontend log to systemd journal. Use `journalctl` to view logs:
+
+### View Backend Service Logs
+
+```bash
+# View last 50 lines of backend logs
+journalctl -u rpi-waybill-printer-backend.service -n 50
+
+# Follow backend logs in real-time
+journalctl -u rpi-waybill-printer-backend.service -f
+
+# View logs from the last hour
+journalctl -u rpi-waybill-printer-backend.service --since "1 hour ago"
+
+# View logs with timestamps and priority levels
+journalctl -u rpi-waybill-printer-backend.service -o short-precise
+```
+
+### View Frontend Service Logs
+
+```bash
+# View last 50 lines of frontend logs
+journalctl -u rpi-waybill-printer-frontend.service -n 50
+
+# Follow frontend logs in real-time
+journalctl -u rpi-waybill-printer-frontend.service -f
+
+# View logs from the last hour
+journalctl -u rpi-waybill-printer-frontend.service --since "1 hour ago"
+```
+
+### View Both Services Together
+
+```bash
+# View all application logs (both services) in real-time
+journalctl -u rpi-waybill-printer-backend.service -u rpi-waybill-printer-frontend.service -f
+
+# View all logs from the last 30 minutes
+journalctl -u rpi-waybill-printer-backend.service -u rpi-waybill-printer-frontend.service --since "30 minutes ago"
+```
+
+### Service Status and Control
+
+```bash
+# Check service status
+systemctl status rpi-waybill-printer-backend.service
+systemctl status rpi-waybill-printer-frontend.service
+
+# Restart a service
+systemctl restart rpi-waybill-printer-backend.service
+systemctl restart rpi-waybill-printer-frontend.service
+
+# Stop a service
+systemctl stop rpi-waybill-printer-backend.service
+systemctl stop rpi-waybill-printer-frontend.service
+
+# Start a service
+systemctl start rpi-waybill-printer-backend.service
+systemctl start rpi-waybill-printer-frontend.service
+
+# View service is enabled
+systemctl is-enabled rpi-waybill-printer-backend.service
+systemctl is-enabled rpi-waybill-printer-frontend.service
 ```
