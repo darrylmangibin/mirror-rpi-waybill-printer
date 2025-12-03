@@ -107,12 +107,26 @@ def monitor_all_printing_jobs(app=None):
                     
                     # Handle completed jobs
                     if cups_status['is_completed']:
-                        logger.info(f"[MONITOR CRON] ✅ COMPLETED - Invoice: {invoice}, WaybillID: {waybill.id}")
+                        logger.info(f"[CUPS COMPLETED] ✅ COMPLETED - Invoice: {invoice}, WaybillID: {waybill.id}")
+                        
+                        # Log detailed CUPS state info when completed
+                        logger.info(f"[CUPS COMPLETED] CUPS State Details:")
+                        logger.info(f"  - Job ID: {waybill.cups_job_id}")
+                        logger.info(f"  - Printer: {waybill.printer_name}")
+                        logger.info(f"  - CUPS State Code: {cups_status['state']}")
+                        logger.info(f"  - CUPS State Name: {cups_status['state_name']}")
+                        logger.info(f"  - Time in Queue: {(now - waybill.updated_at).total_seconds()}s")
+                        logger.info(f"  - DB Status Before: {waybill.status} / {waybill.print_status}")
+                        
                         waybill.status = WaybillPrintStatuses.COMPLETED.value
                         waybill.print_status = PrintStatuses.COMPLETED.value
                         waybill.error_message = None
                         waybill.print_error = None
                         waybill.print_completed_at = now.replace(microsecond=0)
+                        
+                        logger.info(f"[CUPS COMPLETED] DB Status After: {waybill.status} / {waybill.print_status}")
+                        logger.info(f"[CUPS COMPLETED] Print completed at: {waybill.print_completed_at}")
+                        
                         jobs_completed += 1
                         jobs_updated += 1
                     
