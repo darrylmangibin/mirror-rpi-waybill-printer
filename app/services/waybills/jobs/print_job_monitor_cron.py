@@ -116,10 +116,10 @@ def monitor_all_printing_jobs(app=None):
                     # If stuck for 5+ minutes in printing state
                     if time_in_queue > STUCK_JOB_TIMEOUT:
                         logger.warning(f"[MONITOR CRON] ⚠️  STUCK (5+ min) - Invoice: {invoice}, Time: {time_in_queue}s")
-                        logger.warning(f"  - Will mark as ERROR")
-                        waybill.status = WaybillPrintStatuses.ERROR.value
-                        waybill.print_status = PrintStatuses.ERROR.value
-                        waybill.print_error = "Print job stuck in printing state for > 5 minutes"
+                        logger.warning(f"  - Will mark as CANCELLED")
+                        waybill.status = WaybillPrintStatuses.CANCELLED.value
+                        waybill.print_status = PrintStatuses.CANCELLED.value
+                        waybill.print_error = "Print job cancelled - stuck in printing state for > 5 minutes"
                         waybill.print_completed_at = now.replace(microsecond=0)
                         jobs_failed += 1
                         jobs_updated += 1
@@ -129,10 +129,10 @@ def monitor_all_printing_jobs(app=None):
                     ONE_DAY_SECONDS = 86400  # 24 hours
                     if time_since_created > ONE_DAY_SECONDS:
                         logger.warning(f"[MONITOR CRON] ⚠️  TOO OLD (>1 day) - Invoice: {invoice}, Age: {time_since_created}s ({time_since_created/86400:.1f} days)")
-                        logger.warning(f"  - Will mark as ERROR")
-                        waybill.status = WaybillPrintStatuses.ERROR.value
-                        waybill.print_status = PrintStatuses.ERROR.value
-                        waybill.print_error = "Print job older than 1 day - auto-cancelled"
+                        logger.warning(f"  - Will mark as CANCELLED")
+                        waybill.status = WaybillPrintStatuses.CANCELLED.value
+                        waybill.print_status = PrintStatuses.CANCELLED.value
+                        waybill.print_error = "Print job cancelled - older than 1 day"
                         waybill.print_completed_at = now.replace(microsecond=0)
                         jobs_failed += 1
                         jobs_updated += 1
