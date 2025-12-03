@@ -143,9 +143,50 @@ export FLASK_APP=run:app
 
 ## Checking Service Logs
 
-When running as systemd services, both backend and frontend log to systemd journal. Use `journalctl` to view logs:
+The application uses two logging systems:
 
-### Quick Reference - Most Used Commands
+### 1. Application Logs (app/logs/app.log)
+
+The Flask application writes detailed logs to `app/logs/app.log`:
+
+```bash
+# View application logs in real-time
+tail -f app/logs/app.log
+
+# View last 100 lines of application logs
+tail -n 100 app/logs/app.log
+
+# Search for specific errors in logs
+grep "ERROR" app/logs/app.log
+
+# Search for CRON job logs
+grep "MONITOR CRON" app/logs/app.log
+
+# Search for CUPS-related logs
+grep "CUPS" app/logs/app.log
+
+# Count log entries by level
+grep "INFO" app/logs/app.log | wc -l
+grep "ERROR" app/logs/app.log | wc -l
+
+# View logs from the last 10 minutes (Linux only)
+find app/logs/app.log -mmin -10 -exec tail -n 50 {} \;
+```
+
+**Log file location:** `/home/pi/rpi-waybill-printer/app/logs/app.log`
+
+**Log levels:**
+
+- **DEBUG**: Detailed diagnostic information
+- **INFO**: General information (startup messages, job completions)
+- **WARNING**: Warning messages
+- **ERROR**: Error messages and failures
+
+### 2. Systemd Journal Logs
+
+When running as systemd services, both backend and frontend also log to systemd journal. Use `journalctl` to view:
+
+#### Quick Reference - Most Used Commands
 
 ```bash
 # Watch backend logs in real-time (MOST USEFUL)
@@ -161,9 +202,9 @@ journalctl -u rpi-waybill-printer-backend.service -n 50
 journalctl -u rpi-waybill-printer-frontend.service -n 50
 ```
 
-### Detailed Log Viewing Options
+#### Detailed Log Viewing Options
 
-#### View Backend Service Logs
+##### View Backend Service Logs
 
 ```bash
 # View last 50 lines of backend logs
@@ -179,7 +220,7 @@ journalctl -u rpi-waybill-printer-backend.service --since "1 hour ago"
 journalctl -u rpi-waybill-printer-backend.service -o short-precise
 ```
 
-#### View Frontend Service Logs
+##### View Frontend Service Logs
 
 ```bash
 # View last 50 lines of frontend logs
@@ -192,7 +233,7 @@ journalctl -u rpi-waybill-printer-frontend.service -f
 journalctl -u rpi-waybill-printer-frontend.service --since "1 hour ago"
 ```
 
-#### View Both Services Together
+##### View Both Services Together
 
 ```bash
 # View all application logs (both services) in real-time
@@ -228,6 +269,25 @@ systemctl is-enabled rpi-waybill-printer-frontend.service
 
 ### Clearing and Managing Logs
 
+#### Managing Application Logs (app/logs/app.log)
+
+```bash
+# View current size of application log
+du -h app/logs/app.log
+
+# Clear application log (archive first if needed)
+> app/logs/app.log
+
+# Or backup then clear
+cp app/logs/app.log app/logs/app.log.backup
+> app/logs/app.log
+
+# Rotate logs (keep backup, start fresh)
+mv app/logs/app.log app/logs/app.log.$(date +%Y%m%d_%H%M%S)
+```
+
+#### Managing Systemd Journal Logs
+
 To maintain disk space and keep logs manageable on the RPi:
 
 ```bash
@@ -253,12 +313,18 @@ sudo journalctl --vacuum-size=100M
 **Recommended maintenance routine:**
 
 ```bash
-# Weekly: Keep only last 7 days of logs
+# Weekly: Keep only last 7 days of systemd logs
 sudo journalctl --vacuum-time=7d
 
-# Or: Keep logs under 500MB
+# Or: Keep systemd logs under 500MB
 sudo journalctl --vacuum-size=500M
 
+# Clear application log weekly (keep one backup)
+cd /home/pi/rpi-waybill-printer
+mv app/logs/app.log app/logs/app.log.backup
+touch app/logs/app.log
+
 # Check disk usage after cleanup
+du -h app/logs/
 sudo journalctl --disk-usage
 ```
