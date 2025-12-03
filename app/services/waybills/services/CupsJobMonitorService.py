@@ -37,7 +37,6 @@ class CupsJobMonitorService:
         
         try:
             self.conn = cups.Connection()
-            logger.info("CupsJobMonitorService initialized")
         except Exception as e:
             logger.error(f"Failed to initialize CUPS connection in CupsJobMonitorService: {str(e)}")
             self.conn = None

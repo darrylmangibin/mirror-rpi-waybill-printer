@@ -40,7 +40,6 @@ class PrinterCheckService:
         
         try:
             self.conn = cups.Connection()
-            logger.info("PrinterCheckService initialized")
         except Exception as e:
             logger.error(f"Failed to initialize CUPS connection in PrinterCheckService: {str(e)}")
             self.conn = None
