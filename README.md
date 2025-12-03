@@ -145,7 +145,25 @@ export FLASK_APP=run:app
 
 When running as systemd services, both backend and frontend log to systemd journal. Use `journalctl` to view logs:
 
-### View Backend Service Logs
+### Quick Reference - Most Used Commands
+
+```bash
+# Watch backend logs in real-time (MOST USEFUL)
+journalctl -u rpi-waybill-printer-backend.service -f
+
+# Watch frontend logs in real-time
+journalctl -u rpi-waybill-printer-frontend.service -f
+
+# View last 50 lines of backend logs
+journalctl -u rpi-waybill-printer-backend.service -n 50
+
+# View last 50 lines of frontend logs
+journalctl -u rpi-waybill-printer-frontend.service -n 50
+```
+
+### Detailed Log Viewing Options
+
+#### View Backend Service Logs
 
 ```bash
 # View last 50 lines of backend logs
@@ -161,7 +179,7 @@ journalctl -u rpi-waybill-printer-backend.service --since "1 hour ago"
 journalctl -u rpi-waybill-printer-backend.service -o short-precise
 ```
 
-### View Frontend Service Logs
+#### View Frontend Service Logs
 
 ```bash
 # View last 50 lines of frontend logs
@@ -174,7 +192,7 @@ journalctl -u rpi-waybill-printer-frontend.service -f
 journalctl -u rpi-waybill-printer-frontend.service --since "1 hour ago"
 ```
 
-### View Both Services Together
+#### View Both Services Together
 
 ```bash
 # View all application logs (both services) in real-time
@@ -206,4 +224,41 @@ systemctl start rpi-waybill-printer-frontend.service
 # View service is enabled
 systemctl is-enabled rpi-waybill-printer-backend.service
 systemctl is-enabled rpi-waybill-printer-frontend.service
+```
+
+### Clearing and Managing Logs
+
+To maintain disk space and keep logs manageable on the RPi:
+
+```bash
+# Show how much space journal is using
+sudo journalctl --disk-usage
+
+# View logs from the last 7 days
+journalctl --since "7 days ago"
+
+# Clear all systemd journal logs from more than 1 day ago
+sudo journalctl --vacuum-time=1d
+
+# Completely clear all logs (CAUTION: deletes everything)
+sudo journalctl --vacuum-size=0
+
+# Clear logs for specific service only
+sudo journalctl -u rpi-waybill-printer-backend.service --vacuum-time=1d
+
+# Limit journal to max size (e.g., 100MB)
+sudo journalctl --vacuum-size=100M
+```
+
+**Recommended maintenance routine:**
+
+```bash
+# Weekly: Keep only last 7 days of logs
+sudo journalctl --vacuum-time=7d
+
+# Or: Keep logs under 500MB
+sudo journalctl --vacuum-size=500M
+
+# Check disk usage after cleanup
+sudo journalctl --disk-usage
 ```
