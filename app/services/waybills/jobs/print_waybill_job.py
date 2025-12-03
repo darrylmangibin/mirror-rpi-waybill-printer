@@ -58,7 +58,6 @@ def start_print_workers(num_workers=1):
     for i in range(num_workers):
         thread = threading.Thread(target=print_worker, daemon=True, name=f"WaybillPrintWorker-{i}")
         thread.start()
-    logger.info(f"✓ Started {num_workers} waybill print worker threads")
 
 
 def queue_print(waybill_id):

@@ -61,7 +61,6 @@ def start_workers(num_workers=1):
     for i in range(num_workers):
         thread = threading.Thread(target=worker, daemon=True, name=f"WaybillDownloadWorker-{i}")
         thread.start()
-    logger.info(f"✓ Started {num_workers} waybill download worker threads")
 
 
 def queue_download(waybill_id):

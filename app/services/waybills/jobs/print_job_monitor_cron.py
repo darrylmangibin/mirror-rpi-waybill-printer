@@ -61,29 +61,3 @@ def start_print_monitor_cron(scheduler, app):
     except Exception as e:
         logger.error(f"Failed to register print monitor CRON job: {str(e)}", exc_info=True)
 
-
-
-def start_print_monitor_cron(scheduler, app):
-    """
-    Register the print monitor CRON job with APScheduler.
-    
-    Args:
-        scheduler: APScheduler BackgroundScheduler instance
-        app: Flask app instance for app context
-    """
-    try:
-        # Add job to run every 2 seconds
-        scheduler.add_job(
-            func=monitor_all_printing_jobs,
-            args=[app],
-            trigger="interval",
-            seconds=CHECK_INTERVAL,
-            id="print_monitor_cron",
-            name="Print Job Monitor (CRON)",
-            replace_existing=True,
-            misfire_grace_time=10
-        )
-        logger.info(f"✓ Print monitor CRON job registered (interval: {CHECK_INTERVAL}s)")
-    except Exception as e:
-        logger.error(f"Failed to register print monitor CRON job: {str(e)}", exc_info=True)
-

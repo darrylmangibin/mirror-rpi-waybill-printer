@@ -62,22 +62,16 @@ def create_app():
         
         try:
             start_workers(num_workers=1)           # Download worker thread
-            logger.info("✓ Download workers initialized")
-        except Exception as e:
-            logger.error(f"Failed to start download workers: {str(e)}", exc_info=True)
-        
-        try:
             start_print_workers(num_workers=1)     # Print worker thread
-            logger.info("✓ Print workers initialized")
         except Exception as e:
-            logger.error(f"Failed to start print workers: {str(e)}", exc_info=True)
+            logger.error(f"Failed to start workers: {str(e)}", exc_info=True)
         
         # Initialize APScheduler for CRON jobs
         try:
             scheduler = BackgroundScheduler(daemon=True)
             start_print_monitor_cron(scheduler, app)    # Pass app for app context in background thread
             scheduler.start()
-            logger.info("✓ APScheduler initialized with print monitor CRON job")
+            logger.info("✓ App initialized and ready")
         except Exception as e:
             logger.error(f"Failed to start APScheduler: {str(e)}", exc_info=True)
     
