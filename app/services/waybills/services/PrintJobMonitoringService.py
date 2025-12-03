@@ -4,8 +4,7 @@ from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.services.waybills.enums.PrintStatuses import PrintStatuses
-from app.services.waybills.services.CupsJobMonitorService import CupsJobMonitorService
-from app.services.waybills.services.PrinterCheckService import PrinterCheckService
+from app.services.waybills.services.ServiceContainer import container
 
 logger = get_logger(__name__)
 
@@ -23,8 +22,9 @@ class PrintJobMonitoringService:
     ONE_DAY_SECONDS = 86400  # 24 hours
     
     def __init__(self):
-        self.cups_service = CupsJobMonitorService()
-        self.printer_service = PrinterCheckService()
+        # Inject services from container (cached/reused across calls)
+        self.cups_service = container.cups_service
+        self.printer_service = container.printer_service
         self.now = datetime.now()
     
     def monitor_all_printing_jobs(self):
