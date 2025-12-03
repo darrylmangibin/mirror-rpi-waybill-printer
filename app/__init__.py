@@ -75,7 +75,7 @@ def create_app():
         # Initialize APScheduler for CRON jobs
         try:
             scheduler = BackgroundScheduler(daemon=True)
-            start_print_monitor_cron(scheduler)    # Unified CRON job (replaces monitor_print_job + printer_check_job)
+            start_print_monitor_cron(scheduler, app)    # Pass app for app context in background thread
             scheduler.start()
             logger.info("✓ APScheduler initialized with print monitor CRON job")
         except Exception as e:
