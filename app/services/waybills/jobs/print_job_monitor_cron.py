@@ -119,7 +119,6 @@ def monitor_all_printing_jobs(app=None):
                         logger.warning(f"  - Will mark as ERROR")
                         waybill.status = WaybillPrintStatuses.ERROR.value
                         waybill.print_status = PrintStatuses.ERROR.value
-                        waybill.error_message = "Print job stuck in printing state for > 5 minutes"
                         waybill.print_error = "Print job stuck in printing state for > 5 minutes"
                         waybill.print_completed_at = now.replace(microsecond=0)
                         jobs_failed += 1
@@ -133,7 +132,6 @@ def monitor_all_printing_jobs(app=None):
                         logger.warning(f"  - Will mark as ERROR")
                         waybill.status = WaybillPrintStatuses.ERROR.value
                         waybill.print_status = PrintStatuses.ERROR.value
-                        waybill.error_message = "Print job older than 1 day - auto-cancelled"
                         waybill.print_error = "Print job older than 1 day - auto-cancelled"
                         waybill.print_completed_at = now.replace(microsecond=0)
                         jobs_failed += 1
