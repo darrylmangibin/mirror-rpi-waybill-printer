@@ -105,6 +105,41 @@ def monitor_all_printing_jobs(app=None):
                     logger.debug(f"[MONITOR CRON] Check Invoice: {invoice}, State: {cups_status['state_name']}, "
                                f"Completed: {cups_status['is_completed']}, Failed: {cups_status['is_failed']}")
                     
+                    # Check if job is stuck (printing too long or too old)
+                    time_in_queue = (now - waybill.updated_at).total_seconds()
+                    time_since_created = (now - waybill.created_at).total_seconds()
+                    
+                    logger.info(f"[MONITOR CRON] Time Check - Invoice: {invoice}")
+                    logger.info(f"  - Time in current state (updated_at): {time_in_queue}s")
+                    logger.info(f"  - Time since created: {time_since_created}s (days: {time_since_created/86400:.1f})")
+                    
+                    # If stuck for 5+ minutes in printing state
+                    if time_in_queue > STUCK_JOB_TIMEOUT:
+                        logger.warning(f"[MONITOR CRON] ⚠️  STUCK (5+ min) - Invoice: {invoice}, Time: {time_in_queue}s")
+                        logger.warning(f"  - Will mark as ERROR")
+                        waybill.status = WaybillPrintStatuses.ERROR.value
+                        waybill.print_status = PrintStatuses.ERROR.value
+                        waybill.error_message = "Print job stuck in printing state for > 5 minutes"
+                        waybill.print_error = "Print job stuck in printing state for > 5 minutes"
+                        waybill.print_completed_at = now.replace(microsecond=0)
+                        jobs_failed += 1
+                        jobs_updated += 1
+                        continue
+                    
+                    # If created more than 1 day ago
+                    ONE_DAY_SECONDS = 86400  # 24 hours
+                    if time_since_created > ONE_DAY_SECONDS:
+                        logger.warning(f"[MONITOR CRON] ⚠️  TOO OLD (>1 day) - Invoice: {invoice}, Age: {time_since_created}s ({time_since_created/86400:.1f} days)")
+                        logger.warning(f"  - Will mark as ERROR")
+                        waybill.status = WaybillPrintStatuses.ERROR.value
+                        waybill.print_status = PrintStatuses.ERROR.value
+                        waybill.error_message = "Print job older than 1 day - auto-cancelled"
+                        waybill.print_error = "Print job older than 1 day - auto-cancelled"
+                        waybill.print_completed_at = now.replace(microsecond=0)
+                        jobs_failed += 1
+                        jobs_updated += 1
+                        continue
+                    
                     # Handle completed jobs
                     if cups_status['is_completed']:
                         logger.info(f"[CUPS COMPLETED] ✅ COMPLETED - Invoice: {invoice}, WaybillID: {waybill.id}")
