@@ -33,6 +33,10 @@ class WaybillPrint(db.Model):
     error_message = db.Column(db.Text, nullable=True)  # Error details if download fails
     downloaded_at = db.Column(db.DateTime, nullable=True)  # When download completed
     
+    # Download Retry Management (NEW) - Universal safety net for all marketplaces
+    download_retry_count = db.Column(db.Integer, default=0)  # Track retry attempts (0, 1, 2)
+    last_retry_at = db.Column(db.DateTime, nullable=True)  # Last retry attempt timestamp
+    
     # Print Management (NEW)
     print_status = db.Column(db.String, default='idle')  # 'idle', 'pending', 'printing', 'completed', 'error', 'cancelled'
     cups_job_id = db.Column(db.Integer, nullable=True)  # CUPS job ID for tracking
@@ -58,6 +62,9 @@ class WaybillPrint(db.Model):
             'local_file_path': self.local_file_path,
             'error_message': self.error_message,
             'downloaded_at': self.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') if self.downloaded_at else None,
+            # Download retry tracking
+            'download_retry_count': self.download_retry_count,
+            'last_retry_at': self.last_retry_at.strftime('%Y-%m-%d %H:%M:%S') if self.last_retry_at else None,
             # Print-related fields (NEW)
             'print_status': self.print_status,
             'cups_job_id': self.cups_job_id,

@@ -733,22 +733,57 @@ class WaybillDownloadService:
                         except Exception as delete_error:
                             logger.warning(f"Could not delete invalid Playwright PDF - Invoice: {invoice_number}: {str(delete_error)}")
                         
-                        # Update database with error status BUT NOT local_file_path
-                        waybill_print.status = WaybillPrintStatuses.ERROR.value
-                        waybill_print.error_message = validation['reason']
-                        db.session.commit()
+                        # CHECK: Should we retry? (Universal for all marketplaces as safety net)
+                        max_retries = 2
+                        should_retry = waybill_print.download_retry_count < max_retries
                         
-                        logger.warning(f"[VALIDATION FAILED] Playwright PDF invalid - Invoice: {invoice_number}: {validation['reason']}")
-                        
-                        return {
-                            "status": "error",
-                            "message": validation['reason'],
-                            "data": {
-                                "waybill_id": waybill_print.id,
-                                "invoice_number": invoice_number,
-                                "details": validation['details']
+                        if should_retry:
+                            # Queue for retry with exponential backoff
+                            from app.services.waybills.jobs.retry_download_job import queue_retry
+                            
+                            # Exponential backoff: 5s, then 10s
+                            delay = (waybill_print.download_retry_count + 1) * 5
+                            queue_retry(waybill_print.id, delay_seconds=delay)
+                            
+                            logger.warning(f"[RETRY QUEUED - PLAYWRIGHT] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace} - Queued for retry in {delay}s (Attempt {waybill_print.download_retry_count + 1}/{max_retries})")
+                            
+                            # Don't update status to ERROR - keep as DOWNLOADING for retry attempt
+                            waybill_print.error_message = f"Validation failed. Retrying in {delay}s... (Attempt {waybill_print.download_retry_count + 1}/{max_retries})"
+                            db.session.commit()
+                            
+                            return {
+                                "status": "error",
+                                "message": f"Waybill validation failed. Retrying in {delay}s...",
+                                "data": {
+                                    "waybill_id": waybill_print.id,
+                                    "invoice_number": invoice_number,
+                                    "marketplace": waybill_print.marketplace,
+                                    "details": validation['details'],
+                                    "will_retry": True,
+                                    "retry_attempt": waybill_print.download_retry_count + 1,
+                                    "max_retries": max_retries
+                                }
                             }
-                        }
+                        else:
+                            # No more retries - final error
+                            waybill_print.status = WaybillPrintStatuses.ERROR.value
+                            waybill_print.error_message = f"{validation['reason']} (Failed after {max_retries} retry attempts)"
+                            db.session.commit()
+                            
+                            logger.error(f"[VALIDATION FAILED - EXHAUSTED RETRIES - PLAYWRIGHT] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace}: {validation['reason']}")
+                            
+                            return {
+                                "status": "error",
+                                "message": validation['reason'],
+                                "data": {
+                                    "waybill_id": waybill_print.id,
+                                    "invoice_number": invoice_number,
+                                    "marketplace": waybill_print.marketplace,
+                                    "details": validation['details'],
+                                    "retries_exhausted": True
+                                }
+                            }
+
                     
                     # ✅ Only save to database if validation passed
                     # Update database record
@@ -861,22 +896,57 @@ class WaybillDownloadService:
                 except Exception as delete_error:
                     logger.warning(f"Could not delete invalid PDF - Invoice: {invoice_number}: {str(delete_error)}")
                 
-                # Update database with error status BUT NOT local_file_path
-                waybill_print.status = WaybillPrintStatuses.ERROR.value
-                waybill_print.error_message = validation['reason']
-                db.session.commit()
+                # CHECK: Should we retry? (Universal for all marketplaces as safety net)
+                max_retries = 2
+                should_retry = waybill_print.download_retry_count < max_retries
                 
-                logger.warning(f"[VALIDATION FAILED] Waybill content invalid - Invoice: {invoice_number}: {validation['reason']}")
-                
-                return {
-                    "status": "error",
-                    "message": validation['reason'],
-                    "data": {
-                        "waybill_id": waybill_print.id,
-                        "invoice_number": invoice_number,
-                        "details": validation['details']
+                if should_retry:
+                    # Queue for retry with exponential backoff
+                    from app.services.waybills.jobs.retry_download_job import queue_retry
+                    
+                    # Exponential backoff: 5s, then 10s
+                    delay = (waybill_print.download_retry_count + 1) * 5
+                    queue_retry(waybill_print.id, delay_seconds=delay)
+                    
+                    logger.warning(f"[RETRY QUEUED] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace} - Queued for retry in {delay}s (Attempt {waybill_print.download_retry_count + 1}/{max_retries})")
+                    
+                    # Don't update status to ERROR - keep as DOWNLOADING for retry attempt
+                    waybill_print.error_message = f"Validation failed. Retrying in {delay}s... (Attempt {waybill_print.download_retry_count + 1}/{max_retries})"
+                    db.session.commit()
+                    
+                    return {
+                        "status": "error",
+                        "message": f"Waybill validation failed. Retrying in {delay}s...",
+                        "data": {
+                            "waybill_id": waybill_print.id,
+                            "invoice_number": invoice_number,
+                            "marketplace": waybill_print.marketplace,
+                            "details": validation['details'],
+                            "will_retry": True,
+                            "retry_attempt": waybill_print.download_retry_count + 1,
+                            "max_retries": max_retries
+                        }
                     }
-                }
+                else:
+                    # No more retries - final error
+                    waybill_print.status = WaybillPrintStatuses.ERROR.value
+                    waybill_print.error_message = f"{validation['reason']} (Failed after {max_retries} retry attempts)"
+                    db.session.commit()
+                    
+                    logger.error(f"[VALIDATION FAILED - EXHAUSTED RETRIES] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace}: {validation['reason']}")
+                    
+                    return {
+                        "status": "error",
+                        "message": validation['reason'],
+                        "data": {
+                            "waybill_id": waybill_print.id,
+                            "invoice_number": invoice_number,
+                            "marketplace": waybill_print.marketplace,
+                            "details": validation['details'],
+                            "retries_exhausted": True
+                        }
+                    }
+
             
             # ✅ Only save to database if validation passed
             # Update database record with download status
