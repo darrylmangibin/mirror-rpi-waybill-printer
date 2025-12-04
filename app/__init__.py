@@ -9,6 +9,7 @@ from app.utils.network import get_local_ip
 from app.services.waybills.jobs.download_waybill_job import start_workers
 from app.services.waybills.jobs.print_waybill_job import start_print_workers
 from app.services.waybills.jobs.print_job_monitor_cron import start_print_monitor_cron
+from app.services.waybills.jobs.retry_download_job import start_retry_workers
 
 def create_app():
     # Set custom instance path to keep database inside app directory
@@ -63,6 +64,7 @@ def create_app():
         try:
             start_workers(num_workers=1)           # Download worker thread
             start_print_workers(num_workers=1)     # Print worker thread
+            start_retry_workers(num_workers=1)     # Retry worker thread (NEW)
         except Exception as e:
             logger.error(f"Failed to start workers: {str(e)}", exc_info=True)
         
