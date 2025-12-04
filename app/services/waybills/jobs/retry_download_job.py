@@ -43,6 +43,7 @@ def retry_worker():
                     # Update retry tracking before attempt
                     waybill.download_retry_count = current_retry
                     waybill.last_retry_at = datetime.now().replace(microsecond=0)
+                    waybill.error_message = None  # Clear previous error message for fresh attempt
                     db.session.commit()
                     
                     # Re-attempt download
