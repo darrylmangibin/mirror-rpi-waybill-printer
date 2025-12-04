@@ -92,24 +92,70 @@ class WaybillDownloadService:
         Generate fallback waybill URL from third-party API based on marketplace.
         Used when no waybill_url is provided from the initial response.
         
-        Uses FusionTech hosted URL as universal fallback for all marketplaces with Shopify crop offsets.
+        Routes to marketplace-specific URL generators:
+        - Shopify: Uses FusionTech hosted service
+        - All others (Shopee, Lazada, TikTok, Zalora): Uses leados-api
         
         Args:
             waybill_print: WaybillPrint model instance (contains tenant_id, marketplace)
             invoice_number (str): Invoice number for the waybill
         
         Returns:
-            tuple: (fallback_url, crop_marketplace) where crop_marketplace is always Shopify for consistent crop offsets
+            tuple: (fallback_url, crop_marketplace)
+        """
+        marketplace = waybill_print.marketplace
+        
+        if marketplace and marketplace.lower() == Marketplaces.SHOPIFY.value:
+            return self._get_shopify_fallback_url(waybill_print, invoice_number)
+        else:
+            return self._get_leados_api_fallback_url(waybill_print, invoice_number)
+    
+    def _get_shopify_fallback_url(self, waybill_print, invoice_number: str) -> tuple:
+        """
+        Generate Shopify fallback URL from FusionTech hosted service.
+        Only used when no waybill_url is provided for Shopify orders.
+        
+        Args:
+            waybill_print: WaybillPrint model instance
+            invoice_number (str): Invoice number
+        
+        Returns:
+            tuple: (fallback_url, crop_marketplace)
+        """
+        tenant_id = waybill_print.tenant_id
+        
+        fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
+        logger.info(f"Using Shopify FusionTech fallback URL - Invoice: {invoice_number}, Tenant: {tenant_id}, URL: {fallback_url}")
+        
+        # Shopify uses Shopify crop offsets (4x6 inches)
+        return (fallback_url, Marketplaces.SHOPIFY.value)
+    
+    def _get_leados_api_fallback_url(self, waybill_print, invoice_number: str) -> tuple:
+        """
+        Generate leados-api fallback URL for non-Shopify marketplaces.
+        Used for Shopee, Lazada, TikTok, Zalora when no waybill_url is provided.
+        
+        The leados-api handles marketplace-specific logic internally:
+        - Shopee: Calls ShopeeFulfillmentService.generateWaybill()
+        - Lazada: Calls LazadaPrintWaybillService.getUrl()
+        - TikTok: Calls TikTokFulfillmentService.getWaybill()
+        - Zalora: Calls ZaloraFulfillmentService.getWaybill()
+        
+        Args:
+            waybill_print: WaybillPrint model instance
+            invoice_number (str): Invoice number
+        
+        Returns:
+            tuple: (fallback_url, crop_marketplace)
         """
         tenant_id = waybill_print.tenant_id
         marketplace = waybill_print.marketplace
         
-        # Use FusionTech hosted pattern for all marketplaces as universal fallback
-        fallback_url = f"https://{tenant_id}.fusiontech.asia/jnt/waybill/{invoice_number}"
-        logger.info(f"Using FusionTech fallback URL for invoice {invoice_number} (tenant: {tenant_id}, marketplace: {marketplace}), applying Shopify crop offsets")
+        fallback_url = f"https://fusion-production-api-{tenant_id}.up.railway.app/api/waybills/{invoice_number}/print-waybill"
+        logger.info(f"Using leados-api fallback URL - Invoice: {invoice_number}, Tenant: {tenant_id}, Marketplace: {marketplace}, URL: {fallback_url}")
         
-        # Always use Shopify offsets for consistent PDF cropping across all marketplaces
-        return (fallback_url, Marketplaces.SHOPIFY.value)
+        # Use actual marketplace for cropping (no cropping for non-Shopify/Zalora)
+        return (fallback_url, marketplace)
     
     def _should_crop_pdf(self, marketplace: str = None) -> bool:
         """
@@ -179,6 +225,263 @@ class WaybillDownloadService:
         except Exception as e:
             logger.warning(f"Error checking if content is HTML: {str(e)}")
             return False
+    
+    def _is_valid_waybill_pdf(self, filepath: str, invoice_number: str) -> dict:
+        """
+        Validate that a PDF is actually a waybill, not a placeholder.
+        
+        Comprehensive checks:
+        1. File size (not too small)
+        2. Forbidden keywords (generating, please wait, etc.)
+        3. Shipping-related keywords (confirms it's a waybill)
+        4. Reasonable content length
+        
+        Returns:
+            dict: {
+                'is_valid': bool,
+                'reason': str,
+                'details': {
+                    'file_size': int,
+                    'content_length': int,
+                    'has_forbidden_keywords': bool,
+                    'has_shipping_keywords': bool,
+                    'confidence': str,
+                    'shipping_keywords_found': list
+                }
+            }
+        """
+        try:
+            logger.info(f"Validating PDF content - Invoice: {invoice_number}, File: {filepath}")
+            
+            # Get file size for reporting
+            file_size = os.path.getsize(filepath)
+            
+            # Step 1: Extract text from PDF
+            try:
+                reader = PdfReader(filepath)
+                full_text = ""
+                page_count = len(reader.pages)
+                
+                for page in reader.pages:
+                    full_text += page.extract_text()
+                
+                full_text_lower = full_text.lower()
+                content_length = len(full_text.strip())
+                
+                logger.info(f"PDF extracted - Invoice: {invoice_number}, Pages: {page_count}, Content length: {content_length} chars")
+                
+            except Exception as e:
+                logger.error(f"Failed to extract PDF text - Invoice: {invoice_number}: {str(e)}")
+                return {
+                    'is_valid': False,
+                    'reason': f'Could not read PDF content: {str(e)}',
+                    'details': {
+                        'file_size': file_size,
+                        'content_length': 0,
+                        'has_forbidden_keywords': False,
+                        'has_shipping_keywords': False,
+                        'confidence': 'low'
+                    }
+                }
+            
+            # Step 2: Check for forbidden keywords (generating, etc.)
+            forbidden_keywords = [
+                'generating',
+                'please wait',
+                'processing',
+                'loading',
+                'preparing',
+                'waitingfor',
+                'wait for',
+                'is being generated'
+            ]
+            
+            found_forbidden = [kw for kw in forbidden_keywords if kw in full_text_lower]
+            
+            if found_forbidden:
+                logger.warning(f"Forbidden keywords found - Invoice: {invoice_number}, Keywords: {found_forbidden}")
+                return {
+                    'is_valid': False,
+                    'reason': f'Waybill still generating. Found: {", ".join(found_forbidden)}',
+                    'details': {
+                        'file_size': file_size,
+                        'content_length': content_length,
+                        'has_forbidden_keywords': True,
+                        'has_shipping_keywords': False,
+                        'confidence': 'high'
+                    }
+                }
+            
+            # Step 3: Check for shipping/waybill keywords (confirms it's real)
+            shipping_keywords = [
+                'tracking',
+                'tracking number',
+                'tracking id',
+                'shipment',
+                'recipient',
+                'sender',
+                'address',
+                'phone',
+                'weight',
+                'dimensions',
+                'shipping',
+                'delivery',
+                'package',
+                'order',
+                'waybill',
+                'label'
+            ]
+            
+            found_shipping = [kw for kw in shipping_keywords if kw in full_text_lower]
+            has_shipping_keywords = len(found_shipping) > 0
+            
+            logger.info(f"Shipping keywords found - Invoice: {invoice_number}, Keywords: {found_shipping}")
+            
+            # Step 5: Confidence check
+            if has_shipping_keywords:
+                confidence = 'high'
+                is_valid = True
+            elif content_length > 500 and not found_forbidden:
+                confidence = 'medium'
+                is_valid = True
+            else:
+                confidence = 'low'
+                is_valid = True  # Allow with caution
+            
+            logger.info(f"✓ PDF validation PASSED - Invoice: {invoice_number}, Confidence: {confidence}, Shipping keywords: {len(found_shipping)}")
+            
+            return {
+                'is_valid': is_valid,
+                'reason': f'Waybill validated (confidence: {confidence})',
+                'details': {
+                    'file_size': file_size,
+                    'content_length': content_length,
+                    'has_forbidden_keywords': False,
+                    'has_shipping_keywords': has_shipping_keywords,
+                    'confidence': confidence,
+                    'shipping_keywords_found': found_shipping[:5]  # Top 5
+                }
+            }
+        
+        except Exception as e:
+            logger.error(f"Validation error - Invoice: {invoice_number}: {str(e)}", exc_info=True)
+            return {
+                'is_valid': False,
+                'reason': f'Validation error: {str(e)}',
+                'details': {
+                    'file_size': 0,
+                    'content_length': 0,
+                    'has_forbidden_keywords': False,
+                    'has_shipping_keywords': False,
+                    'confidence': 'low'
+                }
+            }
+
+    def _validate_waybill_content(self, filepath: str, invoice_number: str) -> dict:
+        """
+        Validate that the downloaded waybill file contains actual waybill content,
+        not placeholder text like "Generating waybill please wait".
+        
+        Checks:
+        - PDF: Extract text and check for "Generating" keywords
+        - Image (PNG/JPG): Check file size (too small = probably placeholder)
+        
+        Returns:
+            dict: {
+                'is_valid': bool,
+                'reason': str,
+                'keywords_found': list
+            }
+        """
+        try:
+            forbidden_keywords = [
+                'generating',
+                'please wait',
+                'processing',
+                'loading',
+                'preparing'
+            ]
+            
+            # Handle PDF files
+            if filepath.lower().endswith('.pdf'):
+                try:
+                    reader = PdfReader(filepath)
+                    
+                    # Extract text from all pages
+                    full_text = ""
+                    for page in reader.pages:
+                        full_text += page.extract_text().lower()
+                    
+                    # Check for forbidden keywords
+                    found_keywords = [kw for kw in forbidden_keywords if kw in full_text]
+                    
+                    if found_keywords:
+                        logger.warning(f"Waybill still generating - Invoice: {invoice_number}, Found: {found_keywords}")
+                        return {
+                            'is_valid': False,
+                            'reason': f"Waybill still generating. Found: {', '.join(found_keywords)}",
+                            'keywords_found': found_keywords
+                        }
+                    
+                    # Check if PDF has actual content (not just blank pages)
+                    if len(full_text.strip()) < 10:
+                        return {
+                            'is_valid': False,
+                            'reason': "PDF appears to be blank or empty",
+                            'keywords_found': []
+                        }
+                    
+                    logger.info(f"PDF content validated successfully - Invoice: {invoice_number}")
+                    return {
+                        'is_valid': True,
+                        'reason': 'PDF content validated successfully',
+                        'keywords_found': []
+                    }
+                
+                except Exception as e:
+                    logger.error(f"PDF validation failed - Invoice: {invoice_number}: {str(e)}")
+                    # Assume valid if can't read (might be encrypted, corrupted but valid)
+                    return {
+                        'is_valid': True,
+                        'reason': f'Could not fully validate PDF: {str(e)}',
+                        'keywords_found': []
+                    }
+            
+            # Handle image files
+            elif filepath.lower().endswith(('.png', '.jpg', '.jpeg')):
+                # For images, check file size (too small = probably placeholder)
+                file_size = os.path.getsize(filepath)
+                if file_size < 5000:  # Less than 5KB = probably placeholder
+                    logger.warning(f"Image file too small - Invoice: {invoice_number}, Size: {file_size} bytes")
+                    return {
+                        'is_valid': False,
+                        'reason': f"Image file too small ({file_size} bytes) - likely placeholder. Please wait and retry.",
+                        'keywords_found': []
+                    }
+                
+                logger.info(f"Image file size validated - Invoice: {invoice_number}, Size: {file_size} bytes")
+                return {
+                    'is_valid': True,
+                    'reason': 'Image file size validated',
+                    'keywords_found': []
+                }
+            
+            # Unknown format - assume valid
+            logger.info(f"Unknown file type, skipping validation - Invoice: {invoice_number}")
+            return {
+                'is_valid': True,
+                'reason': 'Unknown file type - skipping validation',
+                'keywords_found': []
+            }
+        
+        except Exception as e:
+            logger.error(f"Validation error - Invoice: {invoice_number}: {str(e)}")
+            # On error, assume valid to not break the download process
+            return {
+                'is_valid': True,
+                'reason': f'Validation error (assuming valid): {str(e)}',
+                'keywords_found': []
+            }
     
     async def _convert_webpage_to_pdf(self, url: str, invoice_number: str, output_path: str) -> bool:
         """
@@ -420,6 +723,69 @@ class WaybillDownloadService:
                     
                     file_size = os.path.getsize(filepath)
                     
+                    # Validate waybill content BEFORE saving to database
+                    validation = self._is_valid_waybill_pdf(filepath, invoice_number)
+                    if not validation['is_valid']:
+                        # File is invalid - DELETE the invalid file from disk
+                        try:
+                            os.remove(filepath)
+                            logger.info(f"Invalid waybill (from Playwright) deleted from disk - Invoice: {invoice_number}, File: {filepath}")
+                        except Exception as delete_error:
+                            logger.warning(f"Could not delete invalid Playwright PDF - Invoice: {invoice_number}: {str(delete_error)}")
+                        
+                        # CHECK: Should we retry? (Universal for all marketplaces as safety net)
+                        max_retries = 2
+                        should_retry = waybill_print.download_retry_count < max_retries
+                        
+                        if should_retry:
+                            # Queue for retry with exponential backoff
+                            from app.services.waybills.jobs.retry_download_job import queue_retry
+                            
+                            # Exponential backoff: 5s, then 10s
+                            delay = (waybill_print.download_retry_count + 1) * 5
+                            queue_retry(waybill_print.id, delay_seconds=delay)
+                            
+                            logger.warning(f"[RETRY QUEUED - PLAYWRIGHT] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace} - Queued for retry in {delay}s (Attempt {waybill_print.download_retry_count + 1}/{max_retries})")
+                            
+                            # Don't update status to ERROR - keep as DOWNLOADING for retry attempt
+                            waybill_print.error_message = f"Validation failed. Retrying in {delay}s... (Attempt {waybill_print.download_retry_count + 1}/{max_retries})"
+                            db.session.commit()
+                            
+                            return {
+                                "status": "error",
+                                "message": f"Waybill validation failed. Retrying in {delay}s...",
+                                "data": {
+                                    "waybill_id": waybill_print.id,
+                                    "invoice_number": invoice_number,
+                                    "marketplace": waybill_print.marketplace,
+                                    "details": validation['details'],
+                                    "will_retry": True,
+                                    "retry_attempt": waybill_print.download_retry_count + 1,
+                                    "max_retries": max_retries
+                                }
+                            }
+                        else:
+                            # No more retries - final error
+                            waybill_print.status = WaybillPrintStatuses.ERROR.value
+                            waybill_print.error_message = f"{validation['reason']} (Failed after {max_retries} retry attempts)"
+                            db.session.commit()
+                            
+                            logger.error(f"[VALIDATION FAILED - EXHAUSTED RETRIES - PLAYWRIGHT] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace}: {validation['reason']}")
+                            
+                            return {
+                                "status": "error",
+                                "message": validation['reason'],
+                                "data": {
+                                    "waybill_id": waybill_print.id,
+                                    "invoice_number": invoice_number,
+                                    "marketplace": waybill_print.marketplace,
+                                    "details": validation['details'],
+                                    "retries_exhausted": True
+                                }
+                            }
+
+                    
+                    # ✅ Only save to database if validation passed
                     # Update database record
                     waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
                     waybill_print.local_file_path = filepath
@@ -518,6 +884,71 @@ class WaybillDownloadService:
             
             file_size = os.path.getsize(filepath)
             
+            # Validate waybill content BEFORE saving to database
+            # Check if file is not a placeholder/generating message
+            validation = self._is_valid_waybill_pdf(filepath, invoice_number)
+            if not validation['is_valid']:
+                # File is invalid (still generating or blank)
+                # DELETE the invalid file from disk (do NOT save filepath to DB)
+                try:
+                    os.remove(filepath)
+                    logger.info(f"Invalid waybill deleted from disk - Invoice: {invoice_number}, File: {filepath}")
+                except Exception as delete_error:
+                    logger.warning(f"Could not delete invalid PDF - Invoice: {invoice_number}: {str(delete_error)}")
+                
+                # CHECK: Should we retry? (Universal for all marketplaces as safety net)
+                max_retries = 2
+                should_retry = waybill_print.download_retry_count < max_retries
+                
+                if should_retry:
+                    # Queue for retry with exponential backoff
+                    from app.services.waybills.jobs.retry_download_job import queue_retry
+                    
+                    # Exponential backoff: 5s, then 10s
+                    delay = (waybill_print.download_retry_count + 1) * 5
+                    queue_retry(waybill_print.id, delay_seconds=delay)
+                    
+                    logger.warning(f"[RETRY QUEUED] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace} - Queued for retry in {delay}s (Attempt {waybill_print.download_retry_count + 1}/{max_retries})")
+                    
+                    # Don't update status to ERROR - keep as DOWNLOADING for retry attempt
+                    waybill_print.error_message = f"Validation failed. Retrying in {delay}s... (Attempt {waybill_print.download_retry_count + 1}/{max_retries})"
+                    db.session.commit()
+                    
+                    return {
+                        "status": "error",
+                        "message": f"Waybill validation failed. Retrying in {delay}s...",
+                        "data": {
+                            "waybill_id": waybill_print.id,
+                            "invoice_number": invoice_number,
+                            "marketplace": waybill_print.marketplace,
+                            "details": validation['details'],
+                            "will_retry": True,
+                            "retry_attempt": waybill_print.download_retry_count + 1,
+                            "max_retries": max_retries
+                        }
+                    }
+                else:
+                    # No more retries - final error
+                    waybill_print.status = WaybillPrintStatuses.ERROR.value
+                    waybill_print.error_message = f"{validation['reason']} (Failed after {max_retries} retry attempts)"
+                    db.session.commit()
+                    
+                    logger.error(f"[VALIDATION FAILED - EXHAUSTED RETRIES] Invoice: {invoice_number}, Marketplace: {waybill_print.marketplace}: {validation['reason']}")
+                    
+                    return {
+                        "status": "error",
+                        "message": validation['reason'],
+                        "data": {
+                            "waybill_id": waybill_print.id,
+                            "invoice_number": invoice_number,
+                            "marketplace": waybill_print.marketplace,
+                            "details": validation['details'],
+                            "retries_exhausted": True
+                        }
+                    }
+
+            
+            # ✅ Only save to database if validation passed
             # Update database record with download status
             waybill_print.status = WaybillPrintStatuses.DOWNLOADED.value
             waybill_print.local_file_path = filepath

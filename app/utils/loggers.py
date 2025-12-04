@@ -18,6 +18,9 @@ def get_logger(name: str) -> logging.Logger:
     if not logger.handlers:
         logger.setLevel(logging.DEBUG)
         
+        # Prevent propagation to root logger to avoid duplicate logs
+        logger.propagate = False
+        
         # Formatter
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s',

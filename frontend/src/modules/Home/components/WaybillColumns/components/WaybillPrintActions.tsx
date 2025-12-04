@@ -4,6 +4,7 @@ import {
 	DownloadIcon,
 	PrinterIcon,
 	Trash2Icon,
+	XCircleIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +21,7 @@ interface WaybillPrintActionsProps {
 	onEditClick: (waybill: WaybillPrint) => void;
 	onDownloadClick: (waybill: WaybillPrint) => void;
 	onPrintClick: (waybill: WaybillPrint) => void;
+	onCancelClick: (waybill: WaybillPrint) => void;
 	onDeleteClick: (waybill: WaybillPrint) => void;
 }
 
@@ -28,8 +30,14 @@ export const WaybillPrintActions = ({
 	onEditClick,
 	onDownloadClick,
 	onPrintClick,
+	onCancelClick,
 	onDeleteClick,
 }: WaybillPrintActionsProps) => {
+	// Check if there's a CUPS job that can be cancelled
+	// Show cancel button if cups_job_id exists and job isn't already completed
+	const hasCupsJob = waybill.cups_job_id !== null && waybill.cups_job_id !== undefined;
+	const isCompleted = waybill.print_status === 'completed';
+	const canCancel = hasCupsJob && !isCompleted;
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -74,23 +82,24 @@ export const WaybillPrintActions = ({
 					</div>
 				</Button>
 			</DropdownMenuItem>
+			<DropdownMenuItem
+				onClick={() => onPrintClick(waybill)}
+				className='text-gray-900 hover:bg-gray-100 p-0! transition-colors'>
+				<Button
+					asChild
+					type='button'
+					variant='ghost'
+					size='sm'
+					className='hover:bg-transparent w-full'>
+					<div className='flex items-center justify-start gap-2'>
+						<PrinterIcon className='h-4 w-4' />
+						<span className='text-xs'>Print</span>
+					</div>
+				</Button>
+			</DropdownMenuItem>
+			{canCancel && (
 				<DropdownMenuItem
-					onClick={() => onPrintClick(waybill)}
-					className='text-gray-900 hover:bg-gray-100 p-0! transition-colors'>
-					<Button
-						asChild
-						type='button'
-						variant='ghost'
-						size='sm'
-						className='hover:bg-transparent w-full'>
-						<div className='flex items-center justify-start gap-2'>
-							<PrinterIcon className='h-4 w-4' />
-							<span className='text-xs'>Print</span>
-						</div>
-					</Button>
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={() => onDeleteClick(waybill)}
+					onClick={() => onCancelClick(waybill)}
 					className='p-0! transition-colors'>
 					<Button
 						asChild
@@ -99,11 +108,27 @@ export const WaybillPrintActions = ({
 						size='sm'
 						className='w-full hover:bg-red-50'>
 						<div className='flex items-center justify-start gap-2'>
-							<Trash2Icon className='h-4 w-4 text-red-600' />
-							<span className='text-xs text-red-600'>Delete</span>
+							<XCircleIcon className='h-4 w-4 text-red-600' />
+							<span className='text-xs text-red-600'>Cancel Print</span>
 						</div>
 					</Button>
 				</DropdownMenuItem>
+			)}
+			<DropdownMenuItem
+				onClick={() => onDeleteClick(waybill)}
+				className='p-0! transition-colors'>
+				<Button
+					asChild
+					type='button'
+					variant='ghost'
+					size='sm'
+					className='w-full hover:bg-red-50'>
+					<div className='flex items-center justify-start gap-2'>
+						<Trash2Icon className='h-4 w-4 text-red-600' />
+						<span className='text-xs text-red-600'>Delete</span>
+					</div>
+				</Button>
+			</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
