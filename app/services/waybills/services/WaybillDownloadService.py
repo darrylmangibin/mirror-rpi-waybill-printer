@@ -200,7 +200,11 @@ class WaybillDownloadService:
             logger.info(f"Starting webpage-to-PDF conversion - Invoice: {invoice_number}, URL: {url}")
             
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
+                # Use system Chromium on RPi (Playwright bundles don't support ARM architecture)
+                browser = await p.chromium.launch(
+                    headless=True,
+                    executable_path='/usr/bin/chromium'
+                )
                 page = await browser.new_page()
                 
                 logger.info(f"Playwright browser launched, loading page - Invoice: {invoice_number}")

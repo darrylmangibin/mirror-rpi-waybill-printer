@@ -234,10 +234,10 @@ apt install -y \
     libxtst6
 echo -e "${GREEN}✅ Playwright dependencies installed${NC}"
 
-# Install Playwright browser binaries
-echo -e "${YELLOW}Installing Playwright Chromium browser...${NC}"
-sudo -u "$ACTUAL_USER" ./venv/bin/python3 -m playwright install chromium
-echo -e "${GREEN}✅ Playwright Chromium installed${NC}"
+# Install system Chromium for RPi (Playwright bundles don't support ARM)
+echo -e "${YELLOW}Installing system Chromium browser...${NC}"
+apt install -y chromium
+echo -e "${GREEN}✅ System Chromium installed${NC}"
 
 # Initialize database migrations (one-time setup)
 echo -e "${YELLOW}Initializing database migrations...${NC}"
