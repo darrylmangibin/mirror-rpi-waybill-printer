@@ -16,6 +16,7 @@ class WaybillPrintStatuses(Enum):
     
     COMPLETED = "completed"
     ERROR = "error"
+    CANCELLED = "cancelled"
     
     def __str__(self):
         """Return the string value of the enum."""

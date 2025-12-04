@@ -13,6 +13,7 @@ class PrintStatuses(Enum):
     PRINTING = "printing"       # Submitted to CUPS, currently printing or in queue
     COMPLETED = "completed"     # Print job completed successfully
     ERROR = "error"             # Print job failed or aborted
+    CANCELLED = "cancelled"     # Print job was cancelled by user
     
     def __str__(self):
         """Return the string value of the enum."""

@@ -12,6 +12,7 @@ import {
 	usePrintWaybill,
 	useWaybillStream,
 	useDeleteWaybill,
+	useCancelPrintWaybill,
 	useClearTableSelection,
 } from '@/modules/Home/hooks';
 import { ScanPrintJobDialog } from '@/modules/Home/components/ScanPrintJobDialog';
@@ -19,6 +20,7 @@ import { CreateWaybillPrintDialog } from '@/modules/Home/components/CreateWaybil
 import { EditWaybillPrintDialog } from '@/modules/Home/components/EditWaybillPrintDialog';
 import { DownloadWaybillDialog } from '@/modules/Home/components/DownloadWaybillDialog';
 import { PrintWaybillDialog } from '@/modules/Home/components/PrintWaybillDialog';
+import { CancelPrintConfirmationDialog } from '@/modules/Home/components/CancelPrintConfirmationDialog';
 import { DeleteConfirmationDialog } from '@/modules/Home/components/DeleteConfirmationDialog';
 import { BulkActionsDropdown } from '@/modules/Home/components/BulkActionsDropdown';
 import { BulkDeleteConfirmationDialog } from '@/modules/Home/components/BulkDeleteConfirmationDialog';
@@ -29,6 +31,7 @@ const Home = () => {
 	const [editDialogOpen, setEditDialogOpen] = React.useState(false);
 	const [downloadDialogOpen, setDownloadDialogOpen] = React.useState(false);
 	const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
+	const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 	const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = React.useState(false);
 	const [selectedWaybill, setSelectedWaybill] =
@@ -56,6 +59,7 @@ const Home = () => {
 		searchQuery
 	);
 	const { mutateAsync: printWaybillAsync } = usePrintWaybill();
+	const { mutateAsync: cancelPrintAsync, isPending: isCancelling } = useCancelPrintWaybill();
 	const { mutateAsync: deleteWaybillAsync, isPending: isDeleting, reset: resetDeleteMutation } =
 		useDeleteWaybill();
 
@@ -103,6 +107,23 @@ const Home = () => {
 		}
 	};
 
+	const handleCancelClick = (waybill: WaybillPrint) => {
+		setSelectedWaybill(waybill);
+		setCancelDialogOpen(true);
+	};
+
+	const handleCancelConfirm = async (waybill: WaybillPrint) => {
+		try {
+			await cancelPrintAsync(waybill.id);
+			setCancelDialogOpen(false);
+			setSelectedWaybill(null);
+			toast.success('Print job cancelled successfully');
+		} catch (error) {
+			console.error('Cancel failed:', error);
+			toast.error('Failed to cancel print job');
+		}
+	};
+
 	const handleDeleteClick = (waybill: WaybillPrint) => {
 		setSelectedWaybill(waybill);
 		setDeleteDialogOpen(true);
@@ -124,6 +145,7 @@ const Home = () => {
 				onEditClick: handleEditClick,
 				onDownloadClick: handleDownloadClick,
 				onPrintClick: handlePrintClick,
+				onCancelClick: handleCancelClick,
 				onDeleteClick: handleDeleteClick,
 			}),
 		[]
@@ -150,7 +172,7 @@ const Home = () => {
 		}
 	}, [deleteWaybillAsync, actions, clearSelection, resetDeleteMutation]);
 
-	const handleBulkDeleteClick = (rows: WaybillPrint[]) => {
+	const handleBulkDeleteClick = (_rows: WaybillPrint[]) => {
 		setBulkDeleteDialogOpen(true);
 	};
 
@@ -288,19 +310,26 @@ const Home = () => {
 							}}
 							showTrigger={false}
 						/>
-						<PrintWaybillDialog
-							waybill={selectedWaybill}
-							open={printDialogOpen}
-							onOpenChange={setPrintDialogOpen}
-							onConfirm={handlePrintConfirm}
-						/>
-						<DeleteConfirmationDialog
-							waybill={selectedWaybill}
-							open={deleteDialogOpen}
-							onOpenChange={setDeleteDialogOpen}
-							onConfirm={handleDeleteConfirm}
-							isLoading={isDeleting}
-						/>
+					<PrintWaybillDialog
+						waybill={selectedWaybill}
+						open={printDialogOpen}
+						onOpenChange={setPrintDialogOpen}
+						onConfirm={handlePrintConfirm}
+					/>
+					<CancelPrintConfirmationDialog
+						waybill={selectedWaybill}
+						open={cancelDialogOpen}
+						onOpenChange={setCancelDialogOpen}
+						onConfirm={handleCancelConfirm}
+						isLoading={isCancelling}
+					/>
+					<DeleteConfirmationDialog
+						waybill={selectedWaybill}
+						open={deleteDialogOpen}
+						onOpenChange={setDeleteDialogOpen}
+						onConfirm={handleDeleteConfirm}
+						isLoading={isDeleting}
+					/>
 					</>
 				)}
 
