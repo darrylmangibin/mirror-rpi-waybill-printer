@@ -31,3 +31,4 @@ def downgrade():
         batch_op.drop_column('download_retry_count')
     # ### end Alembic commands ###
 
+
