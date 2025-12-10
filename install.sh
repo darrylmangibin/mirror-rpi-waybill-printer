@@ -276,7 +276,7 @@ fi
 
 # Install frontend packages as the actual user
 echo -e "${YELLOW}Installing npm packages...${NC}"
-sudo -u "$ACTUAL_USER" npm install
+sudo -u "$ACTUAL_USER" npm install --omit=dev
 echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
 
 # Return to root directory
