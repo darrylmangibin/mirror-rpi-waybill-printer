@@ -20,7 +20,7 @@ export const ScanPrintJobDialog = () => {
   const [open, setOpen] = useState(false);
   const { networkInfo, loading, error, actions } = useGetPrintJobQREndPoint();
   const exposedApiUrl =
-    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_BASE_URL ||
     networkInfo?.api_url ||
     "http://localhost:5000";
 
