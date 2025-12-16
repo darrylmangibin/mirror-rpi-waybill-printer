@@ -281,6 +281,7 @@ fi
 # Install frontend packages as the actual user
 echo -e "${YELLOW}Installing npm packages...${NC}"
 sudo -u "$ACTUAL_USER" npm install --omit=dev
+sudo -u "$ACTUAL_USER" npm install typescript
 echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
 
 # Return to root directory
