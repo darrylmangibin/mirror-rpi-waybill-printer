@@ -20,6 +20,8 @@ export const ScanPrintJobDialog = () => {
 	const [open, setOpen] = useState(false);
 	const { networkInfo, loading, error, actions } = useGetPrintJobQREndPoint();
 
+	const API_URL = import.meta.env.VITE_API_URL;
+	
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen);
 		if (newOpen && !networkInfo) {
@@ -84,7 +86,7 @@ export const ScanPrintJobDialog = () => {
 						<div className='space-y-4 flex flex-col items-center'>
 							<div className='flex justify-center bg-white w-full'>
 								<QRCodeSVG
-									value={`${networkInfo.api_url}`}
+									value={`${API_URL}`}
 									size={200}
 									level='H'
 									includeMargin={false}
@@ -93,7 +95,7 @@ export const ScanPrintJobDialog = () => {
 							</div>
 
 							<p className='text-xs font-mono break-all max-w-sm text-center mb-8 bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600 shadow-sm'>
-								{`${networkInfo.api_url}`}
+								{`${API_URL}`}
 							</p>
 						</div>
 					)}
