@@ -236,8 +236,12 @@ echo -e "${GREEN}✅ Playwright dependencies installed${NC}"
 
 # Install system Chromium for RPi (Playwright bundles don't support ARM)
 echo -e "${YELLOW}Installing system Chromium browser...${NC}"
-apt install -y chromium
-echo -e "${GREEN}✅ System Chromium installed${NC}"
+if ! command -v chromium &> /dev/null && ! command -v chromium-browser &> /dev/null; then
+    apt install -y chromium
+    echo -e "${GREEN}✅ System Chromium installed${NC}"
+else
+    echo -e "${GREEN}✅ Chromium already installed${NC}"
+fi
 
 # Initialize database migrations (one-time setup)
 echo -e "${YELLOW}Initializing database migrations...${NC}"
