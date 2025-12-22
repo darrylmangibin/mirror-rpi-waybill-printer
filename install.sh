@@ -13,8 +13,6 @@ echo -e "${BLUE}🚀 Installing Prerequisites${NC}\n"
 echo -e "${YELLOW}📦 Installing Python 3.11${NC}"
 sudo apt install -y python3 python3-pip python3-venv
 
-sudo apt install -y python3 python3-pip python3-venv
-
 # Get the directory where this script is located (works from any directory)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
