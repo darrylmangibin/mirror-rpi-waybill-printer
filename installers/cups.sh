@@ -140,6 +140,5 @@ fi
 
 # Install additional printer drivers and utilities
 echo -e "${YELLOW}Installing additional printer drivers and utilities...${NC}"
-apt update
 apt install -y printer-driver-all imagemagick
 echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
