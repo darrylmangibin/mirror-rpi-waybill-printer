@@ -53,10 +53,49 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
         echo -e "${GREEN}Python 3-venv is already installed. Skipping installation.${NC}"
     fi
 
-    ## Activate virtual environment
-    echo -e "${YELLOW}Activating virtual environment...${NC}"
-    source venv/bin/activate
-    echo -e "${GREEN}Virtual environment activated${NC}"
+    # Get the actual user (when running with sudo)
+    # This is crucial for setting correct file permissions for venv, database, etc.
+    ACTUAL_USER=${SUDO_USER:-$(whoami)}
+    echo -e "${GREEN}✅ Running with admin privileges as user: $ACTUAL_USER${NC}\n"
+
+    # Create virtual environment if it doesn't exist
+    echo -e "${YELLOW}Setting up Python environment...${NC}"
+
+    # Get the directory where this script is located (works from any directory)
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    cd "$SCRIPT_DIR" || exit 1
+
+    if [ ! -d "venv" ]; then
+        echo -e "${YELLOW}Creating Python virtual environment...${NC}"
+        # Use --system-site-packages to allow access to system-installed packages like python3-cups
+        sudo -u "$ACTUAL_USER" python3 -m venv --system-site-packages venv
+    fi
+
+    # Install Python dependencies using the venv's pip
+    echo -e "${YELLOW}Installing Python dependencies...${NC}"
+    sudo -u "$ACTUAL_USER" ./venv/bin/pip install -r requirements.txt
+    echo -e "${GREEN}✅ Python dependencies installed${NC}"
+
+    # Initialize database migrations (one-time setup)
+    echo -e "${YELLOW}Initializing database migrations...${NC}"
+    export FLASK_APP=run:app
+
+    # Create app/instance directory for database
+    mkdir -p app/instance
+    chown "$ACTUAL_USER:$ACTUAL_USER" app/instance
+
+    # Only run flask db init if migrations directory doesn't exist
+    if [ ! -d "app/migrations" ]; then
+        sudo -u "$ACTUAL_USER" ./venv/bin/flask db init
+        echo -e "${GREEN}✅ Database migrations initialized${NC}"
+    else
+        echo -e "${GREEN}✅ Database migrations already exist${NC}"
+    fi
+
+    # Apply migrations to create database tables
+    echo -e "${YELLOW}Creating database tables...${NC}"
+    sudo -u "$ACTUAL_USER" ./venv/bin/flask db upgrade
+    echo -e "${GREEN}✅ Database tables created${NC}"
 
 elif [[ "$INSTALL_MODE" == "offline" ]]; then
     echo -e "${BLUE}Proceeding with Offline Installation...${NC}\n"
