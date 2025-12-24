@@ -33,7 +33,7 @@ sudo ./install.sh
 
 ### Steps of installation
 
-1. You will be prompted by what mode of installation offline or online.
+You will be prompted by what mode of installation offline or online.
 
 ``` text
 Please select installation mode:
@@ -41,6 +41,16 @@ Please select installation mode:
   2) Offline Installation (requires pre-downloaded .deb packages in a 'debs/' folder)
 Enter your choice (1 or 2): 1
 ```
+
+#### Chronological order of installation
+
+Checks the library if installed, if not, installs it.
+
+1. `python3`
+
+2. `python3-pip`
+
+3. `python3-venv`
 
 ### Running the Application
 
