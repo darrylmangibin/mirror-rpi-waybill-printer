@@ -53,6 +53,11 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
         echo -e "${GREEN}Python 3-venv is already installed. Skipping installation.${NC}"
     fi
 
+    ## Activate virtual environment
+    echo -e "${YELLOW}Activating virtual environment...${NC}"
+    source venv/bin/activate
+    echo -e "${GREEN}Virtual environment activated${NC}"
+
 elif [[ "$INSTALL_MODE" == "offline" ]]; then
     echo -e "${BLUE}Proceeding with Offline Installation...${NC}\n"
     # TODO: Implement actual offline installation logic here.
