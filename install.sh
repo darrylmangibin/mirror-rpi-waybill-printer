@@ -28,6 +28,7 @@ fi
 
 if [[ "$INSTALL_MODE" == "online" ]]; then
     echo -e "${BLUE}Proceeding with Online Installation...${NC}\n"
+
     # Existing online installation logic goes here:
     sudo apt update
 
@@ -41,6 +42,12 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
 
     # Install CUPS for printing functionality with Zebra support
     source ./installers/cups.sh
+
+    # Creating copy of .env.example to .env
+    cp .env.example .env
+    echo -e "${GREEN}✅ .env file created for backend${NC}"
+    cd frontend && cp .env.example .env
+    echo -e "${GREEN}✅ .env file created for frontend${NC}"
 
     # Create virtual environment if it doesn't exist
     echo -e "${YELLOW}Setting up Python environment...${NC}"
@@ -57,7 +64,8 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
 
     # Install Python dependencies using the venv's pip
     echo -e "${YELLOW}Installing Python dependencies...${NC}"
-    sudo -u "$ACTUAL_USER" ./venv/bin/pip install -r requirements.txt
+    pwd # Add this to check the current working directory
+    sudo -u "$ACTUAL_USER" ./venv/bin/pip install -r "$SCRIPT_DIR/requirements.txt"
     echo -e "${GREEN}✅ Python dependencies installed${NC}"
 
     # Initialize database migrations (one-time setup)
