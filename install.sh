@@ -32,26 +32,7 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     sudo apt update
 
     ## Python Installation
-    echo -e "${YELLOW}📦 Installing Python 3.x${NC}"
-    if ! dpkg -s python3 &> /dev/null; then
-        sudo apt install -y python3
-    else
-        echo -e "${GREEN}Python 3.x is already installed. Skipping installation.${NC}"
-    fi
-
-    if ! dpkg -s python3-pip &> /dev/null; then
-        echo -e "${YELLOW}📦 Installing Python 3-pip${NC}"
-        sudo apt install -y python3-pip
-    else
-        echo -e "${GREEN}Python 3-pip is already installed. Skipping installation.${NC}"
-    fi
-
-    if ! dpkg -s python3-venv &> /dev/null; then
-        echo -e "${YELLOW}📦 Installing Python 3-venv${NC}"
-        sudo apt install -y python3-venv
-    else
-        echo -e "${GREEN}Python 3-venv is already installed. Skipping installation.${NC}"
-    fi
+    source ./installers/python.sh
 
     # Get the actual user (when running with sudo)
     # This is crucial for setting correct file permissions for venv, database, etc.
