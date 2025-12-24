@@ -34,13 +34,13 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     ## Python Installation
     source ./installers/python.sh
 
-    # Install CUPS for printing functionality with Zebra support
-    source ./installers/cups.sh
-
     # Get the actual user (when running with sudo)
     # This is crucial for setting correct file permissions for venv, database, etc.
     ACTUAL_USER=${SUDO_USER:-$(whoami)}
     echo -e "${GREEN}✅ Running with admin privileges as user: $ACTUAL_USER${NC}\n"
+
+    # Install CUPS for printing functionality with Zebra support
+    source ./installers/cups.sh
 
     # Create virtual environment if it doesn't exist
     echo -e "${YELLOW}Setting up Python environment...${NC}"

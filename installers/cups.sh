@@ -12,15 +12,16 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}Installing CUPS (Common Unix Printing System) with Zebra printer support...${NC}"
 if ! command -v lpstat &> /dev/null; then
-    apt install -y cups cups-client cups-bsd cups-filters python3-cups libcups2-dev ghostscript printer-driver-zebra
-    echo -e "${GREEN}✅ CUPS packages installed with Zebra support${NC}"
+    # Removed 'printer-driver-zebra' from the list
+    apt install -y cups cups-client cups-bsd cups-filters python3-cups libcups2-dev ghostscript
+    echo -e "${GREEN}✅ CUPS packages installed with basic support${NC}"
 else
     echo -e "${GREEN}✅ CUPS already installed${NC}"
     if ! dpkg -l | grep -q python3-cups; then
         echo -e "${YELLOW}Installing Python3 CUPS bindings and Zebra drivers...${NC}"
-        apt update
-        apt install -y python3-cups libcups2-dev cups-filters ghostscript printer-driver-zebra
-        echo -e "${GREEN}✅ Python3 CUPS bindings and Zebra support installed${NC}"
+        # Removed 'printer-driver-zebra' from the list
+        apt install -y python3-cups libcups2-dev cups-filters ghostscript
+        echo -e "${GREEN}✅ Python3 CUPS bindings and basic support installed${NC}"
     fi
 fi
 
