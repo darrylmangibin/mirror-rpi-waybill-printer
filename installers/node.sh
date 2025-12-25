@@ -82,14 +82,20 @@ if [ -d "$FRONTEND_DIR" ]; then
 
     echo -e "${BLUE}Running npm install...${NC}"
     # Use npm install to get all dependencies, including devDependencies for the build
-    npm install --omit=dev
-    # Install typescript needed for the build
-    npm install typescript
+    # Ensure npm install runs as the actual user to avoid permission issues
+    sudo -u "$ACTUAL_USER" npm install --omit=dev
+    # Install typescript needed for the build as the actual user
+    sudo -u "$ACTUAL_USER" npm install typescript
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}npm install completed successfully.${NC}"
+        # Ensure the frontend/dist directory has correct permissions before building
+        echo -e "${BLUE}Setting permissions for frontend/dist...${NC}"
+        sudo chown -R "$ACTUAL_USER:$ACTUAL_USER" "$FRONTEND_DIR/dist" || true # '|| true' to prevent script exit if dir doesn't exist yet
+        sudo chmod -R u+w "$FRONTEND_DIR/dist" || true # '|| true' to prevent script exit if dir doesn't exist yet
         echo -e "${BLUE}Running npm run build...${NC}"
-        npm run build
+        # Ensure npm run build runs as the actual user
+        sudo -u "$ACTUAL_USER" npm run build
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}Frontend project built successfully.${NC}"
         else

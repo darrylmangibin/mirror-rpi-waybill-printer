@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 !.env.example
+
+# Vite specific generated files
+*.timestamp-*
