@@ -26,6 +26,7 @@ else
     echo -e "${GREEN}✅ libasound2t64 installed successfully.${NC}"
 fi
 
+# Install the rest of the Playwright dependencies
 sudo apt install -y \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -52,7 +53,7 @@ sudo apt install -y \
     libxrender1 \
     libxss1 \
     libxtst6
-echo -e "${GREEN}✅ Playwright dependencies installed${NC}"
+echo -e "${GREEN}✅ Other Playwright dependencies installed${NC}"
 
 # Install system Chromium for RPi (Playwright bundles don't support ARM)
 echo -e "${YELLOW}Installing system Chromium browser...${NC}"
