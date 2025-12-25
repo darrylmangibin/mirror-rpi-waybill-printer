@@ -120,6 +120,5 @@ elif [[ "$INSTALL_MODE" == "offline" ]]; then
     # would likely install packages or provide clearer instructions.
 fi
 
-# ... the rest of your install.sh script would continue here, after prerequisites are handled.
-# E.g., setting up virtual environment, installing pip dependencies, systemd services, etc.
-
+# Enable systemd services
+source ./installers/setup-systemd.sh
