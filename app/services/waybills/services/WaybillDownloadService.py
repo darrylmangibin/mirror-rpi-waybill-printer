@@ -505,19 +505,23 @@ class WaybillDownloadService:
             async with async_playwright() as p:
                 # Use system Chromium on RPi (Playwright bundles don't support ARM architecture)
                 chromium_path = '/usr/bin/chromium'
+                snap_chromium_path = '/snap/bin/chromium'
                 chromium_browser_path = 'chromium-browser'
                 
-                try:
-                    browser = await p.chromium.launch(
-                        headless=True,
-                        executable_path=chromium_path
-                    )
-                except Exception as e:
-                    logger.warning(f"Could not launch Chromium at {chromium_path}: {e}. Trying {chromium_browser_path}...")
-                    browser = await p.chromium.launch(
-                        headless=True,
-                        executable_path=chromium_browser_path
-                    )
+                browser = None
+                for path in [chromium_path, snap_chromium_path, chromium_browser_path]:
+                    try:
+                        browser = await p.chromium.launch(
+                            headless=True,
+                            executable_path=path
+                        )
+                        logger.info(f"Successfully launched Chromium from {path}")
+                        break
+                    except Exception as e:
+                        logger.warning(f"Could not launch Chromium at {path}: {e}")
+                
+                if not browser:
+                    raise Exception("Failed to launch Chromium: No executable found at expected paths.")
                 page = await browser.new_page()
                 
                 logger.info(f"Playwright browser launched, loading page - Invoice: {invoice_number}")
