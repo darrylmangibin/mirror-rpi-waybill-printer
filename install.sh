@@ -32,6 +32,18 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     # Existing online installation logic goes here:
     sudo apt update
 
+    # Get the actual user (when running with sudo)
+    # This is crucial for setting correct file permissions for venv, database, etc.
+    ACTUAL_USER=${SUDO_USER:-$(whoami)}
+    echo -e "${GREEN}✅ Running with admin privileges as user: $ACTUAL_USER${NC}\n"
+
+    # Ensure the entire project directory has correct permissions for the actual user
+    echo -e "${BLUE}Setting ownership and permissions for the entire rpi-waybill-printer project...${NC}"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    sudo chown -R "$ACTUAL_USER:$ACTUAL_USER" "$SCRIPT_DIR" # SCRIPT_DIR is the project root
+    sudo chmod -R u+w "$SCRIPT_DIR"
+    echo -e "${GREEN}✅ Project directory permissions set${NC}"
+
     # Create .env file for backend
     cp .env.example .env
     echo -e "${GREEN}✅ .env file created for backend${NC}"

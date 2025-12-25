@@ -89,10 +89,10 @@ if [ -d "$FRONTEND_DIR" ]; then
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}npm install completed successfully.${NC}"
-        # Ensure the frontend/dist directory has correct permissions before building
-        echo -e "${BLUE}Setting permissions for frontend/dist...${NC}"
-        sudo chown -R "$ACTUAL_USER:$ACTUAL_USER" "$FRONTEND_DIR/dist" || true # '|| true' to prevent script exit if dir doesn't exist yet
-        sudo chmod -R u+w "$FRONTEND_DIR/dist" || true # '|| true' to prevent script exit if dir doesn't exist yet
+        # Clean up any existing frontend/dist directory to avoid permission issues
+        echo -e "${BLUE}Cleaning up existing frontend/dist directory...${NC}"
+        sudo rm -rf "$FRONTEND_DIR/dist"
+        
         echo -e "${BLUE}Running npm run build...${NC}"
         # Ensure npm run build runs as the actual user
         sudo -u "$ACTUAL_USER" npm run build
