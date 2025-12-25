@@ -66,6 +66,9 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     # Install Node.js and npm
     source ./installers/node.sh
 
+    # Install Chromium for HTML-to-PDF conversion
+    source ./installers/chromium.sh
+
     # Create virtual environment if it doesn't exist
     echo -e "${YELLOW}Setting up Python environment...${NC}"
 
