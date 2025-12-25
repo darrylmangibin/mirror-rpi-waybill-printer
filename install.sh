@@ -32,6 +32,14 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     # Existing online installation logic goes here:
     sudo apt update
 
+    # Create .env file for backend
+    cp .env.example .env
+    echo -e "${GREEN}✅ .env file created for backend${NC}"
+    cd frontend && cp .env.example .env
+    # Change the location to the root directory
+    cd ..
+    echo -e "${GREEN}✅ .env file created for frontend${NC}"
+
     ## Python Installation
     source ./installers/python.sh
 
@@ -43,11 +51,8 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     # Install CUPS for printing functionality with Zebra support
     source ./installers/cups.sh
 
-    # Creating copy of .env.example to .env
-    cp .env.example .env
-    echo -e "${GREEN}✅ .env file created for backend${NC}"
-    cd frontend && cp .env.example .env
-    echo -e "${GREEN}✅ .env file created for frontend${NC}"
+    # Install Node.js and npm
+    source ./installers/node.sh
 
     # Create virtual environment if it doesn't exist
     echo -e "${YELLOW}Setting up Python environment...${NC}"
