@@ -10,3 +10,4 @@ export { useChangeWaybillStatus } from './useChangeWaybillStatus';
 export { useWaybillStream } from './useWaybillStream';
 export { useDeleteWaybill } from './useDeleteWaybill';
 export { useClearTableSelection } from './useClearTableSelection';
+export { useCleanupWaybills } from './useCleanupWaybills';
