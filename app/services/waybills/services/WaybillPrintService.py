@@ -190,12 +190,27 @@ class WaybillPrintService:
         try:
             logger.info(f"Hey I am cleaning. Cleaning waybills from {from_} to {to}")
             
+            # Parse dates and set to start and end of day
+            from datetime import datetime
+            from_datetime = datetime.strptime(from_, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+            to_datetime = datetime.strptime(to, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=0)
+            
+            # Fetch waybills within date range
+            waybills_to_clean = WaybillPrint.query.filter(
+                WaybillPrint.created_at >= from_datetime,
+                WaybillPrint.created_at <= to_datetime
+            ).all()
+            
+            count = len(waybills_to_clean)
+            logger.info(f"Found {count} waybills to clean between {from_} (00:00:00) and {to} (23:59:59)")
+            
             return {
                 "status": "success",
-                "message": f"Clean up requested for waybills from {from_} to {to}",
+                "message": f"Found {count} waybills to clean",
                 "data": {
                     "from": from_,
-                    "to": to
+                    "to": to,
+                    "count": count
                 }
             }
         
