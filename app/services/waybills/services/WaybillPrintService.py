@@ -172,7 +172,7 @@ class WaybillPrintService:
     def clean_up_waybills_and_files(from_: str, to: str) -> dict:
         """
         Clean waybills and files within a date range.
-        Deletes waybills created between from_ and to dates and removes associated files.
+        Optimized for large datasets with batch processing.
         
         Args:
             from_ (str): Start date in 'YYYY-MM-DD' format
@@ -180,37 +180,71 @@ class WaybillPrintService:
         
         Returns:
             dict: Response with status, message, and data about cleaned items
-            
-        Example:
-            >>> result = WaybillPrintService.clean_up_waybills_and_files('2025-12-26', '2025-12-27')
-            >>> print(result)
         """
         from datetime import datetime
         
+        BATCH_SIZE = 100  # Process in batches to avoid memory issues
+        
         try:
-            logger.info(f"Hey I am cleaning. Cleaning waybills from {from_} to {to}")
-            
             # Parse dates and set to start and end of day
-            from datetime import datetime
             from_datetime = datetime.strptime(from_, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
             to_datetime = datetime.strptime(to, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=0)
             
-            # Fetch waybills within date range
-            waybills_to_clean = WaybillPrint.query.filter(
-                WaybillPrint.created_at >= from_datetime,
-                WaybillPrint.created_at <= to_datetime
-            ).all()
+            # Track cleanup results
+            total_found = 0
+            deleted_records = 0
+            deleted_files = 0
+            errors = []
             
-            count = len(waybills_to_clean)
-            logger.info(f"Found {count} waybills to clean between {from_} (00:00:00) and {to} (23:59:59)")
+            # Process in batches to handle large datasets efficiently
+            offset = 0
+            while True:
+                # Fetch batch of waybills
+                batch = WaybillPrint.query.filter(
+                    WaybillPrint.created_at >= from_datetime,
+                    WaybillPrint.created_at <= to_datetime
+                ).offset(offset).limit(BATCH_SIZE).all()
+                
+                if not batch:
+                    break  # No more records
+                
+                total_found += len(batch)
+                
+                # Delete each waybill and its associated file
+                for waybill in batch:
+                    try:
+                        # Delete local file if it exists and path is not null
+                        if waybill.local_file_path:
+                            try:
+                                if os.path.exists(waybill.local_file_path):
+                                    os.remove(waybill.local_file_path)
+                                    deleted_files += 1
+                            except Exception as e:
+                                error_msg = f"Failed to delete file for waybill {waybill.id}: {str(e)}"
+                                errors.append(error_msg)
+                        
+                        # Delete database record
+                        db.session.delete(waybill)
+                        deleted_records += 1
+                        
+                    except Exception as e:
+                        error_msg = f"Error cleaning waybill {waybill.id}: {str(e)}"
+                        errors.append(error_msg)
+                
+                # Commit batch deletions
+                db.session.commit()
+                offset += BATCH_SIZE
             
             return {
                 "status": "success",
-                "message": f"Found {count} waybills to clean",
+                "message": f"Successfully cleaned {deleted_records} waybills and deleted {deleted_files} files",
                 "data": {
                     "from": from_,
                     "to": to,
-                    "count": count
+                    "total_found": total_found,
+                    "records_deleted": deleted_records,
+                    "files_deleted": deleted_files,
+                    "errors": errors if errors else None
                 }
             }
         
