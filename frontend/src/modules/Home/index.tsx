@@ -23,7 +23,7 @@ import { CancelPrintConfirmationDialog } from "@/modules/Home/components/CancelP
 import { DeleteConfirmationDialog } from "@/modules/Home/components/DeleteConfirmationDialog";
 import { BulkActionsDropdown } from "@/modules/Home/components/BulkActionsDropdown";
 import { BulkDeleteConfirmationDialog } from "@/modules/Home/components/BulkDeleteConfirmationDialog";
-import { CleanupActionsDropdown } from "@/modules/Home/components/CleanupActionsDropdown";
+import { WaybillActionsDropdown } from "@/modules/Home/components/CleanupActionsDropdown";
 import { CleanupWaybillsDialog } from "@/modules/Home/components/CleanupWaybillsDialog";
 import { CreateWaybillPrintDialog } from "@/modules/Home/components/CreateWaybillPrintDialog";
 
@@ -250,7 +250,7 @@ const Home = () => {
           </div>
           {/* Actions Dropdown */}
           <div className="flex gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
-            <CleanupActionsDropdown
+            <WaybillActionsDropdown
               onNewClick={() => setCreateWaybillDialogOpen(true)}
               onCleanupClick={() => setCleanupDialogOpen(true)}
             />
@@ -358,6 +358,8 @@ const Home = () => {
             setIsPolling(true);
             // The waybill will be in the list after creation
             // SSE will notify of the new waybill immediately
+            // Close the dialog after successful creation
+            setCreateWaybillDialogOpen(false);
           }}
         />
 
