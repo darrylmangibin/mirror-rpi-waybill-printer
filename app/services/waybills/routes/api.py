@@ -214,7 +214,7 @@ def cleanup_waybill_files_api():
 
     # Instantiate and execute the CleanWaybillsAction
     cleanup_action = CleanWaybillsAction()
-    result = cleanup_action.execute(from_date=from_date, to_date=to_date)
+    result = cleanup_action(from=from_date, to=to_date)
 
     return jsonify(result), 200 # Assuming the action returns a dict with status and message
 
