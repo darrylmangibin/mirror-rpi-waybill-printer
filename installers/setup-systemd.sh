@@ -9,26 +9,14 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Setting up RPI Waybill Printer Systemd Services${NC}\n"
 
-# Check if running as sudo
-if [ "$EUID" -ne 0 ]; then 
-    echo -e "${RED}❌ This script must be run with sudo${NC}"
-    echo -e "${YELLOW}Usage: sudo ./setup-systemd.sh${NC}"
-    exit 1
-fi
-
-# Get the actual user (when running with sudo)
-ACTUAL_USER=${SUDO_USER:-$(whoami)}
+# ACTUAL_USER is assumed to be passed from the main install.sh script.
+# The script is also assumed to be run with sudo by the parent install.sh script.
 
 # Try to determine project directory
-# First, try using the directory where this script is located
+# First, get the directory where this script is located (e.g., /path/to/project/installers)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "$SCRIPT_DIR/run.py" ] && [ -f "$SCRIPT_DIR/requirements.txt" ]; then
-    PROJECT_DIR="$SCRIPT_DIR"
-else
-    # Fallback: assume standard location
-    HOME_DIR=$(eval echo ~$ACTUAL_USER)
-    PROJECT_DIR="$HOME_DIR/inspire-projects/rpi-waybill-printer"
-fi
+# The project root is one level up from the installers directory
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo -e "${GREEN}✅ User: $ACTUAL_USER${NC}"
 echo -e "${GREEN}✅ Project: $PROJECT_DIR${NC}\n"
@@ -36,7 +24,7 @@ echo -e "${GREEN}✅ Project: $PROJECT_DIR${NC}\n"
 # Verify project directory exists
 if [ ! -d "$PROJECT_DIR" ]; then
     echo -e "${RED}❌ Project directory not found: $PROJECT_DIR${NC}"
-    echo -e "${YELLOW}Please run this script from the project root directory.${NC}"
+    echo -e "${YELLOW}Please ensure the project root is correctly identified.${NC}"
     exit 1
 fi
 
@@ -96,7 +84,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     sleep 2
     systemctl start rpi-waybill-printer-frontend.service
     sleep 2
-    
+
     echo -e "${BLUE}Service Status:${NC}"
     systemctl status rpi-waybill-printer-backend.service --no-pager
     echo ""
@@ -121,4 +109,3 @@ echo -e "\n${BLUE}Access the application:${NC}"
 echo -e "  Backend:  http://<pi-ip>:5000"
 echo -e "  Frontend: http://<pi-ip>:5173"
 echo -e "\n"
-
