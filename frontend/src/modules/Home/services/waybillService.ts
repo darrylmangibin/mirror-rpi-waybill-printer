@@ -289,6 +289,32 @@ const waybillService = {
       );
     }
   },
+
+  /**
+   * Clean up waybills and their associated files within a date range
+   * @param from - Start date in 'YYYY-MM-DD' format
+   * @param to - End date in 'YYYY-MM-DD' format
+   * @returns Promise with cleanup result
+   */
+  async cleanupWaybills(from: string, to: string): Promise<WaybillsResponse> {
+    try {
+      const payload = {
+        from,
+        to,
+      };
+      const response = await api.post<WaybillsResponse>(
+        WAYBILL_ENDPOINTS.CLEANUP_PRINTS,
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to cleanup waybills: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  },
 };
 
 export default waybillService;
