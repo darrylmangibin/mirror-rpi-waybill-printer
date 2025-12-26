@@ -16,8 +16,8 @@ class CleanWaybillAndFilesRequest(FormRequest):
             dict: Validation rules
         """
         return {
-            'from': ['required', 'string', 'regex:/^\d{4}-\d{2}-\d{2}$/'],
-            'to': ['required', 'string', 'regex:/^\d{4}-\d{2}-\d{2}$/']
+            'from': ['required', 'string', 'regex:^\d{4}-\d{2}-\d{2}$'],
+            'to': ['required', 'string', 'regex:^\d{4}-\d{2}-\d{2}$']
         }
     
     def messages(self):
