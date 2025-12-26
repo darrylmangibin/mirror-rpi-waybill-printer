@@ -167,3 +167,88 @@ class WaybillPrintService:
             db.session.rollback()
             logger.error(f"Error changing WaybillPrint status: {str(e)}", exc_info=True)
             raise
+    
+    @staticmethod
+    def clean_up_waybills_and_files(from_: str, to: str) -> dict:
+        """
+        Clean waybills and files within a date range.
+        Optimized for large datasets with batch processing.
+        
+        Args:
+            from_ (str): Start date in 'YYYY-MM-DD' format
+            to (str): End date in 'YYYY-MM-DD' format
+        
+        Returns:
+            dict: Response with status, message, and data about cleaned items
+        """
+        from datetime import datetime
+        
+        BATCH_SIZE = 100  # Process in batches to avoid memory issues
+        
+        try:
+            # Parse dates and set to start and end of day
+            from_datetime = datetime.strptime(from_, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+            to_datetime = datetime.strptime(to, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=0)
+            
+            # Track cleanup results
+            total_found = 0
+            deleted_records = 0
+            deleted_files = 0
+            errors = []
+            
+            # Process in batches to handle large datasets efficiently
+            offset = 0
+            while True:
+                # Fetch batch of waybills
+                batch = WaybillPrint.query.filter(
+                    WaybillPrint.created_at >= from_datetime,
+                    WaybillPrint.created_at <= to_datetime
+                ).offset(offset).limit(BATCH_SIZE).all()
+                
+                if not batch:
+                    break  # No more records
+                
+                total_found += len(batch)
+                
+                # Delete each waybill and its associated file
+                for waybill in batch:
+                    try:
+                        # Delete local file if it exists and path is not null
+                        if waybill.local_file_path:
+                            try:
+                                if os.path.exists(waybill.local_file_path):
+                                    os.remove(waybill.local_file_path)
+                                    deleted_files += 1
+                            except Exception as e:
+                                error_msg = f"Failed to delete file for waybill {waybill.id}: {str(e)}"
+                                errors.append(error_msg)
+                        
+                        # Delete database record
+                        db.session.delete(waybill)
+                        deleted_records += 1
+                        
+                    except Exception as e:
+                        error_msg = f"Error cleaning waybill {waybill.id}: {str(e)}"
+                        errors.append(error_msg)
+                
+                # Commit batch deletions
+                db.session.commit()
+                offset += BATCH_SIZE
+            
+            return {
+                "status": "success",
+                "message": f"Successfully cleaned {deleted_records} waybills and deleted {deleted_files} files",
+                "data": {
+                    "from": from_,
+                    "to": to,
+                    "total_found": total_found,
+                    "records_deleted": deleted_records,
+                    "files_deleted": deleted_files,
+                    "errors": errors if errors else None
+                }
+            }
+        
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error in clean_up_waybills_and_files: {str(e)}", exc_info=True)
+            raise

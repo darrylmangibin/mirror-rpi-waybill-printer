@@ -20,39 +20,37 @@ rpi-waybill-printer/
 
 ### Installation
 
-Run the one-time installation script to set up both backend and frontend:
+This guide will walk you through setting up the RPI Waybill Printer. There are two modes of installation: Online and Offline.
 
-```bash
-./install.sh
+### Preparation for installation
+
+To prepare `install.sh` we need to enter this on the terminal. Then bash the `install.sh` with sudo. Make sure you are on the rpi-waybill-printer root.
+
+``` text
+chmod +x install.sh
+sudo ./install.sh
 ```
 
-**What `install.sh` does:**
+### Steps of installation
 
-- **Backend Setup:**
-  - Creates Python virtual environment (`venv/`)
-  - Installs Flask and all Python dependencies from `requirements.txt`
-  - Initializes database migrations
-  - Creates necessary directories (`app/instance/`)
+You will be prompted by what mode of installation offline or online.
 
-- **Frontend Setup:**
-  - Checks for Node.js/npm availability
-  - Installs all React dependencies from `frontend/package.json`
-  - Sets up the complete development environment
-
-- **Verification:**
-  - Provides clear status updates with colored output
-  - Shows next steps for running the application
-
-**Prerequisites:**
-
-- Python 3.x
-- Node.js and npm (will prompt for installation if missing)
-
-Before running `install.sh`, make sure to install the Python virtual environment package:
-
-```bash
-sudo apt install python3-venv
+``` text
+Please select installation mode:
+  1) Online Installation (requires internet access to download packages)
+  2) Offline Installation (requires pre-downloaded .deb packages in a 'debs/' folder)
+Enter your choice (1 or 2): 1
 ```
+
+#### Chronological order of installation
+
+Checks the library if installed, if not, installs it.
+
+1. `python3`
+
+2. `python3-pip`
+
+3. `python3-venv`
 
 ### Running the Application
 
