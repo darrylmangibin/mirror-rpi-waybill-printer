@@ -171,52 +171,7 @@ def change_status(waybill_print):
 
 
 @waybills_bp.route('/prints/cleanup', methods=['POST'])
-def cleanup_waybill_files_api():
-    """
-    API endpoint to trigger the cleanup of old waybill print files within a specified date range.
-
-    Request Body (JSON):
-        from (str, optional): A date string in 'YYYY-MM-DD' format.
-                               Only waybills created on or after this date will be considered.
-        to (str, optional): A date string in 'YYYY-MM-DD' format.
-                            Only waybills created on or before this date will be considered.
-    """
-    data = request.get_json()
-    if not data:
-        return jsonify({
-            'status': 'error',
-            "message": "Invalid JSON body. Please provide 'from' and 'to' in the request body."
-        }), 400
-
-    from_str = data.get('from')
-    to_str = data.get('to')
-
-    from_date = None
-    to_date = None
-
-    if from_str:
-        try:
-            from_date = datetime.strptime(from_str, '%Y-%m-%d')
-        except ValueError:
-            return jsonify({
-                'status': 'error',
-                "message": "Invalid date format for 'from' in body. Please use YYYY-MM-DD."
-            }), 400
-
-    if to_str:
-        try:
-            to_date = datetime.strptime(to_str, '%Y-%m-%d')
-        except ValueError:
-            return jsonify({
-                'status': 'error',
-                "message": "Invalid date format for 'to' in body. Please use YYYY-MM-DD."
-            }), 400
-
-    # Instantiate and execute the CleanWaybillsAction
-    cleanup_action = CleanWaybillsAction()
-    result = cleanup_action(from=from_date, to=to_date)
-
-    return jsonify(result), 200 # Assuming the action returns a dict with status and message
+def cleanup_waybills_and_files():
 
 
 @waybills_bp.route('/prints/<int:waybill_print>/preview', methods=['GET'])
