@@ -169,6 +169,64 @@ def change_status(waybill_print):
     return jsonify(result), status_code
 
 
+@waybills_bp.route('/prints/cleanup', methods=['POST'])
+def cleanup_waybill_files_api():
+    """
+    API endpoint to trigger the cleanup of old waybill print files within a specified date range.
+
+    Request Body (JSON):
+        from (str, optional): A date string in 'YYYY-MM-DD' format.
+                               Only waybills created on or after this date will be considered.
+        to (str, optional): A date string in 'YYYY-MM-DD' format.
+                            Only waybills created on or before this date will be considered.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({
+            'status': 'error',
+            "message": "Invalid JSON body. Please provide 'from' and 'to' in the request body."
+        }), 400
+
+    from_str = data.get('from')
+    to_str = data.get('to')
+
+    from_date = None
+    to_date = None
+
+    if from_str:
+        try:
+            from_date = datetime.strptime(from_str, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({
+                'status': 'error',
+                "message": "Invalid date format for 'from' in body. Please use YYYY-MM-DD."
+            }), 400
+
+    if to_str:
+        try:
+            to_date = datetime.strptime(to_str, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({
+                'status': 'error',
+                "message": "Invalid date format for 'to' in body. Please use YYYY-MM-DD."
+            }), 400
+
+    log_message = f"Hey, we are preparing to clean files. "
+    if from_date:
+        log_message += f"Filtering from {from_date.strftime('%Y-%m-%d')}. "
+    if to_date:
+        log_message += f"Filtering up to {to_date.strftime('%Y-%m-%d')}. "
+    if not from_date and not to_date:
+        log_message += "No specific date range provided, will use default retention policies. "
+
+    logger.info(log_message)
+
+    return jsonify({
+        'status': 'success',
+        'message': log_message.strip()
+    }), 200
+
+
 @waybills_bp.route('/prints/<int:waybill_print>/preview', methods=['GET'])
 @get_model(WaybillPrint)
 def preview_file(waybill_print):
