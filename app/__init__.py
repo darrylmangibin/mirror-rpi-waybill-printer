@@ -10,6 +10,7 @@ from app.services.waybills.jobs.download_waybill_job import start_workers
 from app.services.waybills.jobs.print_waybill_job import start_print_workers
 from app.services.waybills.jobs.print_job_monitor_cron import start_print_monitor_cron
 from app.services.waybills.jobs.retry_download_job import start_retry_workers
+from app.services.waybills.jobs.auto_cleanup_cron import start_auto_cleanup_cron
 
 def create_app():
     # Set custom instance path to keep database inside app directory
@@ -71,7 +72,8 @@ def create_app():
         # Initialize APScheduler for CRON jobs
         try:
             scheduler = BackgroundScheduler(daemon=True)
-            start_print_monitor_cron(scheduler, app)    # Pass app for app context in background thread
+            start_print_monitor_cron(scheduler, app)    # Print job monitor CRON
+            start_auto_cleanup_cron(scheduler, app)     # Auto-cleanup CRON (old data)
             scheduler.start()
             logger.info("✓ App initialized and ready")
         except Exception as e:
