@@ -3,7 +3,7 @@ from flask_sieve import validate
 from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
-from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction, GetStatusAction, CancelPrintWaybillAction
+from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction, GetStatusAction, CancelPrintWaybillAction, CleanWaybillsAction
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.services.waybills.enums.PrintStatuses import PrintStatuses
 from app.utils.decorators import get_model
@@ -211,20 +211,11 @@ def cleanup_waybill_files_api():
                 "message": "Invalid date format for 'to' in body. Please use YYYY-MM-DD."
             }), 400
 
-    log_message = f"Hey, we are preparing to clean files. "
-    if from_date:
-        log_message += f"Filtering from {from_date.strftime('%Y-%m-%d')}. "
-    if to_date:
-        log_message += f"Filtering up to {to_date.strftime('%Y-%m-%d')}. "
-    if not from_date and not to_date:
-        log_message += "No specific date range provided, will use default retention policies. "
+    # Instantiate and execute the CleanWaybillsAction
+    cleanup_action = CleanWaybillsAction()
+    result = cleanup_action.execute(from_date=from_date, to_date=to_date)
 
-    logger.info(log_message)
-
-    return jsonify({
-        'status': 'success',
-        'message': log_message.strip()
-    }), 200
+    return jsonify(result), 200 # Assuming the action returns a dict with status and message
 
 
 @waybills_bp.route('/prints/<int:waybill_print>/preview', methods=['GET'])
