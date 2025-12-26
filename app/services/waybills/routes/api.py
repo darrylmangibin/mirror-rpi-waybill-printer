@@ -1,10 +1,9 @@
 from flask import Blueprint, request, jsonify, Response, current_app, send_file
 from flask_sieve import validate
-from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest
+from app.services.waybills.requests import StoreWaybillRequest, ChangeStatusRequest, CleanWaybillAndFilesRequest
 from app.services.waybills.controllers import WaybillPrintController
 from app.services.waybills.models.WaybillPrint import WaybillPrint
-from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction, GetStatusAction, CancelPrintWaybillAction
-from app.services.waybills.actions.CleanWaybillsAction import CleanWaybillsAction
+from app.services.waybills.actions import DownloadWaybillAction, PrintWaybillAction, ChangeStatusAction, GetStatusAction, CancelPrintWaybillAction, CleanWaybillAndFilesAction
 from app.services.waybills.enums.WaybillPrintStatuses import WaybillPrintStatuses
 from app.services.waybills.enums.PrintStatuses import PrintStatuses
 from app.utils.decorators import get_model
@@ -171,7 +170,17 @@ def change_status(waybill_print):
 
 
 @waybills_bp.route('/prints/cleanup', methods=['POST'])
+@validate(CleanWaybillAndFilesRequest)
 def cleanup_waybills_and_files():
+    """Clean waybills and their associated files within a date range."""
+    data = request.get_json()
+    from_ = data.get('from')
+    to = data.get('to')
+    
+    clean_action = CleanWaybillAndFilesAction()
+    result = clean_action(from_, to)
+    status_code = 200 if result.get('status') == 'success' else 400
+    return jsonify(result), status_code
 
 
 @waybills_bp.route('/prints/<int:waybill_print>/preview', methods=['GET'])
