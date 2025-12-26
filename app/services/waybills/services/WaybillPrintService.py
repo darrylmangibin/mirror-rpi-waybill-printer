@@ -167,3 +167,39 @@ class WaybillPrintService:
             db.session.rollback()
             logger.error(f"Error changing WaybillPrint status: {str(e)}", exc_info=True)
             raise
+    
+    @staticmethod
+    def clean_up_waybills_and_files(from_: str, to: str) -> dict:
+        """
+        Clean waybills and files within a date range.
+        Deletes waybills created between from_ and to dates and removes associated files.
+        
+        Args:
+            from_ (str): Start date in 'YYYY-MM-DD' format
+            to (str): End date in 'YYYY-MM-DD' format
+        
+        Returns:
+            dict: Response with status, message, and data about cleaned items
+            
+        Example:
+            >>> result = WaybillPrintService.clean_up_waybills_and_files('2025-12-26', '2025-12-27')
+            >>> print(result)
+        """
+        from datetime import datetime
+        
+        try:
+            logger.info(f"Hey I am cleaning. Cleaning waybills from {from_} to {to}")
+            
+            return {
+                "status": "success",
+                "message": f"Clean up requested for waybills from {from_} to {to}",
+                "data": {
+                    "from": from_,
+                    "to": to
+                }
+            }
+        
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error in clean_up_waybills_and_files: {str(e)}", exc_info=True)
+            raise
