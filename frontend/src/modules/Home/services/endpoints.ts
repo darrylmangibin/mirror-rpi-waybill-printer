@@ -24,6 +24,9 @@ export const WAYBILL_ENDPOINTS = {
   PRINT_BY_INVOICE: () => buildApiUrl(`/api/waybills/prints/by-invoice/print`),
   GET_STATUS_BY_INVOICE: (invoiceNumber: string, tenantId: string) => buildApiUrl(`/api/waybills/prints/by-invoice/status?invoice_number=${invoiceNumber}&tenant_id=${tenantId}`),
   CANCEL_BY_INVOICE: () => buildApiUrl(`/api/waybills/prints/by-invoice/cancel`),
+  
+  // Cleanup operations
+  get CLEANUP_PRINTS() { return buildApiUrl('/api/waybills/prints/cleanup'); },
 } as const;
 
 export const NETWORK_ENDPOINTS = {

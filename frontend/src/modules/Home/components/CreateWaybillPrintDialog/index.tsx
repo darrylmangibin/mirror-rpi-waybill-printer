@@ -19,42 +19,57 @@ import { useCreateWaybillPrintForm } from './useCreateWaybillPrintForm';
 import { WaybillPrintForm } from '../WaybillPrintForm';
 
 interface CreateWaybillPrintDialogProps {
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	onSubmit?: (invoiceNumber: string, url: string) => Promise<void>;
 }
 
 export const CreateWaybillPrintDialog = ({
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 	onSubmit,
 }: CreateWaybillPrintDialogProps) => {
-	const { open, handleOpenChange, form, handleSubmit, isPending } =
+	const { open: internalOpen, handleOpenChange: internalHandleOpenChange, form, handleSubmit, isPending } =
 		useCreateWaybillPrintForm({ onSuccess: onSubmit });
+
+	const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+	const handleOpenChange = (newOpen: boolean) => {
+		if (controlledOnOpenChange) {
+			controlledOnOpenChange(newOpen);
+		} else {
+			internalHandleOpenChange(newOpen);
+		}
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger asChild>
-				<div className='flex flex-col gap-1'>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<div>
-								<Button
-									size='sm'
-									type='button'
-									variant='outline'
-									className={cn(
-										'active:scale-95 focus:outline-none focus:ring-0 rounded-lg gap-2 w-full md:w-fit'
-									)}>
-									<PlusIcon className='w-4 h-4' />
-									<span>New</span>
-								</Button>
-							</div>
-						</TooltipTrigger>
-					<TooltipContent className='bg-gray-900 text-white border-0 max-w-xs'>
-						<p className='text-xs'>
-							Click to create a print job with invoice number, marketplace, tenant ID, and optional URL
-						</p>
-					</TooltipContent>
-					</Tooltip>
-				</div>
-			</DialogTrigger>
+			{!controlledOpen && (
+				<DialogTrigger asChild>
+					<div className='flex flex-col gap-1'>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div>
+									<Button
+										size='sm'
+										type='button'
+										variant='outline'
+										className={cn(
+											'active:scale-95 focus:outline-none focus:ring-0 rounded-lg gap-2 w-full md:w-fit'
+										)}>
+										<PlusIcon className='w-4 h-4' />
+										<span>New</span>
+									</Button>
+								</div>
+							</TooltipTrigger>
+								<TooltipContent className='bg-gray-900 text-white border-0 max-w-xs'>
+									<p className='text-xs'>
+										Click to create a print job with invoice number, marketplace, tenant ID, and optional URL
+									</p>
+								</TooltipContent>
+							</Tooltip>
+						</div>
+				</DialogTrigger>
+			)}
 			<DialogContent
 				className='sm:max-w-md p-0 gap-0'
 				showCloseButton={false}>
