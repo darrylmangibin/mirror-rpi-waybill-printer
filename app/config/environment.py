@@ -21,7 +21,7 @@ PRINTER_URI="usb://Xprinter/XP-410B?serial=REPLACE_ME"
 
 # Cleanup Configuration
 CLEANUP_INTERVAL_MINUTES = int(os.getenv('CLEANUP_INTERVAL_MINUTES', '30'))
-HOURS_THRESHOLD = int(os.getenv('HOURS_THRESHOLD', '6'))
+CLEANUP_HOURS_THRESHOLD = int(os.getenv('CLEANUP_HOURS_THRESHOLD', '6'))
 
 
 

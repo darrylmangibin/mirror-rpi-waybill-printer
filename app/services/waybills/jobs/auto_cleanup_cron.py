@@ -9,12 +9,13 @@ from datetime import datetime, timedelta
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
-from app.config.environment import CLEANUP_INTERVAL_MINUTES, HOURS_THRESHOLD
+from app.config.environment import CLEANUP_INTERVAL_MINUTES, CLEANUP_HOURS_THRESHOLD
 import os
 
 logger = get_logger(__name__)
 
-
+# Configuration is now loaded from environment variables
+HOURS_THRESHOLD = CLEANUP_HOURS_THRESHOLD
 def auto_cleanup_old_waybills(app=None):
     """
     Auto-cleanup CRON job: Delete waybills and files older than 6 hours.
