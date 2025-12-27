@@ -116,5 +116,5 @@ elif [[ "$INSTALL_MODE" == "offline" ]]; then
     # would likely install packages or provide clearer instructions.
 fi
 
-# Enable systemd services
+# Enable systemd services (includes CUPS auto-configuration)
 source ./installers/setup-systemd.sh

@@ -61,6 +61,21 @@ FRONTEND_SERVICE_CONTENT=$(cat "$PROJECT_DIR/rpi-waybill-printer-frontend.servic
 echo "$FRONTEND_SERVICE_CONTENT" > /etc/systemd/system/rpi-waybill-printer-frontend.service
 echo -e "${GREEN}✅ Frontend service installed${NC}"
 
+# Setup CUPS auto-configuration service
+echo -e "${YELLOW}📋 Installing CUPS auto-configuration service...${NC}"
+if [ -f "$PROJECT_DIR/cups-auto-configure.service" ]; then
+    CUPS_SERVICE_CONTENT=$(cat "$PROJECT_DIR/cups-auto-configure.service" | sed "s|%PROJECT_DIR%|$PROJECT_DIR|g")
+    echo "$CUPS_SERVICE_CONTENT" > /etc/systemd/system/cups-auto-configure.service
+    chmod 644 /etc/systemd/system/cups-auto-configure.service
+    echo -e "${GREEN}✅ CUPS auto-configuration service installed${NC}"
+    
+    # Make the script executable
+    chmod +x "$PROJECT_DIR/installers/cups-auto-configure.sh"
+    echo -e "${GREEN}✅ CUPS auto-configuration script is executable${NC}"
+else
+    echo -e "${YELLOW}⚠️  CUPS auto-configuration service file not found, skipping${NC}"
+fi
+
 # Reload systemd daemon
 echo -e "${YELLOW}🔄 Reloading systemd daemon...${NC}"
 systemctl daemon-reload
@@ -73,6 +88,9 @@ echo -e "${GREEN}✅ Backend service enabled${NC}"
 
 systemctl enable rpi-waybill-printer-frontend.service
 echo -e "${GREEN}✅ Frontend service enabled${NC}"
+
+systemctl enable cups-auto-configure.service
+echo -e "${GREEN}✅ CUPS auto-configuration service enabled${NC}"
 
 # Optional: Start services now
 echo -e "\n${BLUE}Services are now configured for auto-start on boot.${NC}"
