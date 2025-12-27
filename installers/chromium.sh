@@ -58,9 +58,20 @@ echo -e "${GREEN}✅ Other Playwright dependencies installed${NC}"
 # Install system Chromium for RPi (Playwright bundles don't support ARM)
 echo -e "${YELLOW}Installing system Chromium browser...${NC}"
 if ! command -v chromium &> /dev/null && ! command -v chromium-browser &> /dev/null; then
-    # Changed 'chromium' to 'chromium-browser'
+    # Try chromium-browser first, then fallback to chromium
+    echo -e "${YELLOW}Attempting to install chromium-browser...${NC}"
     sudo apt install -y chromium-browser
-    echo -e "${GREEN}✅ System Chromium installed${NC}"
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}chromium-browser not found, attempting to install chromium...${NC}"
+        sudo apt install -y chromium
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Failed to install chromium or chromium-browser. Please check your system's package availability.${NC}"
+        else
+            echo -e "${GREEN}✅ chromium installed successfully${NC}"
+        fi
+    else
+        echo -e "${GREEN}✅ chromium-browser installed successfully${NC}"
+    fi
 else
     echo -e "${GREEN}✅ Chromium already installed${NC}"
 fi

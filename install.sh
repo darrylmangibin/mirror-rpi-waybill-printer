@@ -44,28 +44,8 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     sudo chmod -R u+w "$SCRIPT_DIR"
     echo -e "${GREEN}✅ Project directory permissions set${NC}"
 
-    # Create .env file for backend
-    cp .env.example .env
-    echo -e "${GREEN}✅ .env file created for backend${NC}"
-
-    cd frontend && cp .env.example .env && cd ..
-    echo -e "${GREEN}✅ .env file created for frontend${NC}"
-
-    # apply proper VITE_BASE_URL for frontend
-    DEFAULT_FULL_IP="192.168.110.1" # Default IP to suggest
-    read -p "Enter the full IP address for VITE_BASE_URL (e.g., '${DEFAULT_FULL_IP}', where the last part often changes): " -i "${DEFAULT_FULL_IP}" IP_ADDRESS_INPUT
-    
-    # Use the default if the user just presses enter
-    IP_ADDRESS_INPUT=${IP_ADDRESS_INPUT:-$DEFAULT_FULL_IP}
-    
-    VITE_BASE_URL_VALUE="http://${IP_ADDRESS_INPUT}:5000"
-    
-    if grep -q "VITE_BASE_URL=" frontend/.env; then
-      sed -i "s|VITE_BASE_URL=.*|VITE_BASE_URL=${VITE_BASE_URL_VALUE}|" frontend/.env
-    else
-      echo "VITE_BASE_URL=${VITE_BASE_URL_VALUE}" >> frontend/.env
-    fi
-    echo -e "${GREEN}✅ VITE_BASE_URL set in frontend/.env to ${VITE_BASE_URL_VALUE}${NC}"
+    # Configure environment files (.env) and VITE_BASE_URL
+    source ./installers/configure-env.sh
 
 
     ## Python Installation
@@ -136,5 +116,5 @@ elif [[ "$INSTALL_MODE" == "offline" ]]; then
     # would likely install packages or provide clearer instructions.
 fi
 
-# Enable systemd services
+# Enable systemd services (includes CUPS auto-configuration)
 source ./installers/setup-systemd.sh

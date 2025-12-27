@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from app.services.health.services.HealthCheckService import HealthCheckService
+from app.services.health.services.CleanupTestService import CleanupTestService
 from app.services.waybills.services.PrinterCheckService import PrinterCheckService
 from app.config.helper import get
 from app.config import printing as printing_config
@@ -90,5 +91,73 @@ def check_and_handle_printer():
         return jsonify({
             'status': 'error',
             'message': str(e)
+        }), 500
+
+
+@health_bp.route('/test/cleanup', methods=['POST'])
+def test_cleanup():
+    """
+    TEST ENDPOINT: Create test waybills and manually trigger cleanup.
+    Use this to test the auto-cleanup CRON job functionality.
+    
+    Query parameters:
+    - create: 'true' to create 10 test waybills (1-hour spaced)
+    - trigger: 'true' to manually run cleanup now
+    
+    Examples:
+    - POST /api/health/test/cleanup?create=true
+    - POST /api/health/test/cleanup?trigger=true
+    - POST /api/health/test/cleanup?create=true&trigger=true
+    """
+    try:
+        create_test_data = request.args.get('create', 'false').lower() == 'true'
+        trigger_cleanup_job = request.args.get('trigger', 'false').lower() == 'true'
+        
+        messages = []
+        data = {}
+        
+        # Create test waybills
+        if create_test_data:
+            result = CleanupTestService.create_test_waybills()
+            if result['success']:
+                data['created_waybills'] = result['waybills']
+                messages.append(f"✅ Created {result['created_count']} test waybills with 1-hour spacing")
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': f"Failed to create test waybills: {result['error']}"
+                }), 500
+        
+        # Trigger cleanup
+        if trigger_cleanup_job:
+            result = CleanupTestService.trigger_cleanup(current_app._get_current_object())
+            if result['success']:
+                data['cleanup_result'] = {
+                    'records_before': result['records_before'],
+                    'records_after': result['records_after'],
+                    'records_deleted': result['records_deleted'],
+                    'threshold_hours': result['threshold_hours']
+                }
+                messages.append(f"✅ Cleanup executed - Deleted {result['records_deleted']} records (before: {result['records_before']}, after: {result['records_after']})")
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': f"Failed to trigger cleanup: {result['error']}"
+                }), 500
+        
+        if not create_test_data and not trigger_cleanup_job:
+            messages.append("ℹ️ No action taken. Use ?create=true or ?trigger=true parameters")
+        
+        return jsonify({
+            'status': 'success',
+            'message': ' | '.join(messages),
+            'data': data
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"[TEST CLEANUP] Unexpected error: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f"Test failed: {str(e)}"
         }), 500
 

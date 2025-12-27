@@ -1,10 +1,5 @@
 import { Trash2Icon } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { DialogHeaderComponent } from "@/components/global/components/DialogHeader";
@@ -27,7 +22,6 @@ interface CleanupWaybillsDialogProps {
 }
 
 export const CleanupWaybillsDialog = ({
-  trigger,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   onSuccess,
