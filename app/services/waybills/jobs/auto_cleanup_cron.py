@@ -9,13 +9,10 @@ from datetime import datetime, timedelta
 from app.utils.loggers import get_logger
 from app.database import db
 from app.services.waybills.models.WaybillPrint import WaybillPrint
+from app.config.environment import CLEANUP_INTERVAL_MINUTES, HOURS_THRESHOLD
 import os
 
 logger = get_logger(__name__)
-
-# Configuration
-CLEANUP_INTERVAL_MINUTES = 30  # Run cleanup check every 30 minutes
-HOURS_THRESHOLD = 6            # Delete records OLDER than 6 hours (recent data is safe)
 
 
 def auto_cleanup_old_waybills(app=None):
