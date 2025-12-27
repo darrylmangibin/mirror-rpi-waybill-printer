@@ -160,3 +160,79 @@ fi
 
 echo -e "${GREEN}✅ VITE_BASE_URL successfully set to: ${VITE_BASE_URL_VALUE}${NC}\n"
 
+# Configure Printer Settings
+echo -e "${BLUE}🖨️  Configuring Printer Settings${NC}\n"
+
+# Get current printer settings
+CURRENT_PRINTER_NAME=$(grep "^PRINTER_NAME=" "$BACKEND_ENV_FILE" 2>/dev/null | cut -d= -f2)
+CURRENT_PRINTER_URI=$(grep "^PRINTER_URI=" "$BACKEND_ENV_FILE" 2>/dev/null | cut -d= -f2)
+
+if [ -n "$CURRENT_PRINTER_NAME" ] && [ -n "$CURRENT_PRINTER_URI" ]; then
+    echo -e "${YELLOW}Current Printer Configuration:${NC}"
+    echo -e "  Name: ${GREEN}${CURRENT_PRINTER_NAME}${NC}"
+    echo -e "  URI:  ${GREEN}${CURRENT_PRINTER_URI}${NC}\n"
+    
+    read -p "Do you want to update the printer configuration? (y/n): " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${GREEN}✅ Keeping current printer configuration${NC}\n"
+        return
+    fi
+else
+    echo -e "${YELLOW}No printer configuration found in $BACKEND_ENV_FILE${NC}\n"
+fi
+
+# Prompt for printer name
+DEFAULT_PRINTER_NAME=${CURRENT_PRINTER_NAME:-"XP410B"}
+read -p "Enter printer name (default: ${DEFAULT_PRINTER_NAME}): " -r PRINTER_NAME
+PRINTER_NAME=${PRINTER_NAME:-$DEFAULT_PRINTER_NAME}
+
+echo ""
+echo -e "${YELLOW}For PRINTER_URI, you need the USB serial number.${NC}"
+echo -e "${BLUE}To find it, run: lpinfo -v${NC}\n"
+
+# Prompt for printer URI
+echo -e "${YELLOW}Printer URI format:${NC}"
+echo -e "  ${BLUE}usb://Xprinter/XP-410B?serial=410BBE235170626${NC}"
+echo -e "  ${BLUE}usb://Brother/HL-L2350DW?serial=XXXXX${NC}\n"
+
+read -p "Enter the full PRINTER_URI (or just the serial if using Xprinter): " -r PRINTER_URI_INPUT
+
+# Handle shorthand for Xprinter (just serial number)
+if [[ ! "$PRINTER_URI_INPUT" =~ ^usb:// ]]; then
+    # User likely entered just the serial number
+    PRINTER_URI="usb://Xprinter/XP-410B?serial=${PRINTER_URI_INPUT}"
+    echo -e "${YELLOW}Constructing URI from serial: ${PRINTER_URI}${NC}"
+else
+    PRINTER_URI="$PRINTER_URI_INPUT"
+fi
+
+echo ""
+echo -e "${YELLOW}New Printer Configuration:${NC}"
+echo -e "  Name: ${GREEN}${PRINTER_NAME}${NC}"
+echo -e "  URI:  ${GREEN}${PRINTER_URI}${NC}\n"
+
+read -p "Confirm update? (y/n): " -n 1 -r
+echo
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}⏸️  Update cancelled${NC}\n"
+    return
+fi
+
+# Update or add printer settings in the .env file
+if grep -q "PRINTER_NAME=" "$BACKEND_ENV_FILE"; then
+    sed -i "s|PRINTER_NAME=.*|PRINTER_NAME=${PRINTER_NAME}|" "$BACKEND_ENV_FILE"
+else
+    echo "PRINTER_NAME=${PRINTER_NAME}" >> "$BACKEND_ENV_FILE"
+fi
+
+if grep -q "PRINTER_URI=" "$BACKEND_ENV_FILE"; then
+    sed -i "s|PRINTER_URI=.*|PRINTER_URI=${PRINTER_URI}|" "$BACKEND_ENV_FILE"
+else
+    echo "PRINTER_URI=${PRINTER_URI}" >> "$BACKEND_ENV_FILE"
+fi
+
+echo -e "${GREEN}✅ Printer configuration successfully set${NC}\n"
+
