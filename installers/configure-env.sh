@@ -108,8 +108,8 @@ if [ -n "$CURRENT_VITE_BASE_URL" ]; then
     echo
     
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${GREEN}✅ Keeping current VITE_BASE_URL${NC}"
-        exit 0
+        echo -e "${GREEN}✅ Keeping current VITE_BASE_URL${NC}\n"
+        return
     fi
 else
     echo -e "${YELLOW}No VITE_BASE_URL found in $FRONTEND_ENV_FILE${NC}"
@@ -127,7 +127,7 @@ IP_ADDRESS_INPUT=${IP_ADDRESS_INPUT:-$DEFAULT_FULL_IP}
 if ! validate_ip "$IP_ADDRESS_INPUT"; then
     echo -e "${RED}❌ Invalid IP address: ${IP_ADDRESS_INPUT}${NC}"
     echo -e "${YELLOW}Please ensure the IP address is in the format: xxx.xxx.xxx.xxx${NC}"
-    exit 1
+    return
 fi
 
 # Construct the VITE_BASE_URL
@@ -136,7 +136,7 @@ VITE_BASE_URL_VALUE="http://${IP_ADDRESS_INPUT}:5000"
 # Validate the constructed URL
 if ! validate_url "$VITE_BASE_URL_VALUE"; then
     echo -e "${RED}❌ Invalid URL constructed: ${VITE_BASE_URL_VALUE}${NC}"
-    exit 1
+    return
 fi
 
 # Display the new value for confirmation
@@ -145,8 +145,8 @@ read -p "Confirm update? (y/n): " -n 1 -r
 echo
 
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}⏸️  Update cancelled${NC}"
-    exit 0
+    echo -e "${YELLOW}⏸️  Update cancelled${NC}\n"
+    return
 fi
 
 # Update or add VITE_BASE_URL in the .env file
