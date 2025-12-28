@@ -11,17 +11,27 @@ NC='\033[0m' # No Color
 # Ensure it is defined in the calling script.
 
 echo -e "${YELLOW}Installing CUPS (Common Unix Printing System) with Zebra printer support...${NC}"
-if ! command -v lpstat &> /dev/null; then
+
+# ✅ SKIP if already installed
+CUPS_ALREADY_INSTALLED=false
+if command -v lpstat &> /dev/null; then
+    echo -e "${GREEN}✅ CUPS already installed${NC}"
+    CUPS_ALREADY_INSTALLED=true
+else
+    echo -e "${YELLOW}📦 Installing CUPS packages...${NC}"
     # Removed 'printer-driver-zebra' from the list
     apt install -y cups cups-client cups-bsd cups-filters python3-cups libcups2-dev ghostscript
     echo -e "${GREEN}✅ CUPS packages installed with basic support${NC}"
-else
-    echo -e "${GREEN}✅ CUPS already installed${NC}"
+fi
+
+# Check for python3-cups if CUPS was already installed
+if [ "$CUPS_ALREADY_INSTALLED" = true ]; then
     if ! dpkg -l | grep -q python3-cups; then
-        echo -e "${YELLOW}Installing Python3 CUPS bindings and Zebra drivers...${NC}"
-        # Removed 'printer-driver-zebra' from the list
+        echo -e "${YELLOW}Installing Python3 CUPS bindings...${NC}"
         apt install -y python3-cups libcups2-dev cups-filters ghostscript
-        echo -e "${GREEN}✅ Python3 CUPS bindings and basic support installed${NC}"
+        echo -e "${GREEN}✅ Python3 CUPS bindings installed${NC}"
+    else
+        echo -e "${GREEN}✅ Python3 CUPS bindings already installed${NC}"
     fi
 fi
 
@@ -31,11 +41,13 @@ systemctl start cups
 systemctl enable cups
 echo -e "${GREEN}✅ CUPS service started and enabled${NC}"
 
-# Configure CUPS daemon for admin-level access
+# ✅ SKIP daemon config if already done
 echo -e "${YELLOW}Configuring CUPS daemon for admin-level access...${NC}"
 if [ ! -f /etc/cups/cupsd.conf.backup ]; then
     cp /etc/cups/cupsd.conf /etc/cups/cupsd.conf.backup
     echo -e "${GREEN}✅ Backed up original cupsd.conf${NC}"
+else
+    echo -e "${GREEN}✅ CUPS config already backed up${NC}"
 fi
 
 # Ensure admin access is configured
@@ -62,6 +74,8 @@ if ! grep -q "Allow local administration" /etc/cups/cupsd.conf; then
 </Location>
 CUPS_CONFIG
     echo -e "${GREEN}✅ CUPS admin configuration added${NC}"
+else
+    echo -e "${GREEN}✅ CUPS admin configuration already exists${NC}"
 fi
 
 chmod 755 /etc/cups
@@ -69,13 +83,18 @@ chmod 644 /etc/cups/cupsd.conf
 systemctl restart cups
 echo -e "${GREEN}✅ CUPS daemon configured with admin-level access${NC}"
 
-# Add current user to CUPS administrative groups
-echo -e "${YELLOW}Adding $ACTUAL_USER to lpadmin and lp groups for admin access...${NC}"
-usermod -aG lpadmin "$ACTUAL_USER"
-usermod -aG lp "$ACTUAL_USER"
-echo -e "${GREEN}✅ User added to lpadmin and lp groups (admin level)${NC}"
+# ✅ SKIP user groups if already added
+echo -e "${YELLOW}Checking CUPS user permissions...${NC}"
+if groups "$ACTUAL_USER" | grep -q lpadmin; then
+    echo -e "${GREEN}✅ User already in lpadmin group${NC}"
+else
+    echo -e "${YELLOW}Adding $ACTUAL_USER to lpadmin and lp groups for admin access...${NC}"
+    usermod -aG lpadmin "$ACTUAL_USER"
+    usermod -aG lp "$ACTUAL_USER"
+    echo -e "${GREEN}✅ User added to lpadmin and lp groups (admin level)${NC}"
+fi
 
-# Enable CUPS remote access
+# Enable CUPS remote access (always safe to re-run)
 echo -e "${YELLOW}Enabling CUPS remote access...${NC}"
 cupsctl --remote-any
 systemctl restart cups
@@ -173,7 +192,12 @@ else
     fi
 fi
 
-# Install additional printer drivers and utilities
-echo -e "${YELLOW}Installing additional printer drivers and utilities...${NC}"
-apt install -y printer-driver-all imagemagick
-echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
+# ✅ SKIP printer-driver-all if already installed
+echo -e "${YELLOW}Checking printer drivers and utilities...${NC}"
+if dpkg -l | grep -q printer-driver-all; then
+    echo -e "${GREEN}✅ Printer drivers already installed${NC}"
+else
+    echo -e "${YELLOW}Installing additional printer drivers and utilities...${NC}"
+    apt install -y printer-driver-all imagemagick
+    echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
+fi

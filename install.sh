@@ -47,7 +47,6 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
     # Configure environment files (.env) and VITE_BASE_URL
     source ./installers/configure-env.sh
 
-
     ## Python Installation
     source ./installers/python.sh
 
