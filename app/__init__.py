@@ -11,84 +11,91 @@ from app.services.waybills.jobs.print_waybill_job import start_print_workers
 from app.services.waybills.jobs.print_job_monitor_cron import start_print_monitor_cron
 from app.services.waybills.jobs.retry_download_job import start_retry_workers
 from app.services.waybills.jobs.auto_cleanup_cron import start_auto_cleanup_cron
+from app.services.socketio import init_socketio
+
 
 def create_app():
     # Set custom instance path to keep database inside app directory
-    instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
+    instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance")
     os.makedirs(instance_path, exist_ok=True)
-    
+
     app = Flask(__name__, instance_path=instance_path)
-    
+
     # Database configuration (now uses instance folder inside app/)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fusion_printer.db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fusion_printer.db"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
     # Connection pooling optimization for RPi
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 5,                    # RPi: smaller pool
-        'max_overflow': 10,                # Allow overflow to 15 total
-        'pool_recycle': 3600,              # Recycle connections every hour
-        'pool_pre_ping': True,             # Test connection before use
-        'echo': False,                     # No SQL logging (saves RPi CPU)
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_size": 5,  # RPi: smaller pool
+        "max_overflow": 10,  # Allow overflow to 15 total
+        "pool_recycle": 3600,  # Recycle connections every hour
+        "pool_pre_ping": True,  # Test connection before use
+        "echo": False,  # No SQL logging (saves RPi CPU)
     }
-    
+
     # Initialize extensions
     db.init_app(app)
-    migrate = Migrate(app, db, directory='app/migrations')
-    
+    migrate = Migrate(app, db, directory="app/migrations")
+
     # Enable CORS - allows frontend on different port to call this API
     CORS(app)
-    
+
     # Initialize Flask-Sieve for request validation
     Sieve(app)
-    
+
     # Register blueprints
     from app.services.waybills.routes.api import waybills_bp
     from app.services.health.routes.api import health_bp
+
     app.register_blueprint(waybills_bp)
     app.register_blueprint(health_bp)
-    
+
     # Import models
     from app.services.waybills.models.WaybillPrint import WaybillPrint
-    
+
     # Register CLI commands (like Laravel Artisan)
     from app.commands import routes
     from app.commands import db as db_commands
+
     app.cli.add_command(routes)
     app.cli.add_command(db_commands)
 
     # Start background workers and CRON jobs
     with app.app_context():
         from app.utils.loggers import get_logger
+
         logger = get_logger(__name__)
-        
+
         try:
-            start_workers(num_workers=1)           # Download worker thread
-            start_print_workers(num_workers=1)     # Print worker thread
-            start_retry_workers(num_workers=1)     # Retry worker thread (NEW)
+            start_workers(num_workers=1)  # Download worker thread
+            start_print_workers(num_workers=1)  # Print worker thread
+            start_retry_workers(num_workers=1)  # Retry worker thread (NEW)
         except Exception as e:
             logger.error(f"Failed to start workers: {str(e)}", exc_info=True)
-        
+
         # Initialize APScheduler for CRON jobs
         try:
             scheduler = BackgroundScheduler(daemon=True)
-            start_print_monitor_cron(scheduler, app)    # Print job monitor CRON
-            start_auto_cleanup_cron(scheduler, app)     # Auto-cleanup CRON (old data)
+            start_print_monitor_cron(scheduler, app)  # Print job monitor CRON
+            start_auto_cleanup_cron(scheduler, app)  # Auto-cleanup CRON (old data)
             scheduler.start()
             logger.info("✓ App initialized and ready")
         except Exception as e:
             logger.error(f"Failed to start APScheduler: {str(e)}", exc_info=True)
-    
-    @app.route('/api/network/local-ip')
+
+    socketio = init_socketio(app)
+
+    @app.route("/api/network/local-ip")
     def get_network_info():
         return {
             "local_ip": get_local_ip(),
             "api_url": f"http://{get_local_ip()}:5000",
-            "status": "success"
+            "status": "success",
         }
-    
-    @app.route('/')
+
+    @app.route("/")
     def hello():
         return {"message": "Hello World", "status": "success"}
-    
-    return app
+
+    return app, socketio

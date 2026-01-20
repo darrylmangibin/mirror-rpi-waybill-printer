@@ -8,13 +8,11 @@ from app.config.environment import DEBUG, HOST, PORT
 load_dotenv()
 
 # Disable Werkzeug logger to prevent duplicate logs from Flask's built-in logging
-logging.getLogger('werkzeug').setLevel(logging.WARNING)
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-app = create_app()
+app, socketio = create_app()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # CRITICAL: Disable reloader to prevent duplicate initialization
     # Flask reloader runs code in both parent and child process, causing duplicate logs
-    app.run(debug=DEBUG, host=HOST, port=PORT, use_reloader=False)
-
-
+    socketio.run(app, debug=DEBUG, host=HOST, port=PORT, use_reloader=False)
