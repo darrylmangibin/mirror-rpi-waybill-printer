@@ -65,8 +65,8 @@ class VideoEvents:
                     "start_recording",
                     {
                         "status": "success",
-                        "data": data,
                     },
+                    broadcast=True,
                 )
 
                 logger.info(
@@ -88,8 +88,8 @@ class VideoEvents:
                     "stop_recording",
                     {
                         "status": "success",
-                        "data": data,
                     },
+                    broadcast=True,
                 )
 
                 logger.info(
@@ -113,6 +113,7 @@ class VideoEvents:
                         "status": "success",
                         "data": data,
                     },
+                    broadcast=True,
                 )
             except Exception as e:
                 logger.error(f"Error in open_camera: {str(e)}", exc_info=True)
@@ -130,6 +131,7 @@ class VideoEvents:
                         "status": "success",
                         "data": data,
                     },
+                    broadcast=True,
                 )
             except Exception as e:
                 logger.error(f"Error in take_photo: {str(e)}", exc_info=True)
@@ -147,6 +149,7 @@ class VideoEvents:
                         "status": "success",
                         "data": data,
                     },
+                    broadcast=True,
                 )
             except Exception as e:
                 logger.error(f"Error in close_camera: {str(e)}", exc_info=True)

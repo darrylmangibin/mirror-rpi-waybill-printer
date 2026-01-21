@@ -26,6 +26,7 @@ class InvoiceEvents:
                         "status": "success",
                         "data": data,
                     },
+                    broadcast=True,
                 )
 
                 logger.info(
@@ -49,6 +50,7 @@ class InvoiceEvents:
                         "status": "success",
                         "data": data,
                     },
+                    broadcast=True,
                 )
 
             except Exception as e:
@@ -66,6 +68,7 @@ class InvoiceEvents:
                         "status": "success",
                         "data": data,
                     },
+                    broadcast=True,
                 )
             except Exception as e:
                 logger.error(f"Error in complete_invoice: {str(e)}", exc_info=True)
