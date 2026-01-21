@@ -29,11 +29,6 @@ class VideoEvents:
                     },
                 )
 
-                logger.info(
-                    f"Client {request.sid} subscribed to video: {data}",
-                    exc_info=True,
-                )
-
             except Exception as e:
                 logger.error(f"Error in subscribe_video: {str(e)}", exc_info=True)
                 emit("error", {"message": str(e)})
@@ -69,11 +64,6 @@ class VideoEvents:
                     broadcast=True,
                 )
 
-                logger.info(
-                    f"Client {request.sid} started recording: {data}",
-                    exc_info=True,
-                )
-
             except Exception as e:
                 logger.error(f"Error in start_recording: {str(e)}", exc_info=True)
                 emit("error", {"message": str(e)})
@@ -90,11 +80,6 @@ class VideoEvents:
                         "status": "success",
                     },
                     broadcast=True,
-                )
-
-                logger.info(
-                    f"Client {request.sid} stopped recording: {data}",
-                    exc_info=True,
                 )
 
             except Exception as e:

@@ -29,11 +29,6 @@ class InvoiceEvents:
                     broadcast=True,
                 )
 
-                logger.info(
-                    f"Client {request.sid} active invoice: {data}",
-                    exc_info=True,
-                )
-
             except Exception as e:
                 logger.error(f"Error in active_invoice: {str(e)}", exc_info=True)
                 emit("error", {"message": str(e)})
