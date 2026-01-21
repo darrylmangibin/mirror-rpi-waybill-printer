@@ -14,14 +14,14 @@ class InvoiceEvents:
     def register_events(socketio):
         """Register all invoice-related events"""
 
-        @socketio.on("subscribe_invoice")
-        def handle_subscribe_invoice(data):
+        @socketio.on("active_invoice")
+        def handle_active_invoice(data):
             """
-            Subscribe to updates for a specific invoice
+            Active invoice
             """
             try:
                 emit(
-                    "subscribed_invoice",
+                    "active_invoice",
                     {
                         "status": "success",
                         "data": data,
@@ -29,22 +29,22 @@ class InvoiceEvents:
                 )
 
                 logger.info(
-                    f"Client {request.sid} subscribed to invoice: {data}",
+                    f"Client {request.sid} active invoice: {data}",
                     exc_info=True,
                 )
 
             except Exception as e:
-                logger.error(f"Error in subscribe_invoice: {str(e)}", exc_info=True)
+                logger.error(f"Error in active_invoice: {str(e)}", exc_info=True)
                 emit("error", {"message": str(e)})
 
-        @socketio.on("unsubscribe_invoice")
-        def handle_unsubscribe_invoice(data):
+        @socketio.on("inactive_invoice")
+        def handle_inactive_invoice(data):
             """
-            Unsubscribe from invoice updates
+            Inactive invoice
             """
             try:
                 emit(
-                    "unsubscribed_invoice",
+                    "inactive_invoice",
                     {
                         "status": "success",
                         "data": data,
@@ -52,4 +52,20 @@ class InvoiceEvents:
                 )
 
             except Exception as e:
-                logger.error(f"Error in unsubscribe_invoice: {str(e)}", exc_info=True)
+                logger.error(f"Error in inactive_invoice: {str(e)}", exc_info=True)
+
+        @socketio.on("packing_completed")
+        def handle_packing_completed(data):
+            """
+            Packing completed
+            """
+            try:
+                emit(
+                    "packing_completed",
+                    {
+                        "status": "success",
+                        "data": data,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error in complete_invoice: {str(e)}", exc_info=True)

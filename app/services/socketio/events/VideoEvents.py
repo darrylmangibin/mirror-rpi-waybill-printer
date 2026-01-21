@@ -55,14 +55,14 @@ class VideoEvents:
             except Exception as e:
                 logger.error(f"Error in unsubscribe_video: {str(e)}", exc_info=True)
 
-        @socketio.on("video_start_request")
+        @socketio.on("start_recording")
         def handle_video_start_request(data):
             """
-            Client requests to start video streaming
+            Start recording
             """
             try:
                 emit(
-                    "video_start_request_acknowledged",
+                    "start_recording",
                     {
                         "status": "success",
                         "data": data,
@@ -70,22 +70,22 @@ class VideoEvents:
                 )
 
                 logger.info(
-                    f"Client {request.sid} started video streaming: {data}",
+                    f"Client {request.sid} started recording: {data}",
                     exc_info=True,
                 )
 
             except Exception as e:
-                logger.error(f"Error in video_start_request: {str(e)}", exc_info=True)
+                logger.error(f"Error in start_recording: {str(e)}", exc_info=True)
                 emit("error", {"message": str(e)})
 
-        @socketio.on("video_stop_request")
+        @socketio.on("stop_recording")
         def handle_video_stop_request(data):
             """
-            Client requests to stop video streaming
+            Stop recording
             """
             try:
                 emit(
-                    "video_stop_request_acknowledged",
+                    "stop_recording",
                     {
                         "status": "success",
                         "data": data,
@@ -93,10 +93,61 @@ class VideoEvents:
                 )
 
                 logger.info(
-                    f"Client {request.sid} stopped video streaming: {data}",
+                    f"Client {request.sid} stopped recording: {data}",
                     exc_info=True,
                 )
 
             except Exception as e:
-                logger.error(f"Error in video_stop_request: {str(e)}", exc_info=True)
+                logger.error(f"Error in stop_recording: {str(e)}", exc_info=True)
+                emit("error", {"message": str(e)})
+
+        @socketio.on("open_camera")
+        def handle_open_camera(data):
+            """
+            Open camera
+            """
+            try:
+                emit(
+                    "open_camera",
+                    {
+                        "status": "success",
+                        "data": data,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error in open_camera: {str(e)}", exc_info=True)
+                emit("error", {"message": str(e)})
+
+        @socketio.on("take_photo")
+        def handle_take_photo(data):
+            """
+            Take photo
+            """
+            try:
+                emit(
+                    "take_photo",
+                    {
+                        "status": "success",
+                        "data": data,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error in take_photo: {str(e)}", exc_info=True)
+                emit("error", {"message": str(e)})
+
+        @socketio.on("close_camera")
+        def handle_close_camera(data):
+            """
+            Close camera
+            """
+            try:
+                emit(
+                    "close_camera",
+                    {
+                        "status": "success",
+                        "data": data,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error in close_camera: {str(e)}", exc_info=True)
                 emit("error", {"message": str(e)})
