@@ -1,7 +1,6 @@
-from flask_socketio import emit, join_room, leave_room
+from flask_socketio import emit
 from flask import request
 from app.utils.loggers import get_logger
-from app.services.socketio.services.SocketIOService import SocketIOService
 
 logger = get_logger(__name__)
 
@@ -22,22 +21,17 @@ class VideoEvents:
             Client sends: { "stream_id": "camera-1" }
             """
             try:
-                stream_id = data.get("stream_id", "default")
-
-                room_name = SocketIOService.get_video_room_name(stream_id)
-                join_room(room_name)
-
-                logger.info(
-                    f"📹 Client {request.sid} subscribed to video stream: {stream_id}"
-                )
-
                 emit(
-                    "video_subscribed",
+                    "subscribed_video",
                     {
                         "status": "success",
-                        "stream_id": stream_id,
-                        "message": f"Subscribed to video stream {stream_id}",
+                        "data": data,
                     },
+                )
+
+                logger.info(
+                    f"Client {request.sid} subscribed to video: {data}",
+                    exc_info=True,
                 )
 
             except Exception as e:
@@ -48,20 +42,14 @@ class VideoEvents:
         def handle_unsubscribe_video(data):
             """
             Unsubscribe from video stream
-            Client sends: { "stream_id": "camera-1" }
             """
             try:
-                stream_id = data.get("stream_id", "default")
-
-                room_name = SocketIOService.get_video_room_name(stream_id)
-                leave_room(room_name)
-
-                logger.info(
-                    f"📹 Client {request.sid} unsubscribed from video stream: {stream_id}"
-                )
-
                 emit(
-                    "video_unsubscribed", {"status": "success", "stream_id": stream_id}
+                    "unsubscribed_video",
+                    {
+                        "status": "success",
+                        "data": data,
+                    },
                 )
 
             except Exception as e:
@@ -71,25 +59,19 @@ class VideoEvents:
         def handle_video_start_request(data):
             """
             Client requests to start video streaming
-            Client sends: { "stream_id": "camera-1", "quality": "high" }
             """
             try:
-                stream_id = data.get("stream_id", "default")
-                quality = data.get("quality", "medium")
-
-                logger.info(
-                    f"📹 Video start requested - Stream: {stream_id}, Quality: {quality}"
-                )
-
-                # Emit to the requester
                 emit(
-                    "video_start_acknowledged",
+                    "video_start_request_acknowledged",
                     {
                         "status": "success",
-                        "stream_id": stream_id,
-                        "quality": quality,
-                        "message": "Video start request acknowledged",
+                        "data": data,
                     },
+                )
+
+                logger.info(
+                    f"Client {request.sid} started video streaming: {data}",
+                    exc_info=True,
                 )
 
             except Exception as e:
@@ -100,21 +82,19 @@ class VideoEvents:
         def handle_video_stop_request(data):
             """
             Client requests to stop video streaming
-            Client sends: { "stream_id": "camera-1" }
             """
             try:
-                stream_id = data.get("stream_id", "default")
-
-                logger.info(f"📹 Video stop requested - Stream: {stream_id}")
-
-                # Emit to the requester
                 emit(
-                    "video_stop_acknowledged",
+                    "video_stop_request_acknowledged",
                     {
                         "status": "success",
-                        "stream_id": stream_id,
-                        "message": "Video stop request acknowledged",
+                        "data": data,
                     },
+                )
+
+                logger.info(
+                    f"Client {request.sid} stopped video streaming: {data}",
+                    exc_info=True,
                 )
 
             except Exception as e:

@@ -5,13 +5,13 @@ from flask_migrate import Migrate
 from flask_sieve import Sieve
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.database import db
+from app.services.socketio.services.SocketIOService import SocketIOService
 from app.utils.network import get_local_ip
 from app.services.waybills.jobs.download_waybill_job import start_workers
 from app.services.waybills.jobs.print_waybill_job import start_print_workers
 from app.services.waybills.jobs.print_job_monitor_cron import start_print_monitor_cron
 from app.services.waybills.jobs.retry_download_job import start_retry_workers
 from app.services.waybills.jobs.auto_cleanup_cron import start_auto_cleanup_cron
-from app.services.socketio import init_socketio
 
 
 def create_app():
@@ -84,7 +84,8 @@ def create_app():
         except Exception as e:
             logger.error(f"Failed to start APScheduler: {str(e)}", exc_info=True)
 
-    socketio = init_socketio(app)
+    socket_io_service = SocketIOService(app)
+    socketio = socket_io_service.socketio
 
     @app.route("/api/network/local-ip")
     def get_network_info():

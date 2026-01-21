@@ -1,3 +1,4 @@
+import time
 from flask_socketio import emit, disconnect
 from flask import request
 from app.utils.loggers import get_logger
@@ -20,13 +21,13 @@ class ConnectionEvents:
             """Handle client connection"""
             client_id = request.sid
             client_ip = request.remote_addr
-            logger.info(f"🔌 Client connected - SID: {client_id}, IP: {client_ip}")
+            logger.info(f"Client connected - SID: {client_id}, IP: {client_ip}")
 
             emit(
                 "connection_established",
                 {
                     "status": "success",
-                    "message": "Connected to printer server",
+                    "message": "Connected to server successfully",
                     "sid": client_id,
                     "timestamp": ConnectionEvents._get_timestamp(),
                 },
@@ -36,12 +37,14 @@ class ConnectionEvents:
         def handle_disconnect():
             """Handle client disconnection"""
             client_id = request.sid
-            logger.info(f"🔌 Client disconnected - SID: {client_id}")
+            logger.info(f"Client disconnected - SID: {client_id}")
+
+            disconnect(sid=client_id)
 
         @socketio.on("ping")
-        def handle_ping():
+        def handle_ping(payload):
             """Handle ping for keepalive"""
-            logger.info(f"🔌 Ping received from client - SID: {request.sid}")
+            logger.info(f"Ping received from client - SID: {request.sid}")
             emit("pong", {"timestamp": ConnectionEvents._get_timestamp()})
 
     @staticmethod
