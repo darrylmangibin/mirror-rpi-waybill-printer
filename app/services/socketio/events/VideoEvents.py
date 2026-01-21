@@ -1,4 +1,4 @@
-from flask_socketio import emit
+from flask_socketio import emit, SocketIO
 from flask import request
 from app.utils.loggers import get_logger
 
@@ -11,7 +11,7 @@ class VideoEvents:
     """
 
     @staticmethod
-    def register_events(socketio):
+    def register_events(socketio: SocketIO):
         """Register all video-related events"""
 
         @socketio.on("subscribe_video")

@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 # Load .env file if it exists
 load_dotenv()
 
+# Environment Type (development, production)
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development').lower()
+
 # Simple configuration flags
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 HOST = os.getenv('HOST', '0.0.0.0')

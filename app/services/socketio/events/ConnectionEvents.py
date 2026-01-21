@@ -1,5 +1,5 @@
 import time
-from flask_socketio import emit, disconnect
+from flask_socketio import emit, SocketIO
 from flask import request
 from app.utils.loggers import get_logger
 
@@ -13,7 +13,7 @@ class ConnectionEvents:
     """
 
     @staticmethod
-    def register_events(socketio):
+    def register_events(socketio: SocketIO):
         """Register all connection-related events"""
 
         @socketio.on("connect")
@@ -38,8 +38,6 @@ class ConnectionEvents:
             """Handle client disconnection"""
             client_id = request.sid
             logger.info(f"Client disconnected - SID: {client_id}")
-
-            disconnect(sid=client_id)
 
         @socketio.on("ping")
         def handle_ping(payload):

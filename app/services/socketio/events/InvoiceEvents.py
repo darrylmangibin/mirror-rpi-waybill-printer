@@ -1,5 +1,4 @@
-from flask_socketio import emit, join_room, leave_room
-from flask import request
+from flask_socketio import emit, SocketIO
 from app.utils.loggers import get_logger
 
 logger = get_logger(__name__)
@@ -11,7 +10,7 @@ class InvoiceEvents:
     """
 
     @staticmethod
-    def register_events(socketio):
+    def register_events(socketio: SocketIO):
         """Register all invoice-related events"""
 
         @socketio.on("active_invoice")

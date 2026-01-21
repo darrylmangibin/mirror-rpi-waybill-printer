@@ -1,11 +1,18 @@
 import os
 import logging
 from dotenv import load_dotenv
+
+load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+
+if ENVIRONMENT == "production":
+    import eventlet
+
+    eventlet.monkey_patch()
+
 from app import create_app
 from app.config.environment import DEBUG, HOST, PORT
-
-# Load .env file if it exists
-load_dotenv()
 
 # Disable Werkzeug logger to prevent duplicate logs from Flask's built-in logging
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
