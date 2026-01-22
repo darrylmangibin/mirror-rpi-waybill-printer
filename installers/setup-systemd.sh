@@ -9,6 +9,14 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 Setting up RPI Waybill Printer Systemd Services${NC}\n"
 
+# Check if running in Docker
+if [ -f /.dockerenv ] || grep -q docker /proc/1/cgroup 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  Docker environment detected.${NC}"
+    echo -e "${BLUE}Systemd services are not needed in Docker.${NC}"
+    echo -e "${GREEN}Use 'docker-compose up' for development instead.${NC}"
+    exit 0
+fi
+
 # ACTUAL_USER is assumed to be passed from the main install.sh script.
 # The script is also assumed to be run with sudo by the parent install.sh script.
 

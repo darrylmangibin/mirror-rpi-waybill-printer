@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: rpi-waybill-printer-backend-prod
+    ports:
+      - "5000:5000"
+    volumes:
+      # Only persist data, not source code
+      - ./app/instance:/app/app/instance
+      - ./app/logs:/app/app/logs
+      - ./app/storage:/app/app/storage
+      # Mount CUPS socket for printer access (Linux only)
+      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=5000
+      - CLEANUP_INTERVAL_MINUTES=30
+      - CLEANUP_HOURS_THRESHOLD=6
+    restart: always
+    networks:
+      - waybill-network
+    privileged: true
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.prod
+    container_name: rpi-waybill-printer-frontend-prod
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - waybill-network
+
+networks:
+  waybill-network:
+    driver: bridge
