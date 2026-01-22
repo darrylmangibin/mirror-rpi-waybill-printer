@@ -78,7 +78,6 @@ docker-compose*.yml
 
 # Installers (not needed in container)
 installers/
-*.sh
 
 # Service files
 *.service
