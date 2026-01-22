@@ -10,8 +10,14 @@ RUN apt-get update && apt-get install -y \
   g++ \
   cups \
   cups-client \
+  cups-bsd \
+  cups-filters \
+  ghostscript \
   curl \
   && rm -rf /var/lib/apt/lists/*
+
+# Start CUPS service (required for Docker container printing)
+RUN service cups start || true
 
 # Copy requirements first for better caching
 COPY requirements.txt .
