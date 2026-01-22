@@ -25,6 +25,10 @@ RUN playwright install --with-deps chromium
 # Copy application code
 COPY . .
 
+# Copy and set executable permissions for startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Create necessary directories
 RUN mkdir -p app/instance app/logs app/storage
 
@@ -42,5 +46,7 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Run the application
-CMD ["python", "run.py"]
+# Run the application using startup script
+# Development: flask --app run.py run --debug (with hot-reload)
+# Production: python run.py (with eventlet)
+CMD ["/app/start.sh"]

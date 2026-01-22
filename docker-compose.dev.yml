@@ -16,9 +16,7 @@ services:
       - ./app/instance:/app/app/instance
       - ./app/logs:/app/app/logs
       - ./app/storage:/app/app/storage
-      # Mount CUPS socket for printer access (LINUX/RASPBERRY PI ONLY)
-      # Comment out or remove this line on macOS/Windows development
-      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+      # NO CUPS socket mount for local development (macOS/Windows)
     environment:
       - ENVIRONMENT=development
       - DEBUG=True
@@ -29,8 +27,6 @@ services:
     restart: unless-stopped
     networks:
       - waybill-network
-    # Allow container to access CUPS for printing (Linux only)
-    privileged: true
 
   frontend:
     build:

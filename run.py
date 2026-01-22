@@ -6,6 +6,8 @@ load_dotenv()
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 
+print(f"Starting application in {ENVIRONMENT} mode.")
+
 if ENVIRONMENT == "production":
     import eventlet
 
@@ -22,4 +24,11 @@ app, socketio = create_app()
 if __name__ == "__main__":
     # CRITICAL: Disable reloader to prevent duplicate initialization
     # Flask reloader runs code in both parent and child process, causing duplicate logs
-    socketio.run(app, debug=DEBUG, host=HOST, port=PORT, use_reloader=False)
+    socketio.run(
+        app,
+        debug=DEBUG,
+        host=HOST,
+        port=PORT,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True,
+    )
