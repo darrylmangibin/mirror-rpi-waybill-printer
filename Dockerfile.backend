@@ -4,6 +4,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies including CUPS for printing
+# Matches installers/cups.sh package list
 RUN apt-get update && apt-get install -y \
   libcups2-dev \
   gcc \
@@ -12,12 +13,10 @@ RUN apt-get update && apt-get install -y \
   cups-client \
   cups-bsd \
   cups-filters \
+  python3-cups \
   ghostscript \
   curl \
   && rm -rf /var/lib/apt/lists/*
-
-# Start CUPS service (required for Docker container printing)
-RUN service cups start || true
 
 # Copy requirements first for better caching
 COPY requirements.txt .
