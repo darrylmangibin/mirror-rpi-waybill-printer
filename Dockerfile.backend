@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y \
   python3-cups \
   ghostscript \
   curl \
+  printer-driver-all \
+  imagemagick \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching

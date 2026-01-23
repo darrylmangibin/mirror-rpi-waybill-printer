@@ -1,14 +1,42 @@
-# Dynamic IP Configuration for Docker
+# Dynamic IP & Printer Configuration for Docker
 
-This setup automatically detects your machine's IP address and configures the frontend to use it.
+This setup automatically detects your machine's IP address, discovers printers, and configures everything in **one command**.
 
 ## How It Works
 
 The `docker-start-dynamic.sh` script:
 
-1. Detects your machine's local IP (e.g., `192.168.100.44`)
-2. Generates `frontend/.env` with that IP
-3. Starts Docker containers with the correct configuration
+1. ✅ Detects your machine's local IP (e.g., `192.168.100.44`)
+2. ✅ Generates `frontend/.env` with that IP
+3. ✅ **Auto-detects USB printers** (Raspberry Pi/Linux only)
+4. ✅ Saves printer configuration to `.env.printer`
+5. ✅ Starts Docker containers with everything configured
+
+## One-Command Setup
+
+### First Time (Raspberry Pi/Linux with Printer)
+
+```bash
+./docker-start-dynamic.sh prod --build
+```
+
+**What happens:**
+
+1. Detects IP: `192.168.100.44`
+2. Scans for USB printers
+3. Finds: `usb://Xprinter/XP-410B?serial=410BBE235170626`
+4. Prompts to save configuration → You press `y`
+5. Creates `.env.printer` with printer details
+6. Starts Docker with all configuration
+7. ✅ **Everything works - printer included!**
+
+### Subsequent Runs
+
+```bash
+./docker-start-dynamic.sh prod
+```
+
+Reads existing `.env.printer` and starts immediately - no prompts!
 
 ## Usage
 

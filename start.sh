@@ -74,6 +74,53 @@ fi
 echo "✅ CUPS configured and restarted"
 
 # ======================================
+# Printer Discovery and Configuration
+# ======================================
+echo "Discovering available printers..."
+echo "Available printer URIs:"
+lpinfo -v 2>/dev/null || echo "(lpinfo not available)"
+echo ""
+
+# Check if printer is already configured
+echo "Checking for existing printer configuration..."
+EXISTING_PRINTER=$(lpstat -p -d 2>/dev/null | grep -oP 'printer \K[^ ]+' | head -1)
+
+if [ -n "$EXISTING_PRINTER" ]; then
+    echo "✅ Printer already configured: $EXISTING_PRINTER"
+    lpstat -p -d 2>/dev/null || true
+else
+    echo "No printer currently configured."
+    
+    # Auto-configure printer if environment variables are provided
+    if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
+        echo "Auto-configuring printer from environment variables..."
+        echo "Printer Name: $PRINTER_NAME"
+        echo "Printer URI: $PRINTER_URI"
+        
+        # Add printer with Zebra PPD driver (compatible with XPrinter thermal printers)
+        lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd 2>/dev/null
+        
+        if [ $? -eq 0 ]; then
+            echo "✅ Thermal printer added successfully"
+            # Set as default
+            lpadmin -d "$PRINTER_NAME" 2>/dev/null || true
+            echo "✅ Printer set as default"
+            lpstat -p -d 2>/dev/null || true
+        else
+            echo "⚠️  Failed to add printer automatically"
+            echo "You can configure it manually using CUPS web interface at http://localhost:631"
+        fi
+    else
+        echo "ℹ️  No printer configured. Set PRINTER_NAME and PRINTER_URI environment variables to auto-configure."
+        echo "Example:"
+        echo "  PRINTER_NAME=XP410B"
+        echo "  PRINTER_URI=usb://Xprinter/XP-410B?serial=410BBE235170626"
+        echo "Or configure manually via CUPS web interface at http://localhost:631"
+    fi
+fi
+echo ""
+
+# ======================================
 # Database Migrations
 # ======================================
 echo "Running database migrations..."

@@ -42,6 +42,69 @@ echo -e "${GREEN}✅ Generated frontend/.env:${NC}"
 cat frontend/.env
 echo ""
 
+# ======================================
+# Auto-detect Printer Configuration
+# ======================================
+echo -e "${BLUE}🖨️  Detecting Printer Configuration${NC}"
+
+# Check if printer environment variables are already set in a .env file
+if [ -f ".env.printer" ]; then
+    echo -e "${GREEN}✅ Found existing .env.printer${NC}"
+    source .env.printer
+else
+    # Try to detect printer automatically (Linux/Raspberry Pi only)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo -e "${YELLOW}Scanning for USB printers...${NC}"
+        
+        # Check if lpinfo is available (CUPS installed on host)
+        if command -v lpinfo &> /dev/null; then
+            # Get USB printer URIs
+            DETECTED_URI=$(lpinfo -v 2>/dev/null | grep "usb://" | head -1 | awk '{print $2}')
+            
+            if [ -n "$DETECTED_URI" ]; then
+                echo -e "${GREEN}✅ Detected printer: $DETECTED_URI${NC}"
+                
+                # Extract printer model from URI for default name
+                PRINTER_MODEL=$(echo "$DETECTED_URI" | sed -n 's/.*\/\/\([^\/]*\)\/.*/\1/p')
+                DEFAULT_PRINTER_NAME="${PRINTER_MODEL:-XP410B}"
+                
+                echo -e "${YELLOW}Suggested printer name: $DEFAULT_PRINTER_NAME${NC}"
+                echo ""
+                echo -e "${BLUE}Save this configuration? (y/n)${NC}"
+                read -p "> " -n 1 -r
+                echo
+                
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    # Create .env.printer file
+                    cat > .env.printer <<EOF
+# Printer Configuration - Auto-detected by docker-start-dynamic.sh
+# Generated at: $(date)
+export PRINTER_NAME=$DEFAULT_PRINTER_NAME
+export PRINTER_URI=$DETECTED_URI
+EOF
+                    echo -e "${GREEN}✅ Saved printer configuration to .env.printer${NC}"
+                    export PRINTER_NAME=$DEFAULT_PRINTER_NAME
+                    export PRINTER_URI=$DETECTED_URI
+                else
+                    echo -e "${YELLOW}⏭️  Skipping printer configuration${NC}"
+                fi
+            else
+                echo -e "${YELLOW}⚠️  No USB printer detected${NC}"
+                echo -e "${BLUE}You can configure manually later or create .env.printer:${NC}"
+                echo -e "  export PRINTER_NAME=XP410B"
+                echo -e "  export PRINTER_URI=usb://Xprinter/XP-410B?serial=410BBE235170626"
+            fi
+        else
+            echo -e "${YELLOW}⚠️  CUPS not installed on host, skipping printer detection${NC}"
+            echo -e "${BLUE}Printer will be configured inside Docker container${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⏭️  Printer detection only available on Linux${NC}"
+    fi
+fi
+
+echo ""
+
 # Determine which compose file to use
 COMPOSE_FILE="docker-compose.yml"
 if [ "$1" == "dev" ]; then
@@ -56,6 +119,19 @@ fi
 
 # Start Docker containers
 echo -e "${YELLOW}Starting Docker containers...${NC}"
+
+# Pass printer environment variables if they exist
+if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
+    echo -e "${BLUE}Using printer configuration:${NC}"
+    echo -e "  Name: $PRINTER_NAME"
+    echo -e "  URI:  $PRINTER_URI"
+    echo ""
+    
+    # Export for docker-compose to use
+    export PRINTER_NAME
+    export PRINTER_URI
+fi
+
 if [ "$2" == "--build" ]; then
     docker compose -f $COMPOSE_FILE up -d --build
 else
