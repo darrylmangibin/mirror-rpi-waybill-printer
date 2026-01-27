@@ -111,18 +111,48 @@ else
         DRIVER="${PRINTER_DRIVER:-drv:///sample.drv/zebra.ppd}"
         echo "Printer Driver: $DRIVER"
         
-        # Add printer
-        lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m "$DRIVER" 2>/dev/null
-        
-        if [ $? -eq 0 ]; then
-            echo "✅ Thermal printer added successfully"
-            # Set as default
-            lpadmin -d "$PRINTER_NAME" 2>/dev/null || true
-            echo "✅ Printer set as default"
-            lpstat -p -d 2>/dev/null || true
+        # Verify driver exists
+        if lpinfo -m | grep -q "$DRIVER"; then
+            echo "✅ Driver found: $DRIVER"
         else
-            echo "⚠️  Failed to add printer automatically"
-            echo "You can configure it manually using CUPS web interface at http://localhost:631"
+            echo "⚠️  Warning: Driver '$DRIVER' not found in CUPS database"
+            echo "Available drivers matching pattern:"
+            lpinfo -m | grep -i "$(echo $DRIVER | sed 's/.*\///;s/\.ppd//')" | head -5
+        fi
+        
+        # Add printer with detailed error output
+        echo "Adding printer to CUPS..."
+        if lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m "$DRIVER" 2>&1; then
+            echo "✅ Printer added successfully"
+            
+            # Wait a moment for CUPS to register the printer
+            sleep 1
+            
+            # Verify printer was added
+            if lpstat -p "$PRINTER_NAME" >/dev/null 2>&1; then
+                echo "✅ Printer verified in CUPS"
+                
+                # Set as default
+                if lpadmin -d "$PRINTER_NAME" 2>&1; then
+                    echo "✅ Printer set as default"
+                else
+                    echo "⚠️  Could not set as default (printer may still work)"
+                fi
+                
+                # Show printer status
+                lpstat -p -d 2>/dev/null || true
+            else
+                echo "❌ Printer was not registered in CUPS"
+                echo "Current printers:"
+                lpstat -p -d 2>/dev/null || echo "No printers found"
+            fi
+        else
+            echo "❌ Failed to add printer"
+            echo ""
+            echo "Troubleshooting:"
+            echo "  1. Check if printer is connected: lpinfo -v | grep usb"
+            echo "  2. Verify driver exists: lpinfo -m | grep -i zebra"
+            echo "  3. Manual setup: http://localhost:631"
         fi
     else
         echo "ℹ️  No printer configured. Set PRINTER_NAME and PRINTER_URI environment variables to auto-configure."

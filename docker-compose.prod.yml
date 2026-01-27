@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: rpi-waybill-printer-backend-prod
+    env_file:
+      - .env.printer
     ports:
       - "5000:5000"
     volumes:
