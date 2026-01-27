@@ -10,14 +10,20 @@ echo "Starting application in $ENVIRONMENT mode..."
 # ======================================
 echo "Configuring CUPS (Common Unix Printing System)..."
 
-# Start CUPS service
+# Start CUPS service (Docker-compatible, no systemd)
 echo "Starting CUPS service..."
-if command -v systemctl &> /dev/null; then
-    systemctl start cups 2>/dev/null || service cups start 2>/dev/null || cupsd 2>/dev/null || true
+# Start cupsd in the background (systemd doesn't work in Docker)
+cupsd 2>/dev/null || true
+
+# Wait for CUPS to be ready
+sleep 2
+
+# Verify CUPS is running
+if pgrep -x "cupsd" > /dev/null; then
+    echo "✅ CUPS service started"
 else
-    service cups start 2>/dev/null || cupsd 2>/dev/null || true
+    echo "⚠️  Warning: CUPS may not have started properly"
 fi
-echo "✅ CUPS service started"
 
 # Configure CUPS daemon for admin-level access
 echo "Configuring CUPS daemon for admin access..."
@@ -65,12 +71,10 @@ echo "Enabling CUPS remote access..."
 cupsctl --remote-any 2>/dev/null || true
 echo "✅ CUPS remote access enabled"
 
-# Restart CUPS to apply configuration
-if command -v systemctl &> /dev/null; then
-    systemctl restart cups 2>/dev/null || service cups restart 2>/dev/null || true
-else
-    service cups restart 2>/dev/null || true
-fi
+# Restart CUPS to apply configuration (Docker-compatible)
+echo "Restarting CUPS to apply configuration..."
+pkill -HUP cupsd 2>/dev/null || cupsd 2>/dev/null || true
+sleep 2
 echo "✅ CUPS configured and restarted"
 
 # ======================================
