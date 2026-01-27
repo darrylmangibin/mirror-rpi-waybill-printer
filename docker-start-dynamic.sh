@@ -14,6 +14,8 @@ echo -e "${BLUE}🚀 Starting RPI Waybill Printer with Docker${NC}\n"
 # ======================================
 echo -e "${BLUE}🐳 Checking Docker installation...${NC}"
 
+DOCKER_JUST_INSTALLED=false
+
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
     echo -e "${YELLOW}Docker not found. Installing Docker...${NC}"
@@ -29,9 +31,9 @@ if ! command -v docker &> /dev/null; then
         ACTUAL_USER=${SUDO_USER:-$(whoami)}
         sudo usermod -aG docker "$ACTUAL_USER"
         
+        DOCKER_JUST_INSTALLED=true
+        
         echo -e "${GREEN}✅ Docker installed${NC}"
-        echo -e "${YELLOW}⚠️  You may need to logout and login again for docker group to take effect${NC}"
-        echo -e "${YELLOW}   Or run: newgrp docker${NC}"
     else
         echo -e "${RED}❌ Docker installation only supported on Linux${NC}"
         echo -e "${YELLOW}Please install Docker Desktop manually on macOS/Windows${NC}"
@@ -63,6 +65,23 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     sudo systemctl enable docker 2>/dev/null || true
     sudo systemctl start docker 2>/dev/null || true
     echo -e "${GREEN}✅ Docker service enabled${NC}"
+fi
+
+# If Docker was just installed, we need to handle group permissions
+if [ "$DOCKER_JUST_INSTALLED" = true ]; then
+    echo ""
+    echo -e "${YELLOW}⚠️  Docker was just installed. Activating docker group...${NC}"
+    echo -e "${BLUE}Continuing setup with sudo for docker commands...${NC}"
+    # Set a flag to use sudo for docker commands
+    USE_SUDO="sudo"
+else
+    # Check if user can run docker without sudo
+    if docker ps &> /dev/null; then
+        USE_SUDO=""
+    else
+        echo -e "${YELLOW}⚠️  Docker requires sudo. Using sudo for docker commands...${NC}"
+        USE_SUDO="sudo"
+    fi
 fi
 
 echo ""
@@ -194,9 +213,9 @@ if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
 fi
 
 if [ "$2" == "--build" ]; then
-    docker compose -f $COMPOSE_FILE up -d --build
+    $USE_SUDO docker compose -f $COMPOSE_FILE up -d --build
 else
-    docker compose -f $COMPOSE_FILE up -d
+    $USE_SUDO docker compose -f $COMPOSE_FILE up -d
 fi
 
 echo ""
@@ -206,6 +225,14 @@ echo -e "  Frontend: http://${LOCAL_IP}:5173"
 echo -e "  Backend:  http://${LOCAL_IP}:5000"
 echo ""
 echo -e "${BLUE}Commands:${NC}"
-echo -e "  View logs:    docker compose -f $COMPOSE_FILE logs -f"
-echo -e "  Stop:         docker compose -f $COMPOSE_FILE down"
-echo -e "  Restart:      docker compose -f $COMPOSE_FILE restart"
+if [ -n "$USE_SUDO" ]; then
+    echo -e "  View logs:    $USE_SUDO docker compose -f $COMPOSE_FILE logs -f"
+    echo -e "  Stop:         $USE_SUDO docker compose -f $COMPOSE_FILE down"
+    echo -e "  Restart:      $USE_SUDO docker compose -f $COMPOSE_FILE restart"
+    echo ""
+    echo -e "${YELLOW}ℹ️  Note: Docker commands require sudo until you logout and login again${NC}"
+else
+    echo -e "  View logs:    docker compose -f $COMPOSE_FILE logs -f"
+    echo -e "  Stop:         docker compose -f $COMPOSE_FILE down"
+    echo -e "  Restart:      docker compose -f $COMPOSE_FILE restart"
+fi
