@@ -10,6 +10,41 @@ NC='\033[0m'
 echo -e "${BLUE}🚀 Starting RPI Waybill Printer with Docker${NC}\n"
 
 # ======================================
+# Helper function to run commands with privilege escalation
+# ======================================
+run_privileged() {
+    if [ "$EUID" -eq 0 ]; then
+        # Already running as root
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        # sudo is available
+        sudo "$@"
+    else
+        # No sudo, try su -c
+        echo -e "${YELLOW}sudo not found, using su -c...${NC}"
+        su -c "$*"
+    fi
+}
+
+# ======================================
+# Detect Linux distribution
+# ======================================
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    elif [ -f /etc/fedora-release ]; then
+        echo "fedora"
+    elif [ -f /etc/debian_version ]; then
+        echo "debian"
+    else
+        echo "unknown"
+    fi
+}
+
+DISTRO=$(detect_distro)
+
+# ======================================
 # Check and Install Docker if needed
 # ======================================
 echo -e "${BLUE}🐳 Checking Docker installation...${NC}"
@@ -22,14 +57,14 @@ if ! command -v docker &> /dev/null; then
     echo -e "${YELLOW}This may take a few minutes...${NC}"
     
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        # Install Docker on Linux
+        # Install Docker on Linux using official script
         curl -fsSL https://get.docker.com -o get-docker.sh
-        sudo sh get-docker.sh
-        sudo rm get-docker.sh
+        run_privileged sh get-docker.sh
+        run_privileged rm get-docker.sh
         
         # Add current user to docker group
         ACTUAL_USER=${SUDO_USER:-$(whoami)}
-        sudo usermod -aG docker "$ACTUAL_USER"
+        run_privileged usermod -aG docker "$ACTUAL_USER"
         
         DOCKER_JUST_INSTALLED=true
         
@@ -48,8 +83,22 @@ if ! command -v docker compose &> /dev/null && ! command -v docker-compose &> /d
     echo -e "${YELLOW}Docker Compose not found. Installing...${NC}"
     
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        sudo apt-get update -qq
-        sudo apt-get install -y docker-compose-plugin
+        # Install based on distribution
+        case "$DISTRO" in
+            fedora|rhel|centos)
+                echo -e "${BLUE}Detected Fedora/RHEL-based system${NC}"
+                run_privileged dnf install -y docker-compose-plugin
+                ;;
+            debian|ubuntu|raspbian)
+                echo -e "${BLUE}Detected Debian/Ubuntu-based system${NC}"
+                run_privileged apt-get update -qq
+                run_privileged apt-get install -y docker-compose-plugin
+                ;;
+            *)
+                echo -e "${YELLOW}Unknown distribution, using Docker's install script...${NC}"
+                # Docker Compose plugin should be installed with Docker
+                ;;
+        esac
         echo -e "${GREEN}✅ Docker Compose installed${NC}"
     else
         echo -e "${RED}❌ Docker Compose installation only supported on Linux${NC}"
@@ -62,8 +111,8 @@ fi
 # Enable Docker service to start on boot (Linux only)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo -e "${YELLOW}Enabling Docker service to start on boot...${NC}"
-    sudo systemctl enable docker 2>/dev/null || true
-    sudo systemctl start docker 2>/dev/null || true
+    run_privileged systemctl enable docker 2>/dev/null || true
+    run_privileged systemctl start docker 2>/dev/null || true
     echo -e "${GREEN}✅ Docker service enabled${NC}"
 fi
 
@@ -71,16 +120,16 @@ fi
 if [ "$DOCKER_JUST_INSTALLED" = true ]; then
     echo ""
     echo -e "${YELLOW}⚠️  Docker was just installed. Activating docker group...${NC}"
-    echo -e "${BLUE}Continuing setup with sudo for docker commands...${NC}"
-    # Set a flag to use sudo for docker commands
-    USE_SUDO="sudo"
+    echo -e "${BLUE}Continuing setup with privileged docker commands...${NC}"
+    # Set a flag to use privileged docker commands
+    USE_PRIVILEGED=true
 else
-    # Check if user can run docker without sudo
+    # Check if user can run docker without privilege escalation
     if docker ps &> /dev/null; then
-        USE_SUDO=""
+        USE_PRIVILEGED=false
     else
-        echo -e "${YELLOW}⚠️  Docker requires sudo. Using sudo for docker commands...${NC}"
-        USE_SUDO="sudo"
+        echo -e "${YELLOW}⚠️  Docker requires privilege escalation. Using privileged commands...${NC}"
+        USE_PRIVILEGED=true
     fi
 fi
 
@@ -213,9 +262,17 @@ if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
 fi
 
 if [ "$2" == "--build" ]; then
-    $USE_SUDO docker compose -f $COMPOSE_FILE up -d --build
+    if [ "$USE_PRIVILEGED" = true ]; then
+        run_privileged docker compose -f $COMPOSE_FILE up -d --build
+    else
+        docker compose -f $COMPOSE_FILE up -d --build
+    fi
 else
-    $USE_SUDO docker compose -f $COMPOSE_FILE up -d
+    if [ "$USE_PRIVILEGED" = true ]; then
+        run_privileged docker compose -f $COMPOSE_FILE up -d
+    else
+        docker compose -f $COMPOSE_FILE up -d
+    fi
 fi
 
 echo ""
@@ -225,12 +282,18 @@ echo -e "  Frontend: http://${LOCAL_IP}:5173"
 echo -e "  Backend:  http://${LOCAL_IP}:5000"
 echo ""
 echo -e "${BLUE}Commands:${NC}"
-if [ -n "$USE_SUDO" ]; then
-    echo -e "  View logs:    $USE_SUDO docker compose -f $COMPOSE_FILE logs -f"
-    echo -e "  Stop:         $USE_SUDO docker compose -f $COMPOSE_FILE down"
-    echo -e "  Restart:      $USE_SUDO docker compose -f $COMPOSE_FILE restart"
+if [ "$USE_PRIVILEGED" = true ]; then
+    if command -v sudo &> /dev/null; then
+        echo -e "  View logs:    sudo docker compose -f $COMPOSE_FILE logs -f"
+        echo -e "  Stop:         sudo docker compose -f $COMPOSE_FILE down"
+        echo -e "  Restart:      sudo docker compose -f $COMPOSE_FILE restart"
+    else
+        echo -e "  View logs:    su -c 'docker compose -f $COMPOSE_FILE logs -f'"
+        echo -e "  Stop:         su -c 'docker compose -f $COMPOSE_FILE down'"
+        echo -e "  Restart:      su -c 'docker compose -f $COMPOSE_FILE restart'"
+    fi
     echo ""
-    echo -e "${YELLOW}ℹ️  Note: Docker commands require sudo until you logout and login again${NC}"
+    echo -e "${YELLOW}ℹ️  Note: Docker commands require privilege escalation until you logout and login again${NC}"
 else
     echo -e "  View logs:    docker compose -f $COMPOSE_FILE logs -f"
     echo -e "  Stop:         docker compose -f $COMPOSE_FILE down"
