@@ -254,55 +254,92 @@ else
                 if [[ $REPLY =~ ^[Yy]$ ]]; then
                     echo -e "${YELLOW}Fetching available printer drivers...${NC}"
                     
-                    # Get list of available drivers from CUPS
+                    # Get full list of available drivers from CUPS
                     if [ "$USE_PRIVILEGED" = true ]; then
-                        DRIVERS=$(run_privileged lpinfo -m 2>/dev/null | head -20)
+                        ALL_DRIVERS=$(run_privileged lpinfo -m 2>/dev/null)
                     else
-                        DRIVERS=$(lpinfo -m 2>/dev/null | head -20)
+                        ALL_DRIVERS=$(lpinfo -m 2>/dev/null)
                     fi
                     
-                    if [ -n "$DRIVERS" ]; then
+                    if [ -n "$ALL_DRIVERS" ]; then
                         echo ""
-                        echo -e "${BLUE}Available drivers (showing first 20):${NC}"
-                        echo "$DRIVERS" | nl -w2 -s'. '
+                        echo -e "${BLUE}Driver Selection Options:${NC}"
+                        echo -e "  1. Search by manufacturer (recommended)"
+                        echo -e "  2. Browse generic drivers"
+                        echo -e "  3. Enter driver path manually"
                         echo ""
-                        echo -e "${BLUE}Enter driver number (or press Enter to search):${NC}"
-                        read -p "> " DRIVER_CHOICE
+                        echo -e "${BLUE}Select option (1-3):${NC}"
+                        read -p "> " SELECTION_METHOD
                         
-                        if [ -n "$DRIVER_CHOICE" ]; then
-                            PRINTER_DRIVER=$(echo "$DRIVERS" | sed -n "${DRIVER_CHOICE}p" | awk '{print $1}')
-                            echo -e "${GREEN}✅ Selected driver: $PRINTER_DRIVER${NC}"
-                        else
-                            echo -e "${BLUE}Enter search term (e.g., 'epson', 'hp', 'generic'):${NC}"
-                            read -p "> " SEARCH_TERM
-                            
-                            if [ -n "$SEARCH_TERM" ]; then
-                                echo ""
-                                echo -e "${YELLOW}Searching for '$SEARCH_TERM'...${NC}"
+                        case "$SELECTION_METHOD" in
+                            1)
+                                echo -e "${BLUE}Enter manufacturer name (e.g., 'zebra', 'epson', 'hp', 'xprinter'):${NC}"
+                                read -p "> " SEARCH_TERM
                                 
-                                if [ "$USE_PRIVILEGED" = true ]; then
-                                    SEARCH_RESULTS=$(run_privileged lpinfo -m 2>/dev/null | grep -i "$SEARCH_TERM" | head -20)
-                                else
-                                    SEARCH_RESULTS=$(lpinfo -m 2>/dev/null | grep -i "$SEARCH_TERM" | head -20)
-                                fi
-                                
-                                if [ -n "$SEARCH_RESULTS" ]; then
+                                if [ -n "$SEARCH_TERM" ]; then
                                     echo ""
-                                    echo -e "${BLUE}Search results:${NC}"
-                                    echo "$SEARCH_RESULTS" | nl -w2 -s'. '
+                                    echo -e "${YELLOW}Searching for '$SEARCH_TERM' drivers...${NC}"
+                                    
+                                    SEARCH_RESULTS=$(echo "$ALL_DRIVERS" | grep -i "$SEARCH_TERM")
+                                    
+                                    if [ -n "$SEARCH_RESULTS" ]; then
+                                        RESULT_COUNT=$(echo "$SEARCH_RESULTS" | wc -l)
+                                        echo -e "${GREEN}Found $RESULT_COUNT driver(s)${NC}"
+                                        echo ""
+                                        
+                                        # Show first 30 results
+                                        echo "$SEARCH_RESULTS" | head -30 | nl -w2 -s'. '
+                                        
+                                        if [ "$RESULT_COUNT" -gt 30 ]; then
+                                            echo ""
+                                            echo -e "${YELLOW}Showing first 30 of $RESULT_COUNT results${NC}"
+                                        fi
+                                        
+                                        echo ""
+                                        echo -e "${BLUE}Enter driver number:${NC}"
+                                        read -p "> " DRIVER_CHOICE
+                                        
+                                        if [ -n "$DRIVER_CHOICE" ]; then
+                                            PRINTER_DRIVER=$(echo "$SEARCH_RESULTS" | sed -n "${DRIVER_CHOICE}p" | awk '{print $1}')
+                                            echo -e "${GREEN}✅ Selected driver: $PRINTER_DRIVER${NC}"
+                                        fi
+                                    else
+                                        echo -e "${YELLOW}⚠️  No drivers found matching '$SEARCH_TERM'${NC}"
+                                        echo -e "${BLUE}Try another search term or select option 3 to enter manually${NC}"
+                                    fi
+                                fi
+                                ;;
+                            2)
+                                echo ""
+                                GENERIC_DRIVERS=$(echo "$ALL_DRIVERS" | grep -i "generic\|raw")
+                                
+                                if [ -n "$GENERIC_DRIVERS" ]; then
+                                    echo -e "${BLUE}Generic drivers:${NC}"
+                                    echo "$GENERIC_DRIVERS" | nl -w2 -s'. '
                                     echo ""
                                     echo -e "${BLUE}Enter driver number:${NC}"
                                     read -p "> " DRIVER_CHOICE
                                     
                                     if [ -n "$DRIVER_CHOICE" ]; then
-                                        PRINTER_DRIVER=$(echo "$SEARCH_RESULTS" | sed -n "${DRIVER_CHOICE}p" | awk '{print $1}')
+                                        PRINTER_DRIVER=$(echo "$GENERIC_DRIVERS" | sed -n "${DRIVER_CHOICE}p" | awk '{print $1}')
                                         echo -e "${GREEN}✅ Selected driver: $PRINTER_DRIVER${NC}"
                                     fi
                                 else
-                                    echo -e "${YELLOW}⚠️  No drivers found matching '$SEARCH_TERM'${NC}"
+                                    echo -e "${YELLOW}⚠️  No generic drivers found${NC}"
                                 fi
-                            fi
-                        fi
+                                ;;
+                            3)
+                                echo -e "${BLUE}Enter driver PPD path (e.g., drv:///sample.drv/zebra.ppd):${NC}"
+                                read -p "> " PRINTER_DRIVER
+                                
+                                if [ -n "$PRINTER_DRIVER" ]; then
+                                    echo -e "${GREEN}✅ Using driver: $PRINTER_DRIVER${NC}"
+                                fi
+                                ;;
+                            *)
+                                echo -e "${YELLOW}Invalid selection${NC}"
+                                ;;
+                        esac
                     else
                         echo -e "${YELLOW}⚠️  Could not fetch driver list${NC}"
                     fi
