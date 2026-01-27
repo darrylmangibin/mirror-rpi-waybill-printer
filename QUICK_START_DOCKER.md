@@ -1,24 +1,41 @@
 # Quick Start: Docker One-Command Setup
 
-## Raspberry Pi / Chromebook Linux
+## Fresh Raspberry Pi / Chromebook Linux (No Docker Installed)
 
-**Complete setup in ONE command:**
+**Complete setup from scratch in ONE command:**
 
 ```bash
 ./docker-start-dynamic.sh prod --build
 ```
 
-**What it does:**
+**What it does automatically:**
 
-- ✅ Detects your network IP
-- ✅ Finds your USB printer
-- ✅ Configures everything
-- ✅ Starts Docker containers
-- ✅ **Ready to print!**
+1. ✅ **Installs Docker** (if not present)
+2. ✅ **Installs Docker Compose** (if not present)
+3. ✅ Enables Docker service on boot
+4. ✅ Detects your network IP
+5. ✅ Finds your USB printer
+6. ✅ Configures everything
+7. ✅ Starts Docker containers
+8. ✅ **Ready to print!**
 
-**First run prompts:**
+**No prerequisites needed!** Just clone the repo and run the script.
+
+## First Run Output
 
 ```
+🚀 Starting RPI Waybill Printer with Docker
+
+🐳 Checking Docker installation...
+Docker not found. Installing Docker...
+This may take a few minutes...
+✅ Docker installed
+✅ Docker Compose installed
+✅ Docker service enabled
+
+Detecting local IP address...
+✅ Detected IP: 192.168.100.44
+
 🖨️  Detecting Printer Configuration
 ✅ Detected printer: usb://Xprinter/XP-410B?serial=410BBE235170626
 Suggested printer name: Xprinter

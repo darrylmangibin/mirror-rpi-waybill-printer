@@ -1,14 +1,75 @@
 #!/bin/bash
-# Docker startup script with dynamic IP detection
+# Docker startup script with dynamic IP detection and auto-installation
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BLUE}🚀 Starting RPI Waybill Printer with Docker${NC}\n"
 
-# Detect local IP address
+# ======================================
+# Check and Install Docker if needed
+# ======================================
+echo -e "${BLUE}🐳 Checking Docker installation...${NC}"
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo -e "${YELLOW}Docker not found. Installing Docker...${NC}"
+    echo -e "${YELLOW}This may take a few minutes...${NC}"
+    
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Install Docker on Linux
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sudo sh get-docker.sh
+        sudo rm get-docker.sh
+        
+        # Add current user to docker group
+        ACTUAL_USER=${SUDO_USER:-$(whoami)}
+        sudo usermod -aG docker "$ACTUAL_USER"
+        
+        echo -e "${GREEN}✅ Docker installed${NC}"
+        echo -e "${YELLOW}⚠️  You may need to logout and login again for docker group to take effect${NC}"
+        echo -e "${YELLOW}   Or run: newgrp docker${NC}"
+    else
+        echo -e "${RED}❌ Docker installation only supported on Linux${NC}"
+        echo -e "${YELLOW}Please install Docker Desktop manually on macOS/Windows${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✅ Docker already installed${NC}"
+fi
+
+# Check if Docker Compose is installed
+if ! command -v docker compose &> /dev/null && ! command -v docker-compose &> /dev/null; then
+    echo -e "${YELLOW}Docker Compose not found. Installing...${NC}"
+    
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        sudo apt-get update -qq
+        sudo apt-get install -y docker-compose-plugin
+        echo -e "${GREEN}✅ Docker Compose installed${NC}"
+    else
+        echo -e "${RED}❌ Docker Compose installation only supported on Linux${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✅ Docker Compose already installed${NC}"
+fi
+
+# Enable Docker service to start on boot (Linux only)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo -e "${YELLOW}Enabling Docker service to start on boot...${NC}"
+    sudo systemctl enable docker 2>/dev/null || true
+    sudo systemctl start docker 2>/dev/null || true
+    echo -e "${GREEN}✅ Docker service enabled${NC}"
+fi
+
+echo ""
+
+# ======================================
+# Detect Local IP Address
+# ======================================
 echo -e "${YELLOW}Detecting local IP address...${NC}"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
