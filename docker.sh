@@ -279,12 +279,24 @@ fi
 
 echo ""
 
-# Determine which compose file to use
+# Determine which compose file to use and handle special commands
 COMPOSE_FILE="docker-compose.yml"
-if [ "$1" == "dev" ]; then
+COMMAND=$1
+
+# Handle dev and prod modes
+if [ "$COMMAND" == "dev" ]; then
     COMPOSE_FILE="docker-compose.dev.yml"
     echo -e "${BLUE}Using development configuration${NC}"
-elif [ "$1" == "prod" ]; then
+    
+    # Check if local dependencies exist, if not run dev-setup.sh
+    if [ ! -d "venv" ] || [ ! -d "frontend/node_modules" ]; then
+        echo ""
+        echo -e "${YELLOW}📦 Local dependencies not found. Running dev-setup.sh...${NC}"
+        chmod +x dev-setup.sh
+        ./dev-setup.sh
+        echo ""
+    fi
+elif [ "$COMMAND" == "prod" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"
     echo -e "${BLUE}Using production configuration${NC}"
 else

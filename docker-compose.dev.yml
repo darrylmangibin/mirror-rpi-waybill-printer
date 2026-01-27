@@ -9,17 +9,14 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Mount source code for hot-reload during development
+      # Mount source code for hot-reload
       - ./app:/app/app
       - ./run.py:/app/run.py
-      # Persist database and logs
+      - ./requirements.txt:/app/requirements.txt
+      # Keep data directories persistent
       - ./app/instance:/app/app/instance
       - ./app/logs:/app/app/logs
       - ./app/storage:/app/app/storage
-    devices:
-      # Pass through all USB devices for printer access (Linux only)
-      # Comment out on macOS/Windows - will fail gracefully if not available
-      - /dev/bus/usb:/dev/bus/usb
     environment:
       - ENVIRONMENT=development
       - DEBUG=True
@@ -30,6 +27,9 @@ services:
       # Auto-configure printer (set by docker.sh or manually)
       - PRINTER_NAME=${PRINTER_NAME:-}
       - PRINTER_URI=${PRINTER_URI:-}
+    devices:
+      # Pass through all USB devices for printer access (Linux only)
+      - /dev/bus/usb:/dev/bus/usb
     restart: unless-stopped
     networks:
       - waybill-network
@@ -42,15 +42,10 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      # Mount source for hot-reload
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/index.html:/app/index.html
-      - ./frontend/vite.config.ts:/app/vite.config.ts
-      - ./frontend/tsconfig.json:/app/tsconfig.json
-      - ./frontend/.env:/app/.env
-      # Prevent node_modules from being overwritten
-      - /app/node_modules
+      # Mount frontend source for hot-reload
+      - ./frontend:/app
+      # Use named volume for node_modules (platform-specific binaries)
+      - frontend-node-modules:/app/node_modules
     env_file:
       - ./frontend/.env
     depends_on:
@@ -62,3 +57,6 @@ services:
 networks:
   waybill-network:
     driver: bridge
+
+volumes:
+  frontend-node-modules:
