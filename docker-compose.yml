@@ -16,9 +16,9 @@ services:
       - ./app/instance:/app/app/instance
       - ./app/logs:/app/app/logs
       - ./app/storage:/app/app/storage
-      # Mount CUPS socket for printer access (LINUX/RASPBERRY PI ONLY)
-      # Comment out or remove this line on macOS/Windows development
-      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+    devices:
+      # Pass through all USB devices for printer access
+      - /dev/bus/usb:/dev/bus/usb
     environment:
       - ENVIRONMENT=development
       - DEBUG=True

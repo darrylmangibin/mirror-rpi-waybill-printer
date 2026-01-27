@@ -13,8 +13,9 @@ services:
       - ./app/instance:/app/app/instance
       - ./app/logs:/app/app/logs
       - ./app/storage:/app/app/storage
-      # Mount CUPS socket for printer access (Linux only)
-      - /var/run/cups/cups.sock:/var/run/cups/cups.sock
+    devices:
+      # Pass through all USB devices for printer access
+      - /dev/bus/usb:/dev/bus/usb
     environment:
       - ENVIRONMENT=production
       - DEBUG=False

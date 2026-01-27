@@ -16,7 +16,10 @@ services:
       - ./app/instance:/app/app/instance
       - ./app/logs:/app/app/logs
       - ./app/storage:/app/app/storage
-      # NO CUPS socket mount for local development (macOS/Windows)
+    devices:
+      # Pass through all USB devices for printer access (Linux only)
+      # Comment out on macOS/Windows - will fail gracefully if not available
+      - /dev/bus/usb:/dev/bus/usb
     environment:
       - ENVIRONMENT=development
       - DEBUG=True
