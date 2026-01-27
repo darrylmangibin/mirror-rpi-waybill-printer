@@ -197,21 +197,52 @@ if [ -f ".env.printer" ]; then
 else
     # Try to detect printer automatically (Linux/Raspberry Pi only)
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo -e "${YELLOW}Scanning for USB printers...${NC}"
+        echo -e "${YELLOW}Scanning for printers...${NC}"
         
-        # Check if lpinfo is available (CUPS installed on host)
-        if command -v lpinfo &> /dev/null; then
-            # Get USB printer URIs
-            DETECTED_URI=$(lpinfo -v 2>/dev/null | grep "usb://" | head -1 | awk '{print $2}')
+        # Check if CUPS is available (CUPS installed on host)
+        if command -v lpstat &> /dev/null; then
+            DETECTED_URI=""
+            PRINTER_NAME=""
             
+            # First, try to get printer from existing CUPS configuration
+            EXISTING_PRINTER=$(lpstat -p 2>/dev/null | head -1 | awk '{print $2}')
+            
+            if [ -n "$EXISTING_PRINTER" ]; then
+                echo -e "${GREEN}✅ Found existing printer: $EXISTING_PRINTER${NC}"
+                
+                # Get the URI for the existing printer
+                if command -v lpstat &> /dev/null; then
+                    DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
+                    PRINTER_NAME="$EXISTING_PRINTER"
+                fi
+            fi
+            
+            # If no existing printer, try to detect USB printer with privilege escalation
+            if [ -z "$DETECTED_URI" ] && command -v lpinfo &> /dev/null; then
+                echo -e "${YELLOW}Scanning for USB printers (requires sudo)...${NC}"
+                
+                # Try to get USB printer URIs with privilege escalation
+                if [ "$USE_PRIVILEGED" = true ]; then
+                    DETECTED_URI=$(run_privileged lpinfo -v 2>/dev/null | grep "usb://" | head -1 | awk '{print $2}')
+                else
+                    DETECTED_URI=$(lpinfo -v 2>/dev/null | grep "usb://" | head -1 | awk '{print $2}')
+                fi
+                
+                if [ -n "$DETECTED_URI" ]; then
+                    echo -e "${GREEN}✅ Detected USB printer: $DETECTED_URI${NC}"
+                    
+                    # Extract printer model from URI for default name
+                    PRINTER_MODEL=$(echo "$DETECTED_URI" | sed -n 's/.*\/\/\([^\/]*\)\/.*/\1/p')
+                    PRINTER_NAME="${PRINTER_MODEL:-XP410B}"
+                fi
+            fi
+            
+            # If we found a printer, ask to save configuration
             if [ -n "$DETECTED_URI" ]; then
-                echo -e "${GREEN}✅ Detected printer: $DETECTED_URI${NC}"
-                
-                # Extract printer model from URI for default name
-                PRINTER_MODEL=$(echo "$DETECTED_URI" | sed -n 's/.*\/\/\([^\/]*\)\/.*/\1/p')
-                DEFAULT_PRINTER_NAME="${PRINTER_MODEL:-XP410B}"
-                
-                echo -e "${YELLOW}Suggested printer name: $DEFAULT_PRINTER_NAME${NC}"
+                echo ""
+                echo -e "${BLUE}Printer configuration:${NC}"
+                echo -e "  Name: $PRINTER_NAME"
+                echo -e "  URI:  $DETECTED_URI"
                 echo ""
                 echo -e "${BLUE}Save this configuration? (y/n)${NC}"
                 read -p "> " -n 1 -r
@@ -222,18 +253,18 @@ else
                     cat > .env.printer <<EOF
 # Printer Configuration - Auto-detected by docker-start-dynamic.sh
 # Generated at: $(date)
-export PRINTER_NAME=$DEFAULT_PRINTER_NAME
+export PRINTER_NAME=$PRINTER_NAME
 export PRINTER_URI=$DETECTED_URI
 EOF
                     echo -e "${GREEN}✅ Saved printer configuration to .env.printer${NC}"
-                    export PRINTER_NAME=$DEFAULT_PRINTER_NAME
+                    export PRINTER_NAME=$PRINTER_NAME
                     export PRINTER_URI=$DETECTED_URI
                 else
                     echo -e "${YELLOW}⏭️  Skipping printer configuration${NC}"
                 fi
             else
-                echo -e "${YELLOW}⚠️  No USB printer detected${NC}"
-                echo -e "${BLUE}You can configure manually later or create .env.printer:${NC}"
+                echo -e "${YELLOW}⚠️  No printer detected${NC}"
+                echo -e "${BLUE}You can configure manually later by creating .env.printer:${NC}"
                 echo -e "  export PRINTER_NAME=XP410B"
                 echo -e "  export PRINTER_URI=usb://Xprinter/XP-410B?serial=410BBE235170626"
             fi
