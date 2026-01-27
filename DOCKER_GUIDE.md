@@ -26,7 +26,7 @@ Complete guide for deploying the RPI Waybill Printer using Docker on Raspberry P
 For fresh installations on Raspberry Pi or Linux systems:
 
 ```bash
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 ```
 
 **What it does automatically:**
@@ -119,13 +119,13 @@ exit
 ```bash
 git clone <repository-url>
 cd rpi-waybill-printer
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 ```
 
 **Development with hot-reload:**
 
 ```bash
-./docker-start-dynamic.sh dev
+./docker.sh dev
 ```
 
 **Options:**
@@ -165,7 +165,7 @@ su - root
 cd /path/to/rpi-waybill-printer
 
 # 3. Run as root
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 
 # 4. After first run, logout and login again
 exit
@@ -181,7 +181,7 @@ logout
 The script automatically detects USB printers using CUPS on the host system:
 
 ```bash
-./docker-start-dynamic.sh prod
+./docker.sh prod
 ```
 
 It will:
@@ -255,7 +255,7 @@ sudo lpinfo -v | grep usb
 rm .env.printer
 
 # Run script again - will detect and prompt
-./docker-start-dynamic.sh prod
+./docker.sh prod
 ```
 
 ### Verify Printer Inside Container
@@ -336,7 +336,7 @@ Access from **any device on your network**!
 **Start:**
 
 ```bash
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 ```
 
 **Or manually:**
@@ -357,7 +357,7 @@ docker compose -f docker-compose.prod.yml up -d
 **Start:**
 
 ```bash
-./docker-start-dynamic.sh dev
+./docker.sh dev
 ```
 
 **Or manually:**
@@ -743,10 +743,10 @@ logout
 
 # Option 2: Use newgrp (in same session)
 newgrp docker
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 
 # Option 3: Run with sudo temporarily
-sudo ./docker-start-dynamic.sh prod --build
+sudo ./docker.sh prod --build
 ```
 
 ### 2. "sudo not found" (Fedora)
@@ -831,7 +831,7 @@ Should contain your correct IP address.
 **Regenerate config:**
 
 ```bash
-./docker-start-dynamic.sh prod
+./docker.sh prod
 ```
 
 ### 6. Port Already in Use
@@ -865,7 +865,7 @@ sudo usermod -aG lp,dialout $USER
 sudo systemctl restart docker
 
 # Rebuild containers
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 ```
 
 ### 8. Duplicate CUPS Configuration Warnings
@@ -942,10 +942,10 @@ These are mounted as volumes and persist across container restarts.
 
 ```bash
 # Fresh install
-./docker-start-dynamic.sh prod --build
+./docker.sh prod --build
 
 # Start
-./docker-start-dynamic.sh prod
+./docker.sh prod
 
 # Logs
 docker logs -f rpi-waybill-printer-backend-prod

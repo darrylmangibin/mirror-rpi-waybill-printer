@@ -23,7 +23,7 @@ services:
       - PORT=5000
       - CLEANUP_INTERVAL_MINUTES=30
       - CLEANUP_HOURS_THRESHOLD=6
-      # Auto-configure printer (set by docker-start-dynamic.sh or manually)
+      # Auto-configure printer (set by docker.sh or manually)
       - PRINTER_NAME=${PRINTER_NAME:-}
       - PRINTER_URI=${PRINTER_URI:-}
     restart: always
