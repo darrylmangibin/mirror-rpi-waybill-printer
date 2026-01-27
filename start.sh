@@ -107,8 +107,12 @@ else
         echo "Printer Name: $PRINTER_NAME"
         echo "Printer URI: $PRINTER_URI"
         
-        # Add printer with Zebra PPD driver (compatible with XPrinter thermal printers)
-        lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd 2>/dev/null
+        # Use specified driver or default to Zebra (compatible with XPrinter thermal printers)
+        DRIVER="${PRINTER_DRIVER:-drv:///sample.drv/zebra.ppd}"
+        echo "Printer Driver: $DRIVER"
+        
+        # Add printer
+        lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m "$DRIVER" 2>/dev/null
         
         if [ $? -eq 0 ]; then
             echo "✅ Thermal printer added successfully"

@@ -27,6 +27,7 @@ services:
       # Auto-configure printer (set by docker.sh or manually)
       - PRINTER_NAME=${PRINTER_NAME:-}
       - PRINTER_URI=${PRINTER_URI:-}
+      - PRINTER_DRIVER=${PRINTER_DRIVER:-}
     devices:
       # Pass through all USB devices for printer access (Linux only)
       - /dev/bus/usb:/dev/bus/usb

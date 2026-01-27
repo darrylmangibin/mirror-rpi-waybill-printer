@@ -26,6 +26,7 @@ services:
       # Auto-configure printer (set by docker.sh or manually)
       - PRINTER_NAME=${PRINTER_NAME:-}
       - PRINTER_URI=${PRINTER_URI:-}
+      - PRINTER_DRIVER=${PRINTER_DRIVER:-}
     restart: always
     networks:
       - waybill-network
