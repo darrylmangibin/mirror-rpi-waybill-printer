@@ -237,12 +237,77 @@ else
                 fi
             fi
             
-            # If we found a printer, ask to save configuration
+            # If we found a printer, ask to select driver and save configuration
             if [ -n "$DETECTED_URI" ]; then
                 echo ""
                 echo -e "${BLUE}Printer configuration:${NC}"
                 echo -e "  Name: $PRINTER_NAME"
                 echo -e "  URI:  $DETECTED_URI"
+                echo ""
+                
+                # Ask if user wants to select a driver
+                echo -e "${BLUE}Would you like to select a printer driver? (y/n)${NC}"
+                read -p "> " -n 1 -r
+                echo
+                
+                PRINTER_DRIVER=""
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    echo -e "${YELLOW}Fetching available printer drivers...${NC}"
+                    
+                    # Get list of available drivers from CUPS
+                    if [ "$USE_PRIVILEGED" = true ]; then
+                        DRIVERS=$(run_privileged lpinfo -m 2>/dev/null | head -20)
+                    else
+                        DRIVERS=$(lpinfo -m 2>/dev/null | head -20)
+                    fi
+                    
+                    if [ -n "$DRIVERS" ]; then
+                        echo ""
+                        echo -e "${BLUE}Available drivers (showing first 20):${NC}"
+                        echo "$DRIVERS" | nl -w2 -s'. '
+                        echo ""
+                        echo -e "${BLUE}Enter driver number (or press Enter to search):${NC}"
+                        read -p "> " DRIVER_CHOICE
+                        
+                        if [ -n "$DRIVER_CHOICE" ]; then
+                            PRINTER_DRIVER=$(echo "$DRIVERS" | sed -n "${DRIVER_CHOICE}p" | awk '{print $1}')
+                            echo -e "${GREEN}✅ Selected driver: $PRINTER_DRIVER${NC}"
+                        else
+                            echo -e "${BLUE}Enter search term (e.g., 'epson', 'hp', 'generic'):${NC}"
+                            read -p "> " SEARCH_TERM
+                            
+                            if [ -n "$SEARCH_TERM" ]; then
+                                echo ""
+                                echo -e "${YELLOW}Searching for '$SEARCH_TERM'...${NC}"
+                                
+                                if [ "$USE_PRIVILEGED" = true ]; then
+                                    SEARCH_RESULTS=$(run_privileged lpinfo -m 2>/dev/null | grep -i "$SEARCH_TERM" | head -20)
+                                else
+                                    SEARCH_RESULTS=$(lpinfo -m 2>/dev/null | grep -i "$SEARCH_TERM" | head -20)
+                                fi
+                                
+                                if [ -n "$SEARCH_RESULTS" ]; then
+                                    echo ""
+                                    echo -e "${BLUE}Search results:${NC}"
+                                    echo "$SEARCH_RESULTS" | nl -w2 -s'. '
+                                    echo ""
+                                    echo -e "${BLUE}Enter driver number:${NC}"
+                                    read -p "> " DRIVER_CHOICE
+                                    
+                                    if [ -n "$DRIVER_CHOICE" ]; then
+                                        PRINTER_DRIVER=$(echo "$SEARCH_RESULTS" | sed -n "${DRIVER_CHOICE}p" | awk '{print $1}')
+                                        echo -e "${GREEN}✅ Selected driver: $PRINTER_DRIVER${NC}"
+                                    fi
+                                else
+                                    echo -e "${YELLOW}⚠️  No drivers found matching '$SEARCH_TERM'${NC}"
+                                fi
+                            fi
+                        fi
+                    else
+                        echo -e "${YELLOW}⚠️  Could not fetch driver list${NC}"
+                    fi
+                fi
+                
                 echo ""
                 echo -e "${BLUE}Save this configuration? (y/n)${NC}"
                 read -p "> " -n 1 -r
@@ -256,6 +321,13 @@ else
 export PRINTER_NAME=$PRINTER_NAME
 export PRINTER_URI=$DETECTED_URI
 EOF
+                    
+                    # Add driver if selected
+                    if [ -n "$PRINTER_DRIVER" ]; then
+                        echo "export PRINTER_DRIVER=$PRINTER_DRIVER" >> .env.printer
+                        export PRINTER_DRIVER=$PRINTER_DRIVER
+                    fi
+                    
                     echo -e "${GREEN}✅ Saved printer configuration to .env.printer${NC}"
                     export PRINTER_NAME=$PRINTER_NAME
                     export PRINTER_URI=$DETECTED_URI
