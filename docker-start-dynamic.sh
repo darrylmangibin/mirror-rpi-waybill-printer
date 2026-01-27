@@ -19,10 +19,24 @@ run_privileged() {
     elif command -v sudo &> /dev/null; then
         # sudo is available
         sudo "$@"
-    else
+    elif command -v su &> /dev/null; then
         # No sudo, try su -c
         echo -e "${YELLOW}sudo not found, using su -c...${NC}"
         su -c "$*"
+    else
+        # Neither sudo nor su available
+        echo -e "${RED}❌ Error: Neither sudo nor su command found${NC}"
+        echo -e "${YELLOW}Please run this script as root or install sudo/su:${NC}"
+        echo -e "  As root: su - root"
+        echo -e "  Then run: ./docker-start-dynamic.sh $*"
+        echo ""
+        echo -e "${YELLOW}Or install sudo first:${NC}"
+        if command -v dnf &> /dev/null; then
+            echo -e "  dnf install sudo  # (as root)"
+        elif command -v apt-get &> /dev/null; then
+            echo -e "  apt-get install sudo  # (as root)"
+        fi
+        exit 1
     fi
 }
 
