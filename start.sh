@@ -33,11 +33,17 @@ if [ -f /etc/cups/cupsd.conf ]; then
         cp /etc/cups/cupsd.conf /etc/cups/cupsd.conf.backup 2>/dev/null || true
     fi
     
-    # Add admin configuration if not already present
-    if ! grep -q "Allow local administration" /etc/cups/cupsd.conf 2>/dev/null; then
+    # Check if we already modified the config (look for our specific marker)
+    if ! grep -q "# RPI-Waybill-Printer CUPS Config" /etc/cups/cupsd.conf 2>/dev/null; then
+        # Remove any duplicate Location blocks first
+        sed -i '/<Location \/>/,/<\/Location>/d' /etc/cups/cupsd.conf 2>/dev/null || true
+        sed -i '/<Location \/admin>/,/<\/Location>/d' /etc/cups/cupsd.conf 2>/dev/null || true
+        sed -i '/<Location \/admin\/conf>/,/<\/Location>/d' /etc/cups/cupsd.conf 2>/dev/null || true
+        
+        # Add our configuration with a marker
         cat >> /etc/cups/cupsd.conf << 'CUPS_CONFIG'
 
-# Allow local administration
+# RPI-Waybill-Printer CUPS Config
 <Location />
   Order allow,deny
   Allow localhost
