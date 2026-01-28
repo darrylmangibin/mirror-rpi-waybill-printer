@@ -1226,6 +1226,7 @@ That's it! 🚀
 ### January 2026 Updates
 
 **Mandatory Mode Selection**
+
 - `docker.sh` now requires either `dev` or `prod` mode to be specified
 - Prevents accidental deployment with incorrect configuration
 - Clear usage instructions displayed when mode is missing
@@ -1240,6 +1241,7 @@ That's it! 🚀
 ```
 
 **QR Code Display**
+
 - Terminal QR code displayed after successful setup (like React Native Expo)
 - Enables easy mobile access - just scan and connect
 - Multiple fallback methods (Python qrcode → qrencode → styled URL)
@@ -1247,6 +1249,7 @@ That's it! 🚀
 - Works in both prod and dev modes
 
 **Printer Auto-Reconnection**
+
 - Background monitor daemon (`printer-monitor.sh`) automatically detects USB disconnections
 - Auto-restores printer configuration when reconnected (no manual intervention needed)
 - Monitors every 15 seconds without impacting performance
@@ -1254,30 +1257,35 @@ That's it! 🚀
 - Works transparently in background
 
 **Enhanced Exit Code Validation**
+
 - Separate exit code tracking for `lpadmin` add printer vs set default operations
 - Prevents "default printer not set on first run" issue
 - Proper error reporting for each step of printer configuration
 - More reliable CUPS configuration process
 
 **Live Startup Logs**
+
 - Real-time log display during `docker.sh` execution
 - 10-second timeout window to view CUPS configuration and printer setup
 - Better visibility into what's happening during initialization
 - Helps debug startup issues immediately
 
 **Privilege Handling Improvements**
+
 - CUPS commands always use privilege escalation (sudo/su) regardless of Docker state
 - Fixed USB printer detection (`lpinfo -v` always runs with privilege)
 - Better handling of systems without sudo (automatic su -c fallback)
 - More reliable on fresh Linux installations
 
 **Fresh Linux Support**
+
 - Zero-config setup on brand new Linux systems
 - Auto-detects missing CUPS and offers installation
 - Distribution-aware (Fedora/RHEL/Debian/Ubuntu support)
 - Enables CUPS and Docker services on boot automatically
 
 **What's Automated:**
+
 1. ✅ Docker & Docker Compose installation
 2. ✅ CUPS installation and service enablement
 3. ✅ USB printer detection with proper privileges
@@ -1289,12 +1297,14 @@ That's it! 🚀
 9. ✅ Background printer reconnection monitoring
 
 **Configuration Files:**
+
 - `.env.printer` - Stores PRINTER_NAME, PRINTER_URI, PRINTER_DRIVER
 - `frontend/.env` - Auto-generated with detected IP for VITE_API_URL and VITE_BASE_URL
 - `printer-monitor.sh` - Background daemon for USB reconnection (inside container)
 - `generate-qr.sh` - QR code generator with multiple fallback methods
 
 **Key Features:**
+
 - **No manual steps required** - fully automated setup from fresh system to running application
 - **Mobile-friendly** - QR code for instant access from phones
 - **Resilient** - automatic reconnection when printer disconnects/reconnects
