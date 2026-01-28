@@ -578,6 +578,28 @@ fi
 
 echo ""
 echo -e "${GREEN}✅ Containers started!${NC}"
+echo ""
+
+# Show startup logs for backend
+echo -e "${BLUE}📋 Showing backend startup logs...${NC}"
+echo -e "${YELLOW}(Waiting for container to initialize...)${NC}"
+sleep 3
+
+if [ "$COMMAND" == "prod" ]; then
+    BACKEND_CONTAINER="rpi-waybill-printer-backend-prod"
+elif [ "$COMMAND" == "dev" ]; then
+    BACKEND_CONTAINER="rpi-waybill-printer-backend-dev"
+else
+    BACKEND_CONTAINER="rpi-waybill-printer-backend"
+fi
+
+# Show logs (timeout after 10 seconds or until application starts)
+timeout 10 docker logs -f "$BACKEND_CONTAINER" 2>/dev/null || docker logs "$BACKEND_CONTAINER" 2>/dev/null || true
+
+echo ""
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo -e "${GREEN}✅ Setup complete!${NC}"
 echo -e "${BLUE}Access the application at:${NC}"
 echo -e "  Frontend: http://${LOCAL_IP}:5173"
 echo -e "  Backend:  http://${LOCAL_IP}:5000"
