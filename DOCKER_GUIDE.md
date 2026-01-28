@@ -32,12 +32,14 @@ For fresh installations on Raspberry Pi or Linux systems:
 **What it does automatically:**
 
 1. ✅ Installs Docker & Docker Compose (if not present)
-2. ✅ Enables Docker service on boot
-3. ✅ Detects your network IP address
-4. ✅ Discovers USB printers automatically
-5. ✅ Configures printer and network settings
-6. ✅ Starts Docker containers
-7. ✅ Ready to use!
+2. ✅ Installs CUPS (if not present) for printer detection
+3. ✅ Enables Docker and CUPS services on boot
+4. ✅ Detects your network IP address
+5. ✅ Discovers USB printers automatically (with sudo/su handling)
+6. ✅ Auto-configures printer in CUPS using lpadmin
+7. ✅ Configures printer and network settings
+8. ✅ Starts Docker containers
+9. ✅ Ready to use!
 
 **No manual configuration needed!**
 
@@ -56,8 +58,56 @@ Detecting local IP address...
 ✅ Detected IP: 192.168.100.44
 
 🖨️  Detecting Printer Configuration
-✅ Found existing printer: XP410B
-✅ Detected URI: usb://Xprinter/XP-410B?serial=410BBE235170626
+
+⚠️  CUPS not installed on host
+Would you like to install CUPS for printer detection? (y/n)
+> y
+Installing CUPS...
+✅ CUPS installed
+
+Scanning for printers...
+Checking for USB devices...
+✅ USB printer(s) detected:
+usb://Xprinter/XP-410B?serial=410BBE235170626
+
+⚠️  No printer configured in CUPS yet
+
+Would you like to configure the printer now? (y/n)
+> y
+Enter printer name (default: XP-410B):
+Available USB printers:
+ 1. usb://Xprinter/XP-410B?serial=410BBE235170626
+
+Select printer number (default: 1):
+
+Configuring printer in CUPS...
+Name: XP-410B
+URI:  usb://Xprinter/XP-410B?serial=410BBE235170626
+✅ Printer configured in CUPS successfully
+printer XP-410B is idle.  enabled since Tue 28 Jan 2026
+system default destination: XP-410B
+
+Would you like to select a printer driver? (y/n)
+> y
+1. Search by manufacturer (recommended)
+2. Browse generic drivers
+3. Enter driver path manually
+
+Select option (1-3):
+> 1
+Enter manufacturer name (e.g., 'zebra', 'epson', 'hp', 'xprinter'):
+> zebra
+
+Searching for 'zebra' drivers...
+Found 15 driver(s)
+
+ 1. drv:///sample.drv/zebra.ppd
+ 2. drv:///zebra/ZPL2.ppd
+...
+
+Enter driver number:
+> 1
+✅ Selected driver: drv:///sample.drv/zebra.ppd
 
 Save this configuration? (y/n)
 > y
@@ -176,21 +226,74 @@ logout
 
 ## Printer Configuration
 
-### Auto-Detection (Recommended)
+### Auto-Detection and Configuration (Recommended)
 
-The script automatically detects USB printers using CUPS on the host system:
+The script automatically handles complete printer setup on fresh Linux systems:
 
 ```bash
-./docker.sh prod
+./docker.sh prod --build
 ```
 
-It will:
+**What happens:**
 
-1. Check for existing CUPS printers using `lpstat -p`
-2. Fall back to USB detection with `lpinfo -v` (requires sudo)
-3. Prompt to save configuration
+1. **CUPS Installation Check**
+   - Detects if CUPS is installed (`lpstat` command)
+   - If missing, prompts to install CUPS
+   - Installs CUPS via `dnf` (Fedora/RHEL) or `apt-get` (Debian/Ubuntu)
+   - Enables and starts CUPS service
+
+2. **USB Printer Detection**
+   - Scans for USB printers using `lpinfo -v` (with sudo/su privilege)
+   - Shows detected USB printers with full URIs
+   - Displays troubleshooting tips if no printers found
+
+3. **CUPS Configuration**
+   - Checks if printer already configured in CUPS (`lpstat -p`)
+   - If not configured, prompts to configure now
+   - Shows numbered list of detected USB printers
+   - Prompts for printer name (suggests model name)
+   - Runs `lpadmin -p NAME -E -v URI -m DRIVER` to add printer
+   - Sets as default printer with `lpadmin -d NAME`
+   - Verifies configuration with `lpstat -p -d`
+
+4. **Driver Selection**
+   - Prompts to select a printer driver
+   - Options: search by manufacturer, browse generic drivers, or enter manually
+   - Supports searching CUPS driver database
+   - Shows up to 30 matching drivers
+
+5. **Configuration Saved**
+   - Saves PRINTER_NAME, PRINTER_URI, PRINTER_DRIVER to `.env.printer`
+   - Docker containers load these via `env_file` directive
+   - Container startup script configures CUPS inside container
 
 **Configuration saved to:** `.env.printer`
+
+**Example .env.printer:**
+
+```bash
+# Printer Configuration - Auto-detected by docker.sh
+# Generated at: Tue 28 Jan 2026
+export PRINTER_NAME=XP-410B
+export PRINTER_URI=usb://Xprinter/XP-410B?serial=410BBE235170626
+export PRINTER_DRIVER=drv:///sample.drv/zebra.ppd
+```
+
+### Privilege Handling
+
+The script automatically handles privilege escalation for CUPS commands:
+
+- **Always uses sudo/su for CUPS**: Commands like `lpinfo -v` and `lpadmin` always need root access
+- **Fallback chain**: Tries `sudo` → `su -c` → root (if already root) → error with instructions
+- **Works on systems without sudo**: Handles Fedora and minimal Linux installations
+- **Separate from Docker privileges**: Docker privilege flag only for Docker commands
+
+**No printer detected?**
+
+1. Check USB connection and printer power
+2. Run manually: `sudo lpinfo -v | grep usb`
+3. Check CUPS is running: `systemctl status cups`
+4. Try CUPS web interface: `http://localhost:631`
 
 ### Manual Configuration
 
@@ -761,9 +864,131 @@ exit
 logout
 ```
 
+### 3. No USB Printers Detected
+
+**Symptoms:**
+
+```bash
+⚠️  No USB printers detected by CUPS
+```
+
+**Causes and Solutions:**
+
+1. **CUPS not installed**
+
+```bash
+# Check if CUPS is installed
+command -v lpstat
+
+# If not found, the script will prompt to install
+# Or install manually:
+sudo apt-get install cups cups-client  # Debian/Ubuntu
+sudo dnf install cups cups-client      # Fedora/RHEL
+sudo systemctl enable cups && sudo systemctl start cups
+```
+
+2. **lpinfo needs privilege**
+
+The script automatically uses `sudo`/`su` for `lpinfo -v`, but verify:
+
+```bash
+# Run manually to test
+sudo lpinfo -v | grep usb
+
+# If you see USB printers here but script doesn't detect them,
+# delete .env.printer and run again:
+rm .env.printer
+./docker.sh prod --build
+```
+
+3. **Printer not powered on or connected**
+
+```bash
+# Check USB connection
+lsusb
+
+# Should show your printer
+# Example: Bus 001 Device 003: ID 0fe6:811e ICS Advent XP-410B
+```
+
+4. **CUPS not running**
+
+```bash
+# Check CUPS service
+sudo systemctl status cups
+
+# Start CUPS if stopped
+sudo systemctl start cups
+```
+
+5. **Empty .env.printer file exists**
+
+```bash
+# The script checks if printer is properly configured
+# If .env.printer exists but is empty or missing variables, it will reconfigure
+
+# To force reconfiguration:
+rm .env.printer
+./docker.sh prod --build
+```
+
+**Manual verification:**
+
+```bash
+# Run these commands to debug:
+sudo lpinfo -v                    # List all devices
+sudo lpinfo -v | grep usb         # USB printers only
+lpstat -p -d                      # Configured printers
+lpstat -v                         # Printer URIs
+```
+
 ### 3. No CUPS Job ID / Print Not Working
 
-**Possible causes:**
+### 4. "lpadmin: Bad device-uri" or "Printer not added"
+
+**Symptoms:**
+
+```bash
+❌ Failed to configure printer in CUPS
+lpadmin: Bad device-uri "usb://..."
+```
+
+**Causes and Solutions:**
+
+1. **lpadmin needs privilege**
+
+The script always uses `sudo`/`su` for `lpadmin` commands. If it still fails:
+
+```bash
+# Verify you can run lpadmin manually
+sudo lpadmin -p TestPrinter -E -v usb://your/printer/uri -m drv:///sample.drv/zebra.ppd
+
+# If successful, delete .env.printer and run script again
+rm .env.printer
+./docker.sh prod --build
+```
+
+2. **Invalid USB URI format**
+
+```bash
+# Check the URI format from lpinfo
+sudo lpinfo -v | grep usb
+
+# Should be like: usb://Manufacturer/Model?serial=123456
+# NOT: usb:// (missing parts)
+```
+
+3. **Printer already exists in CUPS**
+
+```bash
+# Remove existing printer first
+sudo lpadmin -x PrinterName
+
+# Then run script again
+./docker.sh prod --build
+```
+
+### 5. No CUPS Job ID / Print Not Working
 
 1. **CUPS not running inside container**
 
@@ -798,7 +1023,7 @@ devices:
 docker logs rpi-waybill-printer-backend-prod | grep "DOWNLOAD ERROR"
 ```
 
-### 4. "Worker fatal error: 'tuple' object has no attribute 'app_context'"
+### 6. "Worker fatal error: 'tuple' object has no attribute 'app_context'"
 
 **Cause:** Background workers not unpacking `create_app()` tuple correctly
 
@@ -812,7 +1037,7 @@ grep "app, _ = create_app()" app/services/waybills/jobs/download_waybill_job.py
 
 Should show: `app, _ = create_app()` (not `app = create_app()`)
 
-### 5. Frontend Can't Connect to Backend
+### 7. Frontend Can't Connect to Backend
 
 **Check backend health:**
 
@@ -834,7 +1059,7 @@ Should contain your correct IP address.
 ./docker.sh prod
 ```
 
-### 6. Port Already in Use
+### 8. Port Already in Use
 
 ```bash
 # Error: bind: address already in use
@@ -855,7 +1080,7 @@ ports:
   - "5001:5000"  # Use different host port
 ```
 
-### 7. Permission Denied on USB Device
+### 9. Permission Denied on USB Device
 
 ```bash
 # Add user to lp and dialout groups
@@ -868,7 +1093,7 @@ sudo systemctl restart docker
 ./docker.sh prod --build
 ```
 
-### 8. Duplicate CUPS Configuration Warnings
+### 10. Duplicate CUPS Configuration Warnings
 
 ```bash
 W [Date] Duplicate <Location /> on line 136
@@ -884,7 +1109,7 @@ grep "RPI-Waybill-Printer CUPS Config" start.sh
 
 Should exist - this prevents duplicate configs.
 
-### 9. Container Exits Immediately
+### 11. Container Exits Immediately
 
 ```bash
 # Check exit code and reason
