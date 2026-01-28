@@ -254,12 +254,8 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
             
             # First, check what USB devices CUPS can see
             echo -e "${BLUE}Checking for USB devices...${NC}"
-            if [ "$USE_PRIVILEGED" = true ]; then
-                USB_DEVICES=$(run_privileged lpinfo -v 2>/dev/null)
-            else
-                echo "TESTASDASDASDASDASDASDASDASDASDASDASDASDASD"
-                USB_DEVICES=$(lpinfo -v 2>/dev/null)
-            fi
+            # lpinfo always needs privilege to detect USB devices
+            USB_DEVICES=$(run_privileged lpinfo -v 2>/dev/null)
             
             USB_PRINTERS=$(echo "$USB_DEVICES" | grep "usb://")
             
