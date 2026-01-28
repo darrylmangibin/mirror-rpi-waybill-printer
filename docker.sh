@@ -263,6 +263,8 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                     DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
                     PRINTER_NAME="$EXISTING_PRINTER"
                 fi
+            else
+                echo -e "${YELLOW}No printer found in CUPS configuration${NC}"
             fi
             
             # If no existing printer, try to detect USB printer with privilege escalation
@@ -271,9 +273,23 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                 
                 # Try to get USB printer URIs with privilege escalation
                 if [ "$USE_PRIVILEGED" = true ]; then
-                    DETECTED_URI=$(run_privileged lpinfo -v 2>/dev/null | grep "usb://" | head -1 | awk '{print $2}')
+                    USB_DEVICES=$(run_privileged lpinfo -v 2>/dev/null | grep "usb://")
+                    DETECTED_URI=$(echo "$USB_DEVICES" | head -1 | awk '{print $2}')
                 else
-                    DETECTED_URI=$(lpinfo -v 2>/dev/null | grep "usb://" | head -1 | awk '{print $2}')
+                    USB_DEVICES=$(lpinfo -v 2>/dev/null | grep "usb://")
+                    DETECTED_URI=$(echo "$USB_DEVICES" | head -1 | awk '{print $2}')
+                fi
+                
+                # Show what was found for debugging
+                if [ -n "$USB_DEVICES" ]; then
+                    echo -e "${BLUE}USB devices found:${NC}"
+                    echo "$USB_DEVICES"
+                else
+                    echo -e "${YELLOW}No USB printers detected by CUPS${NC}"
+                    echo -e "${BLUE}Troubleshooting:${NC}"
+                    echo -e "  1. Is the printer connected via USB?"
+                    echo -e "  2. Is the printer powered on?"
+                    echo -e "  3. Try: sudo lpinfo -v | grep usb"
                 fi
                 
                 if [ -n "$DETECTED_URI" ]; then
