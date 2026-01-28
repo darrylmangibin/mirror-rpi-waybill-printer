@@ -10,6 +10,25 @@ NC='\033[0m'
 echo -e "${BLUE}🚀 Starting RPI Waybill Printer with Docker${NC}\n"
 
 # ======================================
+# Validate required arguments
+# ======================================
+COMMAND=$1
+
+if [ "$COMMAND" != "dev" ] && [ "$COMMAND" != "prod" ]; then
+    echo -e "${RED}❌ Error: Missing or invalid mode${NC}"
+    echo ""
+    echo -e "${BLUE}Usage:${NC}"
+    echo -e "  $0 dev [--build]    # Development mode"
+    echo -e "  $0 prod [--build]   # Production mode"
+    echo ""
+    echo -e "${BLUE}Examples:${NC}"
+    echo -e "  $0 dev              # Start in development mode"
+    echo -e "  $0 prod --build     # Build and start in production mode"
+    echo ""
+    exit 1
+fi
+
+# ======================================
 # Helper function to run commands with privilege escalation
 # ======================================
 run_privileged() {
@@ -523,11 +542,7 @@ if [ ! -f ".env.printer" ]; then
     echo -e "${BLUE}ℹ️  Created empty .env.printer${NC}"
 fi
 
-# Determine which compose file to use and handle special commands
-COMPOSE_FILE="docker-compose.yml"
-COMMAND=$1
-
-# Handle dev and prod modes
+# Determine which compose file to use based on mode
 if [ "$COMMAND" == "dev" ]; then
     COMPOSE_FILE="docker-compose.dev.yml"
     echo -e "${BLUE}Using development configuration${NC}"
@@ -543,8 +558,6 @@ if [ "$COMMAND" == "dev" ]; then
 elif [ "$COMMAND" == "prod" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"
     echo -e "${BLUE}Using production configuration${NC}"
-else
-    echo -e "${BLUE}Using default configuration${NC}"
 fi
 
 # Start Docker containers
@@ -600,6 +613,12 @@ echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${GREEN}✅ Setup complete!${NC}"
+
+# Generate and display QR code for easy access
+if [ -f "./generate-qr.sh" ]; then
+    ./generate-qr.sh "http://${LOCAL_IP}:5173"
+fi
+
 echo -e "${BLUE}Access the application at:${NC}"
 echo -e "  Frontend: http://${LOCAL_IP}:5173"
 echo -e "  Backend:  http://${LOCAL_IP}:5000"

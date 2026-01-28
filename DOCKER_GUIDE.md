@@ -26,8 +26,14 @@ Complete guide for deploying the RPI Waybill Printer using Docker on Raspberry P
 For fresh installations on Raspberry Pi or Linux systems:
 
 ```bash
+# Production mode (recommended for deployment)
 ./docker.sh prod --build
+
+# Development mode (for active development)
+./docker.sh dev
 ```
+
+**Note:** You must specify either `prod` or `dev` mode. There is no default mode to prevent accidental misconfiguration.
 
 **What it does automatically:**
 
@@ -39,7 +45,10 @@ For fresh installations on Raspberry Pi or Linux systems:
 6. ✅ Auto-configures printer in CUPS using lpadmin
 7. ✅ Configures printer and network settings
 8. ✅ Starts Docker containers
-9. ✅ Ready to use!
+9. ✅ Displays QR code for easy mobile access
+10. ✅ Starts printer reconnection monitor
+11. ✅ Shows live startup logs
+12. ✅ Ready to use!
 
 **No manual configuration needed!**
 
@@ -178,11 +187,16 @@ cd rpi-waybill-printer
 ./docker.sh dev
 ```
 
-**Options:**
+**Requirements:**
 
-- `prod` - Production mode (optimized, no source mounted)
-- `dev` - Development mode (hot-reload, source mounted)
-- `--build` - Force rebuild of containers
+- Mode selection is **mandatory**: `prod` or `dev`
+- Use `--build` flag to rebuild containers
+
+**Mode Differences:**
+
+- `prod` - Production mode (optimized builds, no source mounting, production frontend)
+- `dev` - Development mode (hot-reload, source mounted, dev server with Vite HMR)
+- `--build` - Force rebuild of containers (required for first run or after dependency changes)
 
 ### Method 2: Manual Docker Compose
 
@@ -1207,6 +1221,88 @@ That's it! 🚀
 
 ---
 
+## Recent Improvements
+
+### January 2026 Updates
+
+**Mandatory Mode Selection**
+- `docker.sh` now requires either `dev` or `prod` mode to be specified
+- Prevents accidental deployment with incorrect configuration
+- Clear usage instructions displayed when mode is missing
+
+```bash
+# ✅ Correct usage
+./docker.sh prod --build
+./docker.sh dev
+
+# ❌ No longer works (no default mode)
+./docker.sh
+```
+
+**QR Code Display**
+- Terminal QR code displayed after successful setup (like React Native Expo)
+- Enables easy mobile access - just scan and connect
+- Multiple fallback methods (Python qrcode → qrencode → styled URL)
+- Auto-cleanup with no leftover temp files
+- Works in both prod and dev modes
+
+**Printer Auto-Reconnection**
+- Background monitor daemon (`printer-monitor.sh`) automatically detects USB disconnections
+- Auto-restores printer configuration when reconnected (no manual intervention needed)
+- Monitors every 15 seconds without impacting performance
+- Logs all reconnection events for debugging
+- Works transparently in background
+
+**Enhanced Exit Code Validation**
+- Separate exit code tracking for `lpadmin` add printer vs set default operations
+- Prevents "default printer not set on first run" issue
+- Proper error reporting for each step of printer configuration
+- More reliable CUPS configuration process
+
+**Live Startup Logs**
+- Real-time log display during `docker.sh` execution
+- 10-second timeout window to view CUPS configuration and printer setup
+- Better visibility into what's happening during initialization
+- Helps debug startup issues immediately
+
+**Privilege Handling Improvements**
+- CUPS commands always use privilege escalation (sudo/su) regardless of Docker state
+- Fixed USB printer detection (`lpinfo -v` always runs with privilege)
+- Better handling of systems without sudo (automatic su -c fallback)
+- More reliable on fresh Linux installations
+
+**Fresh Linux Support**
+- Zero-config setup on brand new Linux systems
+- Auto-detects missing CUPS and offers installation
+- Distribution-aware (Fedora/RHEL/Debian/Ubuntu support)
+- Enables CUPS and Docker services on boot automatically
+
+**What's Automated:**
+1. ✅ Docker & Docker Compose installation
+2. ✅ CUPS installation and service enablement
+3. ✅ USB printer detection with proper privileges
+4. ✅ Printer auto-configuration in CUPS via lpadmin
+5. ✅ Network IP detection
+6. ✅ Environment file generation
+7. ✅ Container startup and health monitoring
+8. ✅ QR code display for easy access
+9. ✅ Background printer reconnection monitoring
+
+**Configuration Files:**
+- `.env.printer` - Stores PRINTER_NAME, PRINTER_URI, PRINTER_DRIVER
+- `frontend/.env` - Auto-generated with detected IP for VITE_API_URL and VITE_BASE_URL
+- `printer-monitor.sh` - Background daemon for USB reconnection (inside container)
+- `generate-qr.sh` - QR code generator with multiple fallback methods
+
+**Key Features:**
+- **No manual steps required** - fully automated setup from fresh system to running application
+- **Mobile-friendly** - QR code for instant access from phones
+- **Resilient** - automatic reconnection when printer disconnects/reconnects
+- **Developer-friendly** - real-time logs and clear error messages
+- **Production-ready** - proper exit code validation and error handling
+
+---
+
 ## Support
 
 **Check logs first:**
@@ -1220,6 +1316,7 @@ docker logs rpi-waybill-printer-backend-prod | tail -100
 - Application: `/app/app/logs/app.log` (inside container)
 - CUPS: `/var/log/cups/error_log` (inside container)
 - Docker: `docker logs <container-name>`
+- Printer Monitor: `docker logs -f <container-name> | grep "PRINTER MONITOR"`
 
 **Need help?** Include:
 
@@ -1227,3 +1324,4 @@ docker logs rpi-waybill-printer-backend-prod | tail -100
 2. CUPS error log
 3. Output of `docker ps -a`
 4. Output of `lsusb` (if printer issue)
+5. Contents of `.env.printer` file
