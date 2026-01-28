@@ -23,6 +23,18 @@ echo ""
 
 # Try Python qrcode library first (pure ASCII, no dependencies)
 if command -v python3 &> /dev/null; then
+    # Check if qrcode is installed, if not install it automatically
+    python3 -c "import qrcode" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}Installing QR code library...${NC}"
+        if command -v pip3 &> /dev/null; then
+            pip3 install --quiet qrcode 2>/dev/null || pip3 install --user --quiet qrcode 2>/dev/null
+        elif command -v pip &> /dev/null; then
+            pip install --quiet qrcode 2>/dev/null || pip install --user --quiet qrcode 2>/dev/null
+        fi
+    fi
+    
+    # Try to generate QR code
     python3 << EOF 2>/dev/null
 import sys
 try:
