@@ -257,6 +257,7 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
             if [ "$USE_PRIVILEGED" = true ]; then
                 USB_DEVICES=$(run_privileged lpinfo -v 2>/dev/null)
             else
+                echo "TESTASDASDASDASDASDASDASDASDASDASDASDASDASD"
                 USB_DEVICES=$(lpinfo -v 2>/dev/null)
             fi
             
