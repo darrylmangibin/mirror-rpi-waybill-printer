@@ -316,15 +316,34 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                         
                         # Add printer to CUPS with Zebra driver (always needs privilege)
                         run_privileged lpadmin -p "$PRINTER_NAME" -E -v "$DETECTED_URI" -m drv:///sample.drv/zebra.ppd
-                        run_privileged lpadmin -d "$PRINTER_NAME"
+                        ADD_PRINTER_EXIT=$?
                         
-                        if [ $? -eq 0 ]; then
+                        # Set as default printer
+                        run_privileged lpadmin -d "$PRINTER_NAME"
+                        SET_DEFAULT_EXIT=$?
+                        
+                        # Check if both commands succeeded
+                        if [ $ADD_PRINTER_EXIT -eq 0 ] && [ $SET_DEFAULT_EXIT -eq 0 ]; then
                             echo -e "${GREEN}✅ Printer configured in CUPS successfully${NC}"
+                            echo -e "${GREEN}✅ Set as default printer${NC}"
                             lpstat -p -d 2>/dev/null
                         else
-                            echo -e "${RED}❌ Failed to configure printer in CUPS${NC}"
-                            DETECTED_URI=""
-                            PRINTER_NAME=""
+                            if [ $ADD_PRINTER_EXIT -ne 0 ]; then
+                                echo -e "${RED}❌ Failed to add printer to CUPS (exit code: $ADD_PRINTER_EXIT)${NC}"
+                            fi
+                            if [ $SET_DEFAULT_EXIT -ne 0 ]; then
+                                echo -e "${YELLOW}⚠️  Printer added but failed to set as default (exit code: $SET_DEFAULT_EXIT)${NC}"
+                                echo -e "${BLUE}You can set it as default manually: lpadmin -d $PRINTER_NAME${NC}"
+                                # Don't clear variables if printer was added successfully
+                                if [ $ADD_PRINTER_EXIT -eq 0 ]; then
+                                    echo -e "${GREEN}✅ Printer was added successfully despite default setting issue${NC}"
+                                fi
+                            fi
+                            # Only clear variables if adding printer failed
+                            if [ $ADD_PRINTER_EXIT -ne 0 ]; then
+                                DETECTED_URI=""
+                                PRINTER_NAME=""
+                            fi
                         fi
                     fi
                 else
