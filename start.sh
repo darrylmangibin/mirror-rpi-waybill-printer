@@ -173,6 +173,23 @@ fi
 echo ""
 
 # ======================================
+# Start USB Printer Reconnection Monitor
+# ======================================
+if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
+    echo "Starting USB printer reconnection monitor..."
+    if [ -f "/app/printer-monitor.sh" ]; then
+        chmod +x /app/printer-monitor.sh
+        /app/printer-monitor.sh &
+        MONITOR_PID=$!
+        echo "✅ Printer monitor started (PID: $MONITOR_PID)"
+        echo "   Monitors USB connection and auto-reconnects if disconnected"
+    else
+        echo "⚠️  Printer monitor script not found, skipping"
+    fi
+fi
+echo ""
+
+# ======================================
 # Database Migrations
 # ======================================
 echo "Running database migrations..."

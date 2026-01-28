@@ -32,8 +32,8 @@ RUN playwright install --with-deps chromium
 # Copy application code
 COPY . .
 
-# Set executable permissions for startup script
-RUN chmod +x /app/start.sh
+# Set executable permissions for startup scripts
+RUN chmod +x /app/start.sh /app/printer-monitor.sh
 
 # Create necessary directories
 RUN mkdir -p app/instance app/logs app/storage
