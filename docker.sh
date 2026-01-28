@@ -607,7 +607,11 @@ else
 fi
 
 # Show logs (timeout after 10 seconds or until application starts)
-timeout 10 docker logs -f "$BACKEND_CONTAINER" 2>/dev/null || docker logs "$BACKEND_CONTAINER" 2>/dev/null || true
+if [ "$USE_PRIVILEGED" = true ]; then
+    timeout 10 run_privileged docker logs -f "$BACKEND_CONTAINER" 2>/dev/null || run_privileged docker logs "$BACKEND_CONTAINER" 2>/dev/null || true
+else
+    timeout 10 docker logs -f "$BACKEND_CONTAINER" 2>/dev/null || docker logs "$BACKEND_CONTAINER" 2>/dev/null || true
+fi
 
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
