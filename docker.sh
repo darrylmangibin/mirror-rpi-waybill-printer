@@ -190,13 +190,61 @@ echo ""
 # ======================================
 echo -e "${BLUE}🖨️  Detecting Printer Configuration${NC}"
 
-# Check if printer environment variables are already set in a .env file
+# Check if printer is already properly configured
+PRINTER_CONFIGURED=false
 if [ -f ".env.printer" ]; then
-    echo -e "${GREEN}✅ Found existing .env.printer${NC}"
     source .env.printer
-else
+    if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ] && [ -n "$PRINTER_DRIVER" ]; then
+        PRINTER_CONFIGURED=true
+        echo -e "${GREEN}✅ Printer already configured: $PRINTER_NAME (Driver: $PRINTER_DRIVER)${NC}"
+    fi
+fi
+
+if [ "$PRINTER_CONFIGURED" = false ]; then
     # Try to detect printer automatically (Linux/Raspberry Pi only)
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Check if CUPS is installed, if not offer to install
+        if ! command -v lpstat &> /dev/null; then
+            echo -e "${YELLOW}⚠️  CUPS not installed on host${NC}"
+            echo -e "${BLUE}Would you like to install CUPS for printer detection? (y/n)${NC}"
+            read -p "> " -n 1 -r
+            echo
+            
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                echo -e "${YELLOW}Installing CUPS...${NC}"
+                
+                case "$DISTRO" in
+                    fedora|rhel|centos)
+                        run_privileged dnf install -y cups cups-client
+                        run_privileged systemctl enable cups
+                        run_privileged systemctl start cups
+                        ;;
+                    debian|ubuntu|raspbian)
+                        run_privileged apt-get update -qq
+                        run_privileged apt-get install -y cups cups-client
+                        run_privileged systemctl enable cups
+                        run_privileged systemctl start cups
+                        ;;
+                    *)
+                        echo -e "${YELLOW}Unknown distribution, attempting generic installation...${NC}"
+                        run_privileged apt-get update -qq 2>/dev/null || run_privileged dnf update -y 2>/dev/null
+                        run_privileged apt-get install -y cups cups-client 2>/dev/null || run_privileged dnf install -y cups cups-client 2>/dev/null
+                        run_privileged systemctl enable cups 2>/dev/null || true
+                        run_privileged systemctl start cups 2>/dev/null || true
+                        ;;
+                esac
+                
+                sleep 2
+                
+                if command -v lpstat &> /dev/null; then
+                    echo -e "${GREEN}✅ CUPS installed${NC}"
+                else
+                    echo -e "${RED}❌ CUPS installation failed${NC}"
+                fi
+                echo ""
+            fi
+        fi
+        
         echo -e "${YELLOW}Scanning for printers...${NC}"
         
         # Check if CUPS is available (CUPS installed on host)
@@ -387,6 +435,12 @@ EOF
 fi
 
 echo ""
+
+# Ensure .env.printer exists (create empty if missing) to prevent docker-compose errors
+if [ ! -f ".env.printer" ]; then
+    touch .env.printer
+    echo -e "${BLUE}ℹ️  Created empty .env.printer${NC}"
+fi
 
 # Determine which compose file to use and handle special commands
 COMPOSE_FILE="docker-compose.yml"
