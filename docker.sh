@@ -285,37 +285,73 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                 PRINTER_NAME="$EXISTING_PRINTER"
             else
                 echo -e "${YELLOW}⚠️  No printer configured in CUPS yet${NC}"
-                echo ""
-                echo -e "${BLUE}📋 Please configure your printer in CUPS first:${NC}"
-                echo ""
-                echo -e "${YELLOW}Option 1 - Web Interface (Easiest):${NC}"
-                echo -e "  1. Open: http://localhost:631"
-                echo -e "  2. Go to: Administration → Add Printer"
-                echo -e "  3. Select your USB printer from the list"
-                echo -e "  4. Choose a driver (e.g., Generic → Generic PCL Laser Printer)"
-                echo -e "  5. Set it as default printer"
-                echo ""
-                echo -e "${YELLOW}Option 2 - Command Line:${NC}"
-                if [ -n "$USB_PRINTERS" ]; then
-                    FIRST_USB=$(echo "$USB_PRINTERS" | head -1 | awk '{print $2}')
-                    echo -e "  Quick setup with detected printer:"
-                    echo -e "  sudo lpadmin -p MyPrinter -E -v \"$FIRST_USB\" -m drv:///sample.drv/zebra.ppd"
-                    echo -e "  sudo lpadmin -d MyPrinter"
-                else
-                    echo -e "  sudo lpadmin -p MyPrinter -E -v usb://YOUR_PRINTER_URI -m drv:///sample.drv/zebra.ppd"
-                    echo -e "  sudo lpadmin -d MyPrinter"
-                fi
-                echo ""
-                echo -e "${BLUE}After configuring, press Enter to continue detection...${NC}"
-                read -r
-                echo ""
                 
-                # Re-check after user configuration
-                EXISTING_PRINTER=$(lpstat -p 2>/dev/null | head -1 | awk '{print $2}')
-                if [ -n "$EXISTING_PRINTER" ]; then
-                    echo -e "${GREEN}✅ Found configured printer: $EXISTING_PRINTER${NC}"
-                    DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
-                    PRINTER_NAME="$EXISTING_PRINTER"
+                # If we have USB printers detected, offer to auto-configure
+                if [ -n "$USB_PRINTERS" ]; then
+                    echo ""
+                    echo -e "${BLUE}Would you like to configure the printer now? (y/n)${NC}"
+                    read -p "> " -n 1 -r
+                    echo
+                    
+                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                        # Get first USB printer URI
+                        FIRST_USB=$(echo "$USB_PRINTERS" | head -1 | awk '{print $2}')
+                        
+                        # Extract printer model for default name
+                        PRINTER_MODEL=$(echo "$FIRST_USB" | sed -n 's/.*\/\/\([^\/]*\)\/.*/\1/p')
+                        DEFAULT_NAME="${PRINTER_MODEL:-XP410B}"
+                        
+                        read -p "Enter printer name (default: $DEFAULT_NAME): " PRINTER_NAME
+                        PRINTER_NAME=${PRINTER_NAME:-$DEFAULT_NAME}
+                        
+                        echo -e "${BLUE}Available USB printers:${NC}"
+                        echo "$USB_PRINTERS" | nl -w2 -s'. '
+                        echo ""
+                        read -p "Select printer number (default: 1): " PRINTER_CHOICE
+                        PRINTER_CHOICE=${PRINTER_CHOICE:-1}
+                        
+                        DETECTED_URI=$(echo "$USB_PRINTERS" | sed -n "${PRINTER_CHOICE}p" | awk '{print $2}')
+                        
+                        echo ""
+                        echo -e "${YELLOW}Configuring printer in CUPS...${NC}"
+                        echo -e "${BLUE}Name: $PRINTER_NAME${NC}"
+                        echo -e "${BLUE}URI:  $DETECTED_URI${NC}"
+                        
+                        # Add printer to CUPS with Zebra driver
+                        if [ "$USE_PRIVILEGED" = true ]; then
+                            run_privileged lpadmin -p "$PRINTER_NAME" -E -v "$DETECTED_URI" -m drv:///sample.drv/zebra.ppd
+                            run_privileged lpadmin -d "$PRINTER_NAME"
+                        else
+                            lpadmin -p "$PRINTER_NAME" -E -v "$DETECTED_URI" -m drv:///sample.drv/zebra.ppd
+                            lpadmin -d "$PRINTER_NAME"
+                        fi
+                        
+                        if [ $? -eq 0 ]; then
+                            echo -e "${GREEN}✅ Printer configured in CUPS successfully${NC}"
+                            lpstat -p -d 2>/dev/null
+                        else
+                            echo -e "${RED}❌ Failed to configure printer in CUPS${NC}"
+                            DETECTED_URI=""
+                            PRINTER_NAME=""
+                        fi
+                    fi
+                else
+                    echo ""
+                    echo -e "${BLUE}📋 Please configure your printer in CUPS first:${NC}"
+                    echo ""
+                    echo -e "${YELLOW}Web Interface: http://localhost:631${NC}"
+                    echo -e "  Administration → Add Printer → Select USB printer → Choose driver"
+                    echo ""
+                    echo -e "${BLUE}After configuring, press Enter to continue...${NC}"
+                    read -r
+                    
+                    # Re-check after user configuration
+                    EXISTING_PRINTER=$(lpstat -p 2>/dev/null | head -1 | awk '{print $2}')
+                    if [ -n "$EXISTING_PRINTER" ]; then
+                        echo -e "${GREEN}✅ Found configured printer: $EXISTING_PRINTER${NC}"
+                        DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
+                        PRINTER_NAME="$EXISTING_PRINTER"
+                    fi
                 fi
             fi
             
