@@ -122,7 +122,10 @@ else
         
         # Add printer with detailed error output
         echo "Adding printer to CUPS..."
-        if lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m "$DRIVER" 2>&1; then
+        lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m "$DRIVER" 2>&1
+        ADD_PRINTER_EXIT=$?
+        
+        if [ $ADD_PRINTER_EXIT -eq 0 ]; then
             echo "✅ Printer added successfully"
             
             # Wait a moment for CUPS to register the printer
@@ -133,13 +136,18 @@ else
                 echo "✅ Printer verified in CUPS"
                 
                 # Set as default
-                if lpadmin -d "$PRINTER_NAME" 2>&1; then
+                lpadmin -d "$PRINTER_NAME" 2>&1
+                SET_DEFAULT_EXIT=$?
+                
+                if [ $SET_DEFAULT_EXIT -eq 0 ]; then
                     echo "✅ Printer set as default"
                 else
-                    echo "⚠️  Could not set as default (printer may still work)"
+                    echo "⚠️  Could not set as default (exit code: $SET_DEFAULT_EXIT)"
+                    echo "Printer may still work, but won't be the default"
                 fi
                 
                 # Show printer status
+                echo ""
                 lpstat -p -d 2>/dev/null || true
             else
                 echo "❌ Printer was not registered in CUPS"
@@ -147,7 +155,7 @@ else
                 lpstat -p -d 2>/dev/null || echo "No printers found"
             fi
         else
-            echo "❌ Failed to add printer"
+            echo "❌ Failed to add printer (exit code: $ADD_PRINTER_EXIT)"
             echo ""
             echo "Troubleshooting:"
             echo "  1. Check if printer is connected: lpinfo -v | grep usb"
