@@ -44,17 +44,42 @@ while true; do
     case "$URI_TYPE" in
         usb)
             # For USB printers, check if USB device exists
-            # Extract just the device path without usb:// prefix
-            USB_DEVICE=$(echo "$PRINTER_URI" | sed 's|usb://||')
+            # Method 1: Check /dev/bus/usb for any connected devices
+            USB_DEVICES_COUNT=$(find /dev/bus/usb -type c 2>/dev/null | wc -l)
             
-            # Check if USB device is present using lpinfo
-            USB_CHECK=$(lpinfo -v 2>/dev/null | grep "usb://" | grep -i "$(echo "$USB_DEVICE" | cut -d/ -f1)")
+            # Method 2: Extract manufacturer/model from URI and check with lpinfo
+            MANUFACTURER=$(echo "$PRINTER_URI" | sed -n 's|usb://\([^/]*\)/.*|\1|p')
             
-            if [ -n "$USB_CHECK" ]; then
-                PRINTER_ONLINE=true
-                echo "[PRINTER MONITOR] DEBUG: USB device detected - $USB_DEVICE"
+            # Check if any USB device from this manufacturer is present
+            if [ -n "$MANUFACTURER" ]; then
+                USB_CHECK=$(lpinfo -v 2>/dev/null | grep "usb://" | grep -i "$MANUFACTURER")
             else
-                echo "[PRINTER MONITOR] DEBUG: USB device NOT detected - $USB_DEVICE"
+                # Fallback: check if exact URI exists
+                USB_CHECK=$(lpinfo -v 2>/dev/null | grep -F "$PRINTER_URI")
+            fi
+            
+            # Method 3: Check if printer shows up in lsusb (if available)
+            if command -v lsusb &> /dev/null && [ -n "$MANUFACTURER" ]; then
+                LSUSB_CHECK=$(lsusb 2>/dev/null | grep -i "$MANUFACTURER")
+            else
+                LSUSB_CHECK=""
+            fi
+            
+            # Consider printer online if either method detects it
+            if [ -n "$USB_CHECK" ] || [ -n "$LSUSB_CHECK" ]; then
+                PRINTER_ONLINE=true
+                echo "[PRINTER MONITOR] DEBUG: USB device detected"
+                [ -n "$USB_CHECK" ] && echo "[PRINTER MONITOR] DEBUG: lpinfo found: $USB_CHECK"
+                [ -n "$LSUSB_CHECK" ] && echo "[PRINTER MONITOR] DEBUG: lsusb found: $LSUSB_CHECK"
+            else
+                echo "[PRINTER MONITOR] DEBUG: USB device NOT detected - Looking for: $MANUFACTURER"
+                echo "[PRINTER MONITOR] DEBUG: USB devices in /dev/bus/usb: $USB_DEVICES_COUNT"
+                echo "[PRINTER MONITOR] DEBUG: lpinfo output:"
+                lpinfo -v 2>/dev/null | grep "usb://" || echo "  (none)"
+                if command -v lsusb &> /dev/null; then
+                    echo "[PRINTER MONITOR] DEBUG: lsusb output:"
+                    lsusb 2>/dev/null || echo "  (none)"
+                fi
             fi
             ;;
         socket|ipp|http|https)
