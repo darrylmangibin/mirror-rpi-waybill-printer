@@ -252,52 +252,70 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
             DETECTED_URI=""
             PRINTER_NAME=""
             
-            # First, try to get printer from existing CUPS configuration
+            # First, check what USB devices CUPS can see
+            echo -e "${BLUE}Checking for USB devices...${NC}"
+            if [ "$USE_PRIVILEGED" = true ]; then
+                USB_DEVICES=$(run_privileged lpinfo -v 2>/dev/null)
+            else
+                USB_DEVICES=$(lpinfo -v 2>/dev/null)
+            fi
+            
+            USB_PRINTERS=$(echo "$USB_DEVICES" | grep "usb://")
+            
+            if [ -n "$USB_PRINTERS" ]; then
+                echo -e "${GREEN}✅ USB printer(s) detected:${NC}"
+                echo "$USB_PRINTERS"
+                echo ""
+            else
+                echo -e "${YELLOW}⚠️  No USB printers detected by CUPS${NC}"
+                echo -e "${BLUE}Troubleshooting:${NC}"
+                echo -e "  1. Is the printer connected via USB and powered on?"
+                echo -e "  2. Try manually: sudo lpinfo -v | grep usb"
+                echo ""
+            fi
+            
+            # Check if printer is already configured in CUPS
             EXISTING_PRINTER=$(lpstat -p 2>/dev/null | head -1 | awk '{print $2}')
             
             if [ -n "$EXISTING_PRINTER" ]; then
-                echo -e "${GREEN}✅ Found existing printer: $EXISTING_PRINTER${NC}"
+                echo -e "${GREEN}✅ Found configured printer in CUPS: $EXISTING_PRINTER${NC}"
                 
                 # Get the URI for the existing printer
-                if command -v lpstat &> /dev/null; then
+                DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
+                PRINTER_NAME="$EXISTING_PRINTER"
+            else
+                echo -e "${YELLOW}⚠️  No printer configured in CUPS yet${NC}"
+                echo ""
+                echo -e "${BLUE}📋 Please configure your printer in CUPS first:${NC}"
+                echo ""
+                echo -e "${YELLOW}Option 1 - Web Interface (Easiest):${NC}"
+                echo -e "  1. Open: http://localhost:631"
+                echo -e "  2. Go to: Administration → Add Printer"
+                echo -e "  3. Select your USB printer from the list"
+                echo -e "  4. Choose a driver (e.g., Generic → Generic PCL Laser Printer)"
+                echo -e "  5. Set it as default printer"
+                echo ""
+                echo -e "${YELLOW}Option 2 - Command Line:${NC}"
+                if [ -n "$USB_PRINTERS" ]; then
+                    FIRST_USB=$(echo "$USB_PRINTERS" | head -1 | awk '{print $2}')
+                    echo -e "  Quick setup with detected printer:"
+                    echo -e "  sudo lpadmin -p MyPrinter -E -v \"$FIRST_USB\" -m drv:///sample.drv/zebra.ppd"
+                    echo -e "  sudo lpadmin -d MyPrinter"
+                else
+                    echo -e "  sudo lpadmin -p MyPrinter -E -v usb://YOUR_PRINTER_URI -m drv:///sample.drv/zebra.ppd"
+                    echo -e "  sudo lpadmin -d MyPrinter"
+                fi
+                echo ""
+                echo -e "${BLUE}After configuring, press Enter to continue detection...${NC}"
+                read -r
+                echo ""
+                
+                # Re-check after user configuration
+                EXISTING_PRINTER=$(lpstat -p 2>/dev/null | head -1 | awk '{print $2}')
+                if [ -n "$EXISTING_PRINTER" ]; then
+                    echo -e "${GREEN}✅ Found configured printer: $EXISTING_PRINTER${NC}"
                     DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
                     PRINTER_NAME="$EXISTING_PRINTER"
-                fi
-            else
-                echo -e "${YELLOW}No printer found in CUPS configuration${NC}"
-            fi
-            
-            # If no existing printer, try to detect USB printer with privilege escalation
-            if [ -z "$DETECTED_URI" ] && command -v lpinfo &> /dev/null; then
-                echo -e "${YELLOW}Scanning for USB printers (requires sudo)...${NC}"
-                
-                # Try to get USB printer URIs with privilege escalation
-                if [ "$USE_PRIVILEGED" = true ]; then
-                    USB_DEVICES=$(run_privileged lpinfo -v 2>/dev/null | grep "usb://")
-                    DETECTED_URI=$(echo "$USB_DEVICES" | head -1 | awk '{print $2}')
-                else
-                    USB_DEVICES=$(lpinfo -v 2>/dev/null | grep "usb://")
-                    DETECTED_URI=$(echo "$USB_DEVICES" | head -1 | awk '{print $2}')
-                fi
-                
-                # Show what was found for debugging
-                if [ -n "$USB_DEVICES" ]; then
-                    echo -e "${BLUE}USB devices found:${NC}"
-                    echo "$USB_DEVICES"
-                else
-                    echo -e "${YELLOW}No USB printers detected by CUPS${NC}"
-                    echo -e "${BLUE}Troubleshooting:${NC}"
-                    echo -e "  1. Is the printer connected via USB?"
-                    echo -e "  2. Is the printer powered on?"
-                    echo -e "  3. Try: sudo lpinfo -v | grep usb"
-                fi
-                
-                if [ -n "$DETECTED_URI" ]; then
-                    echo -e "${GREEN}✅ Detected USB printer: $DETECTED_URI${NC}"
-                    
-                    # Extract printer model from URI for default name
-                    PRINTER_MODEL=$(echo "$DETECTED_URI" | sed -n 's/.*\/\/\([^\/]*\)\/.*/\1/p')
-                    PRINTER_NAME="${PRINTER_MODEL:-XP410B}"
                 fi
             fi
             
