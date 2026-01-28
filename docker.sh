@@ -614,11 +614,6 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo -e "${GREEN}✅ Setup complete!${NC}"
 
-# Generate and display QR code for easy access
-if [ -f "./generate-qr.sh" ]; then
-    ./generate-qr.sh "http://${LOCAL_IP}:5173"
-fi
-
 echo -e "${BLUE}Access the application at:${NC}"
 echo -e "  Frontend: http://${LOCAL_IP}:5173"
 echo -e "  Backend:  http://${LOCAL_IP}:5000"

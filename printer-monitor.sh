@@ -11,6 +11,15 @@ echo "[PRINTER MONITOR] Checking every ${MONITOR_INTERVAL} seconds"
 # Wait for initial CUPS startup
 sleep 5
 
+# Log configuration once at startup
+if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
+    echo "[PRINTER MONITOR] Monitoring printer: $PRINTER_NAME"
+    echo "[PRINTER MONITOR] URI: $PRINTER_URI"
+    echo "[PRINTER MONITOR] Driver: ${PRINTER_DRIVER:-drv:///sample.drv/zebra.ppd}"
+else
+    echo "[PRINTER MONITOR] ⚠️  No printer configuration found in environment variables"
+fi
+
 while true; do
     # Check if CUPS is running
     if ! pgrep -x "cupsd" > /dev/null; then
@@ -26,16 +35,6 @@ while true; do
         continue
     fi
     
-    # Check if printer exists in CUPS
-    PRINTER_EXISTS=$(lpstat -p "$PRINTER_NAME" 2>/dev/null)
-    
-    if [ -z "$PRINTER_EXISTS" ]; then
-        # Printer not in CUPS at all
-        PRINTER_WAS_ONLINE=false
-        sleep $MONITOR_INTERVAL
-        continue
-    fi
-    
     # Extract URI type (usb://, socket://, etc.)
     URI_TYPE=$(echo "$PRINTER_URI" | cut -d: -f1)
     
@@ -45,11 +44,17 @@ while true; do
     case "$URI_TYPE" in
         usb)
             # For USB printers, check if USB device exists
-            USB_DEVICE=$(echo "$PRINTER_URI" | sed 's/usb:\/\///')
-            USB_PRESENT=$(lpinfo -v 2>/dev/null | grep -F "$USB_DEVICE")
+            # Extract just the device path without usb:// prefix
+            USB_DEVICE=$(echo "$PRINTER_URI" | sed 's|usb://||')
             
-            if [ -n "$USB_PRESENT" ]; then
+            # Check if USB device is present using lpinfo
+            USB_CHECK=$(lpinfo -v 2>/dev/null | grep "usb://" | grep -i "$(echo "$USB_DEVICE" | cut -d/ -f1)")
+            
+            if [ -n "$USB_CHECK" ]; then
                 PRINTER_ONLINE=true
+                echo "[PRINTER MONITOR] DEBUG: USB device detected - $USB_DEVICE"
+            else
+                echo "[PRINTER MONITOR] DEBUG: USB device NOT detected - $USB_DEVICE"
             fi
             ;;
         socket|ipp|http|https)
@@ -99,6 +104,9 @@ while true; do
             else
                 echo "[PRINTER MONITOR] ❌ Failed to re-add printer"
             fi
+        else
+            # Printer still online (no change)
+            echo "[PRINTER MONITOR] DEBUG: Printer still online"
         fi
         PRINTER_WAS_ONLINE=true
     else
@@ -106,6 +114,9 @@ while true; do
             # Printer just went offline
             echo "[PRINTER MONITOR] ⚠️  Printer disconnected: $PRINTER_NAME"
             echo "[PRINTER MONITOR] Waiting for reconnection..."
+        else
+            # Printer still offline
+            echo "[PRINTER MONITOR] DEBUG: Printer still offline"
         fi
         PRINTER_WAS_ONLINE=false
     fi
