@@ -317,14 +317,9 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                         echo -e "${BLUE}Name: $PRINTER_NAME${NC}"
                         echo -e "${BLUE}URI:  $DETECTED_URI${NC}"
                         
-                        # Add printer to CUPS with Zebra driver
-                        if [ "$USE_PRIVILEGED" = true ]; then
-                            run_privileged lpadmin -p "$PRINTER_NAME" -E -v "$DETECTED_URI" -m drv:///sample.drv/zebra.ppd
-                            run_privileged lpadmin -d "$PRINTER_NAME"
-                        else
-                            lpadmin -p "$PRINTER_NAME" -E -v "$DETECTED_URI" -m drv:///sample.drv/zebra.ppd
-                            lpadmin -d "$PRINTER_NAME"
-                        fi
+                        # Add printer to CUPS with Zebra driver (always needs privilege)
+                        run_privileged lpadmin -p "$PRINTER_NAME" -E -v "$DETECTED_URI" -m drv:///sample.drv/zebra.ppd
+                        run_privileged lpadmin -d "$PRINTER_NAME"
                         
                         if [ $? -eq 0 ]; then
                             echo -e "${GREEN}✅ Printer configured in CUPS successfully${NC}"
