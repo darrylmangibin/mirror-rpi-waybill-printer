@@ -660,8 +660,6 @@ echo ""
 
 # Show startup logs for backend
 echo -e "${BLUE}📋 Showing backend startup logs...${NC}"
-echo -e "${YELLOW}(Waiting for container to initialize...)${NC}"
-sleep 3
 
 if [ "$COMMAND" == "prod" ]; then
     BACKEND_CONTAINER="rpi-waybill-printer-backend-prod"
@@ -671,11 +669,43 @@ else
     BACKEND_CONTAINER="rpi-waybill-printer-backend"
 fi
 
-# Show logs (timeout after 10 seconds or until application starts)
+# Check if container is actually running
+echo -e "${YELLOW}Checking container status...${NC}"
 if [ "$USE_PRIVILEGED" = true ]; then
-    timeout 10 run_privileged docker logs -f "$BACKEND_CONTAINER" 2>/dev/null || run_privileged docker logs "$BACKEND_CONTAINER" 2>/dev/null || true
+    CONTAINER_STATUS=$(run_privileged docker ps --filter "name=$BACKEND_CONTAINER" --format "{{.Status}}" 2>/dev/null)
 else
-    timeout 10 docker logs -f "$BACKEND_CONTAINER" 2>/dev/null || docker logs "$BACKEND_CONTAINER" 2>/dev/null || true
+    CONTAINER_STATUS=$(docker ps --filter "name=$BACKEND_CONTAINER" --format "{{.Status}}" 2>/dev/null)
+fi
+
+if [ -z "$CONTAINER_STATUS" ]; then
+    echo -e "${RED}❌ Container $BACKEND_CONTAINER is not running${NC}"
+    echo -e "${YELLOW}Checking if container exists but stopped...${NC}"
+    
+    if [ "$USE_PRIVILEGED" = true ]; then
+        run_privileged docker ps -a --filter "name=$BACKEND_CONTAINER"
+    else
+        docker ps -a --filter "name=$BACKEND_CONTAINER"
+    fi
+    
+    echo ""
+    echo -e "${YELLOW}Try checking logs manually:${NC}"
+    if [ "$USE_PRIVILEGED" = true ]; then
+        echo -e "  sudo docker logs $BACKEND_CONTAINER"
+    else
+        echo -e "  docker logs $BACKEND_CONTAINER"
+    fi
+else
+    echo -e "${GREEN}✅ Container is running: $CONTAINER_STATUS${NC}"
+    echo -e "${YELLOW}Waiting for logs (3 seconds)...${NC}"
+    sleep 3
+    
+    # Show logs (timeout after 10 seconds or until application starts)
+    echo ""
+    if [ "$USE_PRIVILEGED" = true ]; then
+        timeout 10 run_privileged docker logs -f "$BACKEND_CONTAINER" 2>&1 || run_privileged docker logs "$BACKEND_CONTAINER" 2>&1 || true
+    else
+        timeout 10 docker logs -f "$BACKEND_CONTAINER" 2>&1 || docker logs "$BACKEND_CONTAINER" 2>&1 || true
+    fi
 fi
 
 echo ""
