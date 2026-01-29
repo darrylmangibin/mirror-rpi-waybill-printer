@@ -403,12 +403,14 @@ lpstat -v
 **Problem:** Docker containers cannot detect USB hotplug events in real-time.
 
 **Why?**
+
 - Docker mounts `/dev/bus/usb:/dev/bus/usb` as a **static mount**
 - USB devices present at container start are visible
 - When you unplug/replug USB devices, the container doesn't get notified
 - **udev events** (used by CUPS) don't propagate into containers
 
 **Impact:**
+
 - ❌ Inside container: `printer-monitor.sh` has **limited effectiveness**
 - ✅ On host: Full USB hotplug detection works normally
 
@@ -459,12 +461,14 @@ Monitoring USB changes... (Press Ctrl+C to stop)
 ### How It Works
 
 **1. Host monitors USB devices:**
+
 ```bash
 # Polls /dev/bus/usb every 2 seconds
 CURRENT_USB_DEVICES=$(ls -1 /dev/bus/usb/*/* 2>/dev/null | sort)
 ```
 
 **2. Detects changes:**
+
 ```bash
 # Compares with previous state
 if [ "$CURRENT_USB_DEVICES" != "$LAST_USB_DEVICES" ]; then
@@ -473,6 +477,7 @@ fi
 ```
 
 **3. Identifies printer:**
+
 ```bash
 # Extracts manufacturer from URI
 MANUFACTURER=$(echo "$PRINTER_URI" | sed -n 's|usb://\([^/]*\)/.*|\1|p')
@@ -484,6 +489,7 @@ fi
 ```
 
 **4. Restores printer in Docker:**
+
 ```bash
 # Restart CUPS
 docker exec rpi-waybill-printer-backend-prod pkill -HUP cupsd
@@ -605,11 +611,13 @@ The `printer-monitor.sh` still runs **inside** the Docker container, but with li
 **Started by:** `/app/start.sh` during container initialization
 
 **Limitations:**
-- ⚠️  Cannot detect USB hotplug events reliably
-- ⚠️  Only works if CUPS inside container detects changes
-- ⚠️  Requires manual CUPS restart to detect new devices
+
+- ⚠️ Cannot detect USB hotplug events reliably
+- ⚠️ Only works if CUPS inside container detects changes
+- ⚠️ Requires manual CUPS restart to detect new devices
 
 **When it works:**
+
 - ✅ Network printers (socket://)
 - ✅ Initial USB detection at container start
 - ✅ Backup monitoring (polls every 15 seconds)

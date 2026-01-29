@@ -56,8 +56,8 @@ PRINTER_WAS_CONNECTED=false
 
 # Check if printer is currently connected
 if [ -n "$PRINTER_URI" ]; then
-    MANUFACTURER=$(echo "$PRINTER_URI" | sed -n 's|usb://\([^/]*\)/.*|\1|p')
-    if lsusb 2>/dev/null | grep -qi "$MANUFACTURER"; then
+    # Check if CUPS detects the printer using lpinfo
+    if sudo lpinfo -v 2>/dev/null | grep -q "direct usb://"; then
         PRINTER_WAS_CONNECTED=true
         echo -e "${GREEN}[$(date '+%H:%M:%S')] Printer currently connected${NC}"
     else
@@ -79,7 +79,8 @@ while true; do
         # Check if it's the printer we're monitoring
         PRINTER_CURRENTLY_CONNECTED=false
         if [ -n "$PRINTER_URI" ]; then
-            if lsusb 2>/dev/null | grep -qi "$MANUFACTURER"; then
+            # Check if CUPS detects the printer using lpinfo
+            if sudo lpinfo -v 2>/dev/null | grep -q "direct usb://"; then
                 PRINTER_CURRENTLY_CONNECTED=true
             fi
         fi

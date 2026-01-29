@@ -15,6 +15,7 @@ A local printing solution using Flask backend and React frontend for Raspberry P
 ```
 
 **What it does automatically:**
+
 - ✅ Installs Docker & Docker Compose
 - ✅ Installs & configures CUPS for printing
 - ✅ Detects and configures USB printers
@@ -23,6 +24,7 @@ A local printing solution using Flask backend and React frontend for Raspberry P
 - ✅ Monitors printer USB reconnection
 
 Access the application:
+
 - Frontend: http://YOUR_IP:5173
 - Backend: http://YOUR_IP:5000
 
