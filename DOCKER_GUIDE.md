@@ -396,6 +396,232 @@ lpstat -v
 
 ---
 
+## USB Printer Reconnection Monitoring
+
+### Understanding the Docker USB Limitation
+
+**Problem:** Docker containers cannot detect USB hotplug events in real-time.
+
+**Why?**
+- Docker mounts `/dev/bus/usb:/dev/bus/usb` as a **static mount**
+- USB devices present at container start are visible
+- When you unplug/replug USB devices, the container doesn't get notified
+- **udev events** (used by CUPS) don't propagate into containers
+
+**Impact:**
+- ❌ Inside container: `printer-monitor.sh` has **limited effectiveness**
+- ✅ On host: Full USB hotplug detection works normally
+
+### Solution: Host-Side Monitoring
+
+Run `printer-monitor-host.sh` **on the Raspberry Pi host** (not inside Docker):
+
+```bash
+# Start the host-side monitor
+chmod +x printer-monitor-host.sh
+./printer-monitor-host.sh
+```
+
+**What it does:**
+
+1. **Monitors USB changes** on the host system (`/dev/bus/usb`)
+2. **Detects printer reconnection** using `lsusb` and manufacturer matching
+3. **Triggers Docker container actions** via `docker exec` commands:
+   - Restarts CUPS inside container
+   - Removes old printer configuration
+   - Re-adds printer with correct URI and driver
+   - Sets as default printer
+   - Verifies printer status
+
+**Example output:**
+
+```
+🖨️  Host-side USB Printer Monitor for Docker
+✅ Found container: rpi-waybill-printer-backend-prod
+✅ Monitoring printer: XP410B
+   URI: usb://Xprinter/XP-410B?serial=410BBE235170626
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Monitoring USB changes... (Press Ctrl+C to stop)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[14:32:10] Printer currently connected
+[14:32:45] ⚠️  Printer disconnected
+[14:32:45] Waiting for reconnection...
+[14:32:50] USB device change detected!
+[14:32:50] ✅ Printer reconnected!
+[14:32:50] Triggering CUPS restart in Docker container...
+[14:32:52] Reconfiguring printer in container...
+[14:32:53] printer XP410B is idle.  enabled since ...
+[14:32:53] ✅ Printer fully restored in Docker
+```
+
+### How It Works
+
+**1. Host monitors USB devices:**
+```bash
+# Polls /dev/bus/usb every 2 seconds
+CURRENT_USB_DEVICES=$(ls -1 /dev/bus/usb/*/* 2>/dev/null | sort)
+```
+
+**2. Detects changes:**
+```bash
+# Compares with previous state
+if [ "$CURRENT_USB_DEVICES" != "$LAST_USB_DEVICES" ]; then
+    # USB change detected!
+fi
+```
+
+**3. Identifies printer:**
+```bash
+# Extracts manufacturer from URI
+MANUFACTURER=$(echo "$PRINTER_URI" | sed -n 's|usb://\([^/]*\)/.*|\1|p')
+
+# Checks if it's our printer
+if lsusb | grep -qi "$MANUFACTURER"; then
+    PRINTER_RECONNECTED=true
+fi
+```
+
+**4. Restores printer in Docker:**
+```bash
+# Restart CUPS
+docker exec rpi-waybill-printer-backend-prod pkill -HUP cupsd
+
+# Remove old config
+docker exec rpi-waybill-printer-backend-prod lpadmin -x "$PRINTER_NAME"
+
+# Re-add printer
+docker exec rpi-waybill-printer-backend-prod lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m "$DRIVER"
+
+# Set as default
+docker exec rpi-waybill-printer-backend-prod lpadmin -d "$PRINTER_NAME"
+```
+
+### Running as Background Service (Systemd)
+
+For automatic monitoring on boot:
+
+**1. Create systemd service:**
+
+```bash
+sudo nano /etc/systemd/system/printer-monitor-host.service
+```
+
+**2. Add service configuration:**
+
+```ini
+[Unit]
+Description=Host-side USB Printer Monitor for Docker
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/rpi-waybill-printer
+ExecStart=/home/pi/rpi-waybill-printer/printer-monitor-host.sh
+Restart=always
+RestartSec=10
+User=root
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**3. Enable and start:**
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable printer-monitor-host.service
+sudo systemctl start printer-monitor-host.service
+
+# Check status
+sudo systemctl status printer-monitor-host.service
+
+# View logs
+sudo journalctl -u printer-monitor-host.service -f
+```
+
+### Debugging USB Reconnection Issues
+
+**Check if monitor is running:**
+
+```bash
+ps aux | grep printer-monitor-host
+```
+
+**Test USB detection manually:**
+
+```bash
+# Before unplugging
+ls -la /dev/bus/usb/*/*
+lsusb
+
+# After unplugging (should show one less device)
+ls -la /dev/bus/usb/*/*
+lsusb
+
+# After replugging (should match original)
+ls -la /dev/bus/usb/*/*
+lsusb | grep -i xprinter  # or your manufacturer
+```
+
+**Check if Docker container is accessible:**
+
+```bash
+# List running containers
+docker ps
+
+# Test docker exec
+docker exec rpi-waybill-printer-backend-prod lpstat -p
+```
+
+**Verify .env.printer configuration:**
+
+```bash
+cat .env.printer
+# Should have PRINTER_NAME and PRINTER_URI
+```
+
+**Manual trigger test:**
+
+```bash
+# Inside the script directory
+source .env.printer
+
+# Manually trigger printer reconfiguration
+docker exec rpi-waybill-printer-backend-prod lpadmin -x "$PRINTER_NAME"
+docker exec rpi-waybill-printer-backend-prod lpadmin -p "$PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd
+docker exec rpi-waybill-printer-backend-prod lpstat -p
+```
+
+### Container-Side Monitor (Limited)
+
+The `printer-monitor.sh` still runs **inside** the Docker container, but with limited effectiveness:
+
+**Location:** `/app/printer-monitor.sh` (inside container)
+
+**Started by:** `/app/start.sh` during container initialization
+
+**Limitations:**
+- ⚠️  Cannot detect USB hotplug events reliably
+- ⚠️  Only works if CUPS inside container detects changes
+- ⚠️  Requires manual CUPS restart to detect new devices
+
+**When it works:**
+- ✅ Network printers (socket://)
+- ✅ Initial USB detection at container start
+- ✅ Backup monitoring (polls every 15 seconds)
+
+**Check container monitor logs:**
+
+```bash
+docker logs rpi-waybill-printer-backend-prod | grep "PRINTER MONITOR"
+```
+
+---
+
 ## Network Configuration
 
 ### Automatic IP Detection

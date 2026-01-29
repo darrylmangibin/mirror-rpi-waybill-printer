@@ -2,24 +2,31 @@
 
 A local printing solution using Flask backend and React frontend for Raspberry Pi 5.
 
-## 🐳 Quick Start with Docker (Recommended for Development)
+## 🐳 Quick Start with Docker (Recommended)
 
-**Works on Linux, macOS, and Windows!**
+**One-command setup for Raspberry Pi & Linux:**
 
 ```bash
-# One command to start everything
-./docker-start.sh
+# Production mode (recommended for deployment)
+./docker.sh prod --build
 
-# Or manually:
-docker-compose up
+# Development mode (with hot-reload)
+./docker.sh dev --build
 ```
 
+**What it does automatically:**
+- ✅ Installs Docker & Docker Compose
+- ✅ Installs & configures CUPS for printing
+- ✅ Detects and configures USB printers
+- ✅ Configures network settings
+- ✅ Starts all services
+- ✅ Monitors printer USB reconnection
+
 Access the application:
+- Frontend: http://YOUR_IP:5173
+- Backend: http://YOUR_IP:5000
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:5000
-
-**For detailed Docker instructions, see [DOCKER_README.md](DOCKER_README.md)**
+**For detailed Docker instructions, see [DOCKER_GUIDE.md](DOCKER_GUIDE.md)**
 
 ---
 
