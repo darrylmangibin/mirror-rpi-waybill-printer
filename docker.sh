@@ -292,6 +292,7 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
             
             # Check if printer is already configured in CUPS
             ALL_PRINTERS=$(lpstat -p 2>/dev/null | awk '{print $2}')
+            ADD_NEW_PRINTER=false
             
             if [ -n "$ALL_PRINTERS" ]; then
                 PRINTER_COUNT=$(echo "$ALL_PRINTERS" | wc -l)
@@ -303,6 +304,19 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                     echo -e "${GREEN}✅ Found configured printer in CUPS: $EXISTING_PRINTER${NC}"
                     echo -e "${BLUE}   URI: $DETECTED_URI${NC}"
                     PRINTER_NAME="$EXISTING_PRINTER"
+                    
+                    # Check if there are unconfigured USB printers
+                    if [ -n "$USB_PRINTERS" ]; then
+                        echo ""
+                        echo -e "${YELLOW}💡 Note: Additional USB printer(s) detected but not configured yet${NC}"
+                        echo -e "${BLUE}Would you like to add a new USB printer instead? (y/n)${NC}"
+                        read -p "> " -n 1 -r
+                        echo
+                        
+                        if [[ $REPLY =~ ^[Yy]$ ]]; then
+                            ADD_NEW_PRINTER=true
+                        fi
+                    fi
                 else
                     # Multiple printers, let user choose
                     echo -e "${GREEN}✅ Found $PRINTER_COUNT configured printers in CUPS:${NC}"
@@ -317,23 +331,41 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
                         PRINTER_INDEX=$((PRINTER_INDEX + 1))
                     done <<< "$ALL_PRINTERS"
                     
+                    # Check if there are unconfigured USB printers
+                    if [ -n "$USB_PRINTERS" ]; then
+                        echo ""
+                        echo -e " ${YELLOW}${PRINTER_INDEX}. [Add new USB printer]${NC}"
+                        echo -e "    ${BLUE}Detected USB printer(s) not yet configured${NC}"
+                    fi
+                    
                     echo ""
                     read -p "Select printer number (default: 1): " PRINTER_CHOICE
                     PRINTER_CHOICE=${PRINTER_CHOICE:-1}
                     
-                    EXISTING_PRINTER=$(echo "$ALL_PRINTERS" | sed -n "${PRINTER_CHOICE}p")
-                    
-                    if [ -n "$EXISTING_PRINTER" ]; then
-                        DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
-                        echo -e "${GREEN}✅ Selected printer: $EXISTING_PRINTER${NC}"
-                        echo -e "${BLUE}   URI: $DETECTED_URI${NC}"
-                        PRINTER_NAME="$EXISTING_PRINTER"
+                    # Check if user wants to add new USB printer
+                    if [ -n "$USB_PRINTERS" ] && [ "$PRINTER_CHOICE" -eq "$PRINTER_INDEX" ]; then
+                        # User chose to add new USB printer
+                        ADD_NEW_PRINTER=true
                     else
-                        echo -e "${RED}❌ Invalid selection${NC}"
+                        EXISTING_PRINTER=$(echo "$ALL_PRINTERS" | sed -n "${PRINTER_CHOICE}p")
+                        
+                        if [ -n "$EXISTING_PRINTER" ]; then
+                            DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
+                            echo -e "${GREEN}✅ Selected printer: $EXISTING_PRINTER${NC}"
+                            echo -e "${BLUE}   URI: $DETECTED_URI${NC}"
+                            PRINTER_NAME="$EXISTING_PRINTER"
+                        else
+                            echo -e "${RED}❌ Invalid selection${NC}"
+                        fi
                     fi
                 fi
-            else
-                echo -e "${YELLOW}⚠️  No printer configured in CUPS yet${NC}"
+            fi
+            
+            # If user wants to add new printer OR no printers configured
+            if [ "$ADD_NEW_PRINTER" = true ] || [ -z "$ALL_PRINTERS" ]; then
+                if [ -z "$ALL_PRINTERS" ]; then
+                    echo -e "${YELLOW}⚠️  No printer configured in CUPS yet${NC}"
+                fi
                 
                 # If we have USB printers detected, offer to auto-configure
                 if [ -n "$USB_PRINTERS" ]; then
