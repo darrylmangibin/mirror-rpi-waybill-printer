@@ -190,6 +190,27 @@ fi
 echo ""
 
 # ======================================
+# Wait for Printer Configuration (Setup Mode)
+# ======================================
+if [ ! -f "/app/.printer_ready" ]; then
+    echo "⏳ Waiting for printer configuration to complete..."
+    echo "   (This happens during initial setup)"
+    WAIT_COUNT=0
+    while [ ! -f "/app/.printer_ready" ] && [ $WAIT_COUNT -lt 120 ]; do
+        sleep 1
+        WAIT_COUNT=$((WAIT_COUNT + 1))
+    done
+    
+    if [ -f "/app/.printer_ready" ]; then
+        echo "✅ Printer configuration complete, starting application..."
+    else
+        echo "⚠️  Timeout waiting for printer configuration (120s)"
+        echo "   Starting application anyway..."
+    fi
+fi
+echo ""
+
+# ======================================
 # Database Migrations
 # ======================================
 echo "Running database migrations..."

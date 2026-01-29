@@ -640,6 +640,14 @@ if [ -n "$PRINTER_NAME" ] && [ -n "$PRINTER_URI" ]; then
     export PRINTER_URI
 fi
 
+# Signal to container that printer configuration is ready
+echo -e "${BLUE}Signaling printer configuration complete...${NC}"
+if [ "$COMMAND" == "prod" ]; then
+    BACKEND_CONTAINER="rpi-waybill-printer-backend-prod"
+else
+    BACKEND_CONTAINER="rpi-waybill-printer-backend-dev"
+fi
+
 if [ "$2" == "--build" ]; then
     if [ "$USE_PRIVILEGED" = true ]; then
         run_privileged docker compose -f $COMPOSE_FILE up -d --build
@@ -656,6 +664,24 @@ fi
 
 echo ""
 echo -e "${GREEN}✅ Containers started!${NC}"
+
+# Signal to container that printer setup is complete
+echo -e "${BLUE}Releasing application startup...${NC}"
+if [ "$COMMAND" == "prod" ]; then
+    BACKEND_CONTAINER="rpi-waybill-printer-backend-prod"
+elif [ "$COMMAND" == "dev" ]; then
+    BACKEND_CONTAINER="rpi-waybill-printer-backend-dev"
+else
+    BACKEND_CONTAINER="rpi-waybill-printer-backend"
+fi
+
+sleep 2  # Give container time to start
+docker exec "$BACKEND_CONTAINER" touch /app/.printer_ready 2>/dev/null || {
+    echo -e "${YELLOW}⚠️  Could not signal container (container may still be starting)${NC}"
+    echo -e "${BLUE}Waiting for container to be ready...${NC}"
+    sleep 3
+    docker exec "$BACKEND_CONTAINER" touch /app/.printer_ready 2>/dev/null || true
+}
 echo ""
 
 # Show startup logs for backend
