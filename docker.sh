@@ -291,14 +291,47 @@ if [ "$PRINTER_CONFIGURED" = false ]; then
             fi
             
             # Check if printer is already configured in CUPS
-            EXISTING_PRINTER=$(lpstat -p 2>/dev/null | head -1 | awk '{print $2}')
+            ALL_PRINTERS=$(lpstat -p 2>/dev/null | awk '{print $2}')
             
-            if [ -n "$EXISTING_PRINTER" ]; then
-                echo -e "${GREEN}✅ Found configured printer in CUPS: $EXISTING_PRINTER${NC}"
+            if [ -n "$ALL_PRINTERS" ]; then
+                PRINTER_COUNT=$(echo "$ALL_PRINTERS" | wc -l)
                 
-                # Get the URI for the existing printer
-                DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
-                PRINTER_NAME="$EXISTING_PRINTER"
+                if [ "$PRINTER_COUNT" -eq 1 ]; then
+                    # Only one printer, use it automatically
+                    EXISTING_PRINTER=$(echo "$ALL_PRINTERS" | head -1)
+                    DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
+                    echo -e "${GREEN}✅ Found configured printer in CUPS: $EXISTING_PRINTER${NC}"
+                    echo -e "${BLUE}   URI: $DETECTED_URI${NC}"
+                    PRINTER_NAME="$EXISTING_PRINTER"
+                else
+                    # Multiple printers, let user choose
+                    echo -e "${GREEN}✅ Found $PRINTER_COUNT configured printers in CUPS:${NC}"
+                    echo ""
+                    
+                    # Display printers with their URIs
+                    PRINTER_INDEX=1
+                    while IFS= read -r PRINTER; do
+                        PRINTER_URI=$(lpstat -v "$PRINTER" 2>/dev/null | sed -n "s/.*device for $PRINTER: //p")
+                        echo -e " ${PRINTER_INDEX}. ${PRINTER}"
+                        echo -e "    ${BLUE}URI: ${PRINTER_URI}${NC}"
+                        PRINTER_INDEX=$((PRINTER_INDEX + 1))
+                    done <<< "$ALL_PRINTERS"
+                    
+                    echo ""
+                    read -p "Select printer number (default: 1): " PRINTER_CHOICE
+                    PRINTER_CHOICE=${PRINTER_CHOICE:-1}
+                    
+                    EXISTING_PRINTER=$(echo "$ALL_PRINTERS" | sed -n "${PRINTER_CHOICE}p")
+                    
+                    if [ -n "$EXISTING_PRINTER" ]; then
+                        DETECTED_URI=$(lpstat -v "$EXISTING_PRINTER" 2>/dev/null | sed -n "s/.*device for $EXISTING_PRINTER: //p")
+                        echo -e "${GREEN}✅ Selected printer: $EXISTING_PRINTER${NC}"
+                        echo -e "${BLUE}   URI: $DETECTED_URI${NC}"
+                        PRINTER_NAME="$EXISTING_PRINTER"
+                    else
+                        echo -e "${RED}❌ Invalid selection${NC}"
+                    fi
+                fi
             else
                 echo -e "${YELLOW}⚠️  No printer configured in CUPS yet${NC}"
                 
