@@ -2,10 +2,16 @@
 # Printer USB reconnection monitor
 # Runs in background and automatically restarts CUPS when printer reconnects
 
+# ⚠️  DOCKER LIMITATION: USB hotplug events don't propagate into containers
+# This script has LIMITED effectiveness inside Docker containers
+# For automatic USB reconnection, use printer-monitor-host.sh on the HOST
+
 MONITOR_INTERVAL=15  # Check every 15 seconds
 PRINTER_WAS_ONLINE=false
 
-echo "[PRINTER MONITOR] Starting USB printer reconnection monitor..."
+echo "[PRINTER MONITOR] Starting USB printer reconnection monitor (Docker)..."
+echo "[PRINTER MONITOR] ⚠️  Note: USB hotplug detection is limited in Docker"
+echo "[PRINTER MONITOR] For automatic reconnection, run printer-monitor-host.sh on the host"
 echo "[PRINTER MONITOR] Checking every ${MONITOR_INTERVAL} seconds"
 
 # Wait for initial CUPS startup
