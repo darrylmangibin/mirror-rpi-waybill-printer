@@ -82,7 +82,7 @@ try:
     from app.database import db
     from app.services.waybills.models.WaybillPrint import WaybillPrint
     
-    app = create_app()
+    app, _ = create_app()  # Unpack tuple (app, socketio)
     
     with app.app_context():
         # Get count before deletion

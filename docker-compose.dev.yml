@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: rpi-waybill-printer-backend-dev
+    env_file:
+      - .env.printer
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount source code for hot-reload
+      - ./app:/app/app
+      - ./run.py:/app/run.py
+      - ./requirements.txt:/app/requirements.txt
+      # Keep data directories persistent
+      - ./app/instance:/app/app/instance
+      - ./app/logs:/app/app/logs
+      - ./app/storage:/app/app/storage
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=True
+      - HOST=0.0.0.0
+      - PORT=5000
+      - CLEANUP_INTERVAL_MINUTES=30
+      - CLEANUP_HOURS_THRESHOLD=6
+      # Auto-configure printer (set by docker.sh or manually)
+      - PRINTER_NAME=${PRINTER_NAME:-}
+      - PRINTER_URI=${PRINTER_URI:-}
+      - PRINTER_DRIVER=${PRINTER_DRIVER:-}
+    devices:
+      # Pass through all USB devices for printer access (Linux only)
+      - /dev/bus/usb:/dev/bus/usb
+    restart: unless-stopped
+    networks:
+      - waybill-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: rpi-waybill-printer-frontend-dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount frontend source for hot-reload
+      - ./frontend:/app
+      # Use named volume for node_modules (platform-specific binaries)
+      - frontend-node-modules:/app/node_modules
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - waybill-network
+
+networks:
+  waybill-network:
+    driver: bridge
+
+volumes:
+  frontend-node-modules:
