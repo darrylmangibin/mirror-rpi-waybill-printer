@@ -10,7 +10,7 @@ load_dotenv()
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 
-ASYNC_MODE = "threading" if ENVIRONMENT == "development" else "eventlet"
+ASYNC_MODE = "threading" if ENVIRONMENT == "development" else "gevent"
 
 SOCKETIO_CONFIG = {
     "cors_allowed_origins": "*",
