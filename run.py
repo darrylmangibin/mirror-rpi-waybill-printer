@@ -1,17 +1,10 @@
-# Gevent monkey patching MUST be first, before any other imports
 import os
-
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
-
-if ENVIRONMENT == "production":
-    from gevent import monkey
-
-    monkey.patch_all()
-
 import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 
 print(f"Starting application in {ENVIRONMENT} mode.")
 
