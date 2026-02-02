@@ -2,6 +2,36 @@
 
 A local printing solution using Flask backend and React frontend for Raspberry Pi 5.
 
+## 🐳 Quick Start with Docker (Recommended)
+
+**One-command setup for Raspberry Pi & Linux:**
+
+```bash
+# Production mode (recommended for deployment)
+./docker.sh prod --build
+
+# Development mode (with hot-reload)
+./docker.sh dev --build
+```
+
+**What it does automatically:**
+
+- ✅ Installs Docker & Docker Compose
+- ✅ Installs & configures CUPS for printing
+- ✅ Detects and configures USB printers
+- ✅ Configures network settings
+- ✅ Starts all services
+- ✅ Monitors printer USB reconnection
+
+Access the application:
+
+- Frontend: http://YOUR_IP:5173
+- Backend: http://YOUR_IP:5000
+
+**For detailed Docker instructions, see [DOCKER_GUIDE.md](DOCKER_GUIDE.md)**
+
+---
+
 ## Project Structure
 
 ```text
@@ -26,7 +56,7 @@ This guide will walk you through setting up the RPI Waybill Printer. There are t
 
 To prepare `install.sh` we need to enter this on the terminal. Then bash the `install.sh` with sudo. Make sure you are on the rpi-waybill-printer root.
 
-``` text
+```text
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -35,7 +65,7 @@ sudo ./install.sh
 
 You will be prompted by what mode of installation offline or online.
 
-``` text
+```text
 Please select installation mode:
   1) Online Installation (requires internet access to download packages)
   2) Offline Installation (requires pre-downloaded .deb packages in a 'debs/' folder)

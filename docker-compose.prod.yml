@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: rpi-waybill-printer-backend-prod
+    env_file:
+      - .env.printer
+    ports:
+      - "5000:5000"
+    volumes:
+      # Only persist data, not source code
+      - ./app/instance:/app/app/instance
+      - ./app/logs:/app/app/logs
+      - ./app/storage:/app/app/storage
+    devices:
+      # Pass through all USB devices for printer access
+      - /dev/bus/usb:/dev/bus/usb
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=5000
+      - CLEANUP_INTERVAL_MINUTES=30
+      - CLEANUP_HOURS_THRESHOLD=6
+      # Auto-configure printer (set by docker.sh or manually)
+      - PRINTER_NAME=${PRINTER_NAME:-}
+      - PRINTER_URI=${PRINTER_URI:-}
+      - PRINTER_DRIVER=${PRINTER_DRIVER:-}
+    restart: always
+    networks:
+      - waybill-network
+    privileged: true
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.prod
+    container_name: rpi-waybill-printer-frontend-prod
+    ports:
+      - "5173:80"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - waybill-network
+
+networks:
+  waybill-network:
+    driver: bridge
