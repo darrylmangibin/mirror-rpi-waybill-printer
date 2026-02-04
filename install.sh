@@ -93,7 +93,7 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
 
     # Only run flask db init if migrations directory doesn't exist
     if [ ! -d "app/migrations" ]; then
-        sudo -u "$ACTUAL_USER" ./venv/bin/flask db init
+        sudo -u "$ACTUAL_USER" FLASK_APP=run:app ./venv/bin/flask db init
         echo -e "${GREEN}✅ Database migrations initialized${NC}"
     else
         echo -e "${GREEN}✅ Database migrations already exist${NC}"
@@ -101,7 +101,7 @@ if [[ "$INSTALL_MODE" == "online" ]]; then
 
     # Apply migrations to create database tables
     echo -e "${YELLOW}Creating database tables...${NC}"
-    sudo -u "$ACTUAL_USER" ./venv/bin/flask db upgrade
+    sudo -u "$ACTUAL_USER" FLASK_APP=run:app ./venv/bin/flask db upgrade
     echo -e "${GREEN}✅ Database tables created${NC}"
 
 elif [[ "$INSTALL_MODE" == "offline" ]]; then
