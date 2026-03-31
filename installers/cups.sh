@@ -100,7 +100,24 @@ cupsctl --remote-any
 systemctl restart cups
 echo -e "${GREEN}✅ CUPS remote access enabled${NC}"
 
-# Discover and list available printers
+   103|# Check and offer to disable cups-browsed to prevent automatic printer discovery
+   104|if systemctl is-active --quiet cups-browsed; then
+   105|    echo -e "${YELLOW}CUPS automatic printer discovery (cups-browsed) is active.${NC}"
+   106|    read -p "Do you want to disable automatic printer discovery to prevent unnecessary printers from being added? (y/n) " -n 1 -r
+   107|    echo
+   108|    if [[ $REPLY =~ ^[Yy]$ ]]; then
+   109|        echo -e "${YELLOW}Disabling cups-browsed service...${NC}"
+   110|        systemctl stop cups-browsed
+   111|        systemctl disable cups-browsed
+   112|        echo -e "${GREEN}✅ cups-browsed service disabled. Automatic printer discovery will no longer occur.${NC}"
+   113|    else
+   114|        echo -e "${YELLOW}⏭️  Keeping cups-browsed enabled. CUPS may automatically discover and add printers.${NC}"
+   115|    fi
+   116|else
+   117|    echo -e "${GREEN}✅ cups-browsed service is not active or not installed. Automatic printer discovery is not enabled.${NC}"
+   118|fi
+   119|
+   120|# Discover and list available printers
 echo -e "${YELLOW}Discovering available printer connections...${NC}"
 echo -e "${BLUE}Available printer URIs:${NC}"
 lpinfo -v
@@ -116,8 +133,30 @@ if [ -z "$EXISTING_PRINTER" ]; then
     read -p "Do you want to configure your thermal printer now? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        read -p "Enter printer name (default: XP410B): " PRINTER_NAME
-        PRINTER_NAME=${PRINTER_NAME:-XP410B}
+        echo -e "${YELLOW}Please select a printer name or enter a custom one:${NC}"
+        select choice in "XP401B" "XP402B" "Enter custom name"; do
+            case $choice in
+                "XP401B")
+                    PRINTER_NAME="XP401B"
+                    break
+                    ;;
+                "XP402B")
+                    PRINTER_NAME="XP402B"
+                    break
+                    ;;
+                "Enter custom name")
+                    read -p "Enter custom printer name: " PRINTER_NAME
+                    if [ -z "$PRINTER_NAME" ]; then
+                        echo -e "${RED}❌ Printer name cannot be empty. Please try again.${NC}"
+                        continue
+                    fi
+                    break
+                    ;;
+                *)
+                    echo -e "${RED}Invalid choice. Please try again.${NC}"
+                    ;;
+            esac
+        done
         
         read -p "Do you want to set up the PRINTER_URI now? (y/n) " -n 1 -r
         echo
@@ -165,8 +204,34 @@ else
     read -p "Do you want to change the printer setup? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        read -p "Enter new printer name (current: $EXISTING_PRINTER): " NEW_PRINTER_NAME
-        NEW_PRINTER_NAME=${NEW_PRINTER_NAME:-$EXISTING_PRINTER}
+        echo -e "${YELLOW}Please select a new printer name or enter a custom one (current: $EXISTING_PRINTER):${NC}"
+        select choice in "XP401B" "XP402B" "Enter custom name" "Keep existing ($EXISTING_PRINTER)"; do
+            case $choice in
+                "XP401B")
+                    NEW_PRINTER_NAME="XP401B"
+                    break
+                    ;;
+                "XP402B")
+                    NEW_PRINTER_NAME="XP402B"
+                    break
+                    ;;
+                "Enter custom name")
+                    read -p "Enter custom printer name: " NEW_PRINTER_NAME
+                    if [ -z "$NEW_PRINTER_NAME" ]; then
+                        echo -e "${RED}❌ Printer name cannot be empty. Please try again.${NC}"
+                        continue
+                    fi
+                    break
+                    ;;
+                "Keep existing ($EXISTING_PRINTER)")
+                    NEW_PRINTER_NAME="$EXISTING_PRINTER"
+                    break
+                    ;;
+                *)
+                    echo -e "${RED}Invalid choice. Please try again.${NC}"
+                    ;;
+            esac
+        done
         
         read -p "Do you want to change the PRINTER_URI? (y/n) " -n 1 -r
         echo
