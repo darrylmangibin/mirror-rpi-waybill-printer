@@ -239,6 +239,11 @@ else
             if [ -z "$PRINTER_URI" ]; then
                 echo -e "${RED}❌ Printer URI cannot be empty${NC}"
             else
+                # If printer name changed, delete the old printer first
+                if [ "$NEW_PRINTER_NAME" != "$EXISTING_PRINTER" ]; then
+                    echo -e "${YELLOW}Printer name changed from $EXISTING_PRINTER to $NEW_PRINTER_NAME. Removing old printer...${NC}"
+                    lpadmin -x "$EXISTING_PRINTER" 2>/dev/null
+                fi
                 echo -e "${YELLOW}Updating printer configuration...${NC}"
                 lpadmin -p "$NEW_PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd
                 if [ $? -eq 0 ]; then
