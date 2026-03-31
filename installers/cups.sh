@@ -100,23 +100,6 @@ cupsctl --remote-any
 systemctl restart cups
 echo -e "${GREEN}✅ CUPS remote access enabled${NC}"
 
-# Check and offer to disable cups-browsed to prevent automatic printer discovery
-if systemctl is-active --quiet cups-browsed; then
-    echo -e "${YELLOW}CUPS automatic printer discovery (cups-browsed) is active.${NC}"
-    read -p "Do you want to disable automatic printer discovery to prevent unnecessary printers from being added? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Disabling cups-browsed service...${NC}"
-        systemctl stop cups-browsed
-        systemctl disable cups-browsed
-        echo -e "${GREEN}✅ cups-browsed service disabled. Automatic printer discovery will no longer occur.${NC}"
-    else
-        echo -e "${YELLOW}⏭️  Keeping cups-browsed enabled. CUPS may automatically discover and add printers.${NC}"
-    fi
-else
-    echo -e "${GREEN}✅ cups-browsed service is not active or not installed. Automatic printer discovery is not enabled.${NC}"
-fi
-
 # Discover and list available printers
 echo -e "${YELLOW}Discovering available printer connections...${NC}"
 echo -e "${BLUE}Available printer URIs:${NC}"
@@ -124,6 +107,7 @@ lpinfo -v
 echo ""
 
 # Check if printer is already configured
+echo -e "${YELLOW}Checking for existing printer configuration...${NC}"
 EXISTING_PRINTER=$(lpstat -p -d 2>/dev/null | grep -oP 'printer \K[^ ]+' | head -1)
 
 if [ -z "$EXISTING_PRINTER" ]; then
@@ -132,30 +116,8 @@ if [ -z "$EXISTING_PRINTER" ]; then
     read -p "Do you want to configure your thermal printer now? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Please select a printer name or enter a custom one:${NC}"
-        select choice in "XP401B" "XP402B" "Enter custom name"; do
-            case $choice in
-                "XP401B")
-                    PRINTER_NAME="XP401B"
-                    break
-                    ;;
-                "XP402B")
-                    PRINTER_NAME="XP402B"
-                    break
-                    ;;
-                "Enter custom name")
-                    read -p "Enter custom printer name: " PRINTER_NAME
-                    if [ -z "$PRINTER_NAME" ]; then
-                        echo -e "${RED}❌ Printer name cannot be empty. Please try again.${NC}"
-                        continue
-                    fi
-                    break
-                    ;;
-                *)
-                    echo -e "${RED}Invalid choice. Please try again.${NC}"
-                    ;;
-            esac
-        done
+        read -p "Enter printer name (default: XP410B): " PRINTER_NAME
+        PRINTER_NAME=${PRINTER_NAME:-XP410B}
         
         read -p "Do you want to set up the PRINTER_URI now? (y/n) " -n 1 -r
         echo
@@ -203,34 +165,8 @@ else
     read -p "Do you want to change the printer setup? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Please select a new printer name or enter a custom one (current: $EXISTING_PRINTER):${NC}"
-        select choice in "XP401B" "XP402B" "Enter custom name" "Keep existing ($EXISTING_PRINTER)"; do
-            case $choice in
-                "XP401B")
-                    NEW_PRINTER_NAME="XP401B"
-                    break
-                    ;;
-                "XP402B")
-                    NEW_PRINTER_NAME="XP402B"
-                    break
-                    ;;
-                "Enter custom name")
-                    read -p "Enter custom printer name: " NEW_PRINTER_NAME
-                    if [ -z "$NEW_PRINTER_NAME" ]; then
-                        echo -e "${RED}❌ Printer name cannot be empty. Please try again.${NC}"
-                        continue
-                    fi
-                    break
-                    ;;
-                "Keep existing ($EXISTING_PRINTER)")
-                    NEW_PRINTER_NAME="$EXISTING_PRINTER"
-                    break
-                    ;;
-                *)
-                    echo -e "${RED}Invalid choice. Please try again.${NC}"
-                    ;;
-            esac
-        done
+        read -p "Enter new printer name (current: $EXISTING_PRINTER): " NEW_PRINTER_NAME
+        NEW_PRINTER_NAME=${NEW_PRINTER_NAME:-$EXISTING_PRINTER}
         
         read -p "Do you want to change the PRINTER_URI? (y/n) " -n 1 -r
         echo
@@ -239,11 +175,6 @@ else
             if [ -z "$PRINTER_URI" ]; then
                 echo -e "${RED}❌ Printer URI cannot be empty${NC}"
             else
-                # If printer name changed, delete the old printer first
-                if [ "$NEW_PRINTER_NAME" != "$EXISTING_PRINTER" ]; then
-                    echo -e "${YELLOW}Printer name changed from $EXISTING_PRINTER to $NEW_PRINTER_NAME. Removing old printer...${NC}"
-                    lpadmin -x "$EXISTING_PRINTER" 2>/dev/null
-                fi
                 echo -e "${YELLOW}Updating printer configuration...${NC}"
                 lpadmin -p "$NEW_PRINTER_NAME" -E -v "$PRINTER_URI" -m drv:///sample.drv/zebra.ppd
                 if [ $? -eq 0 ]; then
@@ -266,6 +197,7 @@ echo -e "${YELLOW}Checking printer drivers and utilities...${NC}"
 if dpkg -l | grep -q printer-driver-all; then
     echo -e "${GREEN}✅ Printer drivers already installed${NC}"
 else
+    echo -e "${YELLOW}Installing additional printer drivers and utilities...${NC}"
     apt install -y printer-driver-all imagemagick
     echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
 fi
