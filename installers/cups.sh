@@ -100,31 +100,30 @@ cupsctl --remote-any
 systemctl restart cups
 echo -e "${GREEN}✅ CUPS remote access enabled${NC}"
 
-   103|# Check and offer to disable cups-browsed to prevent automatic printer discovery
-   104|if systemctl is-active --quiet cups-browsed; then
-   105|    echo -e "${YELLOW}CUPS automatic printer discovery (cups-browsed) is active.${NC}"
-   106|    read -p "Do you want to disable automatic printer discovery to prevent unnecessary printers from being added? (y/n) " -n 1 -r
-   107|    echo
-   108|    if [[ $REPLY =~ ^[Yy]$ ]]; then
-   109|        echo -e "${YELLOW}Disabling cups-browsed service...${NC}"
-   110|        systemctl stop cups-browsed
-   111|        systemctl disable cups-browsed
-   112|        echo -e "${GREEN}✅ cups-browsed service disabled. Automatic printer discovery will no longer occur.${NC}"
-   113|    else
-   114|        echo -e "${YELLOW}⏭️  Keeping cups-browsed enabled. CUPS may automatically discover and add printers.${NC}"
-   115|    fi
-   116|else
-   117|    echo -e "${GREEN}✅ cups-browsed service is not active or not installed. Automatic printer discovery is not enabled.${NC}"
-   118|fi
-   119|
-   120|# Discover and list available printers
+# Check and offer to disable cups-browsed to prevent automatic printer discovery
+if systemctl is-active --quiet cups-browsed; then
+    echo -e "${YELLOW}CUPS automatic printer discovery (cups-browsed) is active.${NC}"
+    read -p "Do you want to disable automatic printer discovery to prevent unnecessary printers from being added? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}Disabling cups-browsed service...${NC}"
+        systemctl stop cups-browsed
+        systemctl disable cups-browsed
+        echo -e "${GREEN}✅ cups-browsed service disabled. Automatic printer discovery will no longer occur.${NC}"
+    else
+        echo -e "${YELLOW}⏭️  Keeping cups-browsed enabled. CUPS may automatically discover and add printers.${NC}"
+    fi
+else
+    echo -e "${GREEN}✅ cups-browsed service is not active or not installed. Automatic printer discovery is not enabled.${NC}"
+fi
+
+# Discover and list available printers
 echo -e "${YELLOW}Discovering available printer connections...${NC}"
 echo -e "${BLUE}Available printer URIs:${NC}"
 lpinfo -v
 echo ""
 
 # Check if printer is already configured
-echo -e "${YELLOW}Checking for existing printer configuration...${NC}"
 EXISTING_PRINTER=$(lpstat -p -d 2>/dev/null | grep -oP 'printer \K[^ ]+' | head -1)
 
 if [ -z "$EXISTING_PRINTER" ]; then
@@ -262,7 +261,6 @@ echo -e "${YELLOW}Checking printer drivers and utilities...${NC}"
 if dpkg -l | grep -q printer-driver-all; then
     echo -e "${GREEN}✅ Printer drivers already installed${NC}"
 else
-    echo -e "${YELLOW}Installing additional printer drivers and utilities...${NC}"
     apt install -y printer-driver-all imagemagick
     echo -e "${GREEN}✅ Printer drivers and utilities installed${NC}"
 fi
