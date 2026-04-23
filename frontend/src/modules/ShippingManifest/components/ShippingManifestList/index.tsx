@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   ChevronLeft,
@@ -28,9 +29,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useShippingManifests } from "@/modules/ShippingManifest/hooks/useShippingManifests";
-import type { ShippingManifest } from "@/modules/ShippingManifest/types/shipping-manifest.type";
+import type {
+  ShippingManifest,
+  ShippingManifestListStatus,
+} from "@/modules/ShippingManifest/types/shipping-manifest.type";
 
-type StatusFilter = "open" | "closed" | "for_loading" | "loaded" | "completed";
+type StatusFilter = ShippingManifestListStatus;
 
 const statuses: StatusFilter[] = [
   "open",
@@ -155,7 +159,8 @@ const SkeletonRows = ({ rows }: { rows: number }) =>
     </TableRow>
   ));
 
-const ShippingManifestPage = () => {
+const ShippingManifestList = () => {
+  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("open");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -400,15 +405,31 @@ const ShippingManifestPage = () => {
                   manifests.map((manifest, idx) => (
                     <TableRow
                       key={manifest.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        navigate(`/shipping-manifests/${manifest.id}`)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          navigate(`/shipping-manifests/${manifest.id}`);
+                        }
+                      }}
                       className={cn(
-                        "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
+                        "cursor-pointer border-b border-slate-100 transition-all duration-150 hover:bg-slate-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:ring-inset",
                         idx % 2 === 0 ? "bg-white" : "bg-slate-50/30",
                       )}
                     >
                       <TableCell className="pl-5 py-3.5">
-                        <span className="font-mono text-sm font-semibold text-violet-700">
-                          {manifest.manifest_code}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-mono text-sm font-semibold text-violet-700">
+                            {manifest.manifest_code}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            View details
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="py-3.5 text-sm text-slate-700">
                         {manifest.shipping_carrier ?? (
@@ -463,7 +484,7 @@ const ShippingManifestPage = () => {
 
             {/* ── Pagination footer ── */}
             <div className="flex flex-col gap-3 border-t border-slate-100 bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-slate-500">
+              <div className="text-xs text-slate-500">
                 {isLoading ? (
                   <Skeleton className="h-3.5 w-40" />
                 ) : (
@@ -481,7 +502,7 @@ const ShippingManifestPage = () => {
                     results
                   </>
                 )}
-              </p>
+              </div>
 
               <div className="flex items-center gap-1.5">
                 {/* Previous */}
@@ -531,4 +552,4 @@ const ShippingManifestPage = () => {
   );
 };
 
-export default ShippingManifestPage;
+export default ShippingManifestList;

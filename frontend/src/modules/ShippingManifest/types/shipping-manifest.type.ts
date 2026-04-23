@@ -10,6 +10,11 @@ export type ShippingManifestStatus =
   | "for_loading"
   | "loaded";
 
+export type ShippingManifestListStatus = Extract<
+  ShippingManifestStatus,
+  "open" | "closed" | "for_loading" | "loaded" | "completed"
+>;
+
 export type ShippingManifestGenerationType = "manual" | "automatic";
 
 export type ShippingManifestMetaData = Record<string, unknown>;

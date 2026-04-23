@@ -1,5 +1,5 @@
-import ShippingManifestPage from "@/modules/ShippingManifest/components/ShippingManifestPage";
+import ShippingManifestList from "@/modules/ShippingManifest/components/ShippingManifestList";
 
-export default function ShippingManifest() {
-  return <ShippingManifestPage />;
+export default function ShippingManifestPage() {
+  return <ShippingManifestList />;
 }

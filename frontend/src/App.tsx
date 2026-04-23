@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import Home from "@/pages/home/page";
 import ShippingManifestPage from "@/pages/shipping-manifest/page";
+import ShippingManifestDetailsPage from "@/pages/shipping-manifest-details/page";
 
 function App() {
   return (
@@ -9,6 +10,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shipping-manifests" element={<ShippingManifestPage />} />
+        <Route
+          path="/shipping-manifests/:id"
+          element={<ShippingManifestDetailsPage />}
+        />
       </Routes>
       <Toaster position="top-right" />
     </main>
