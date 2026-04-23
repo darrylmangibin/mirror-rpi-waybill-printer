@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useInfiniteShippingManifests } from "@/modules/ShippingManifest/hooks/useInfiniteShippingManifests";
 
 type ManifestStatus =
   | "completed"
@@ -116,6 +117,10 @@ const ShippingManifestPage = () => {
     if (selectedStatus === "all") return manifests;
     return manifests.filter((manifest) => manifest.status === selectedStatus);
   }, [manifests, selectedStatus]);
+
+  const { results } = useInfiniteShippingManifests();
+
+  console.log(results);
 
   return (
     <>
