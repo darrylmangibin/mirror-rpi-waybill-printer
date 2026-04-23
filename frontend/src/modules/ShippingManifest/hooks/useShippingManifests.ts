@@ -1,9 +1,14 @@
 import type { ApiQueryParams, Pagination } from "@/common/types/common.types";
 import type { ShippingManifest } from "@/modules/ShippingManifest/types/shipping-manifest.type";
-import { SHIPPING_MANIFESTS_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
+import {
+  SHIPPING_MANIFESTS_INFINITE_QUERY_KEY,
+  SHIPPING_MANIFESTS_QUERY_KEY,
+} from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 import {
   useInfiniteQuery,
+  useQuery,
   type UseInfiniteQueryOptions,
+  type UseQueryOptions,
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getShippingManifests } from "@/modules/ShippingManifest/services/get-shipping-manifests.service";
@@ -19,7 +24,7 @@ export const useInfiniteShippingManifests = (
 ) => {
   const { ...rest } = params ?? {};
   const query = useInfiniteQuery({
-    queryKey: [SHIPPING_MANIFESTS_QUERY_KEY, params],
+    queryKey: [SHIPPING_MANIFESTS_INFINITE_QUERY_KEY, params],
     queryFn: ({ pageParam = 1 }) =>
       getShippingManifests({
         ...rest,
@@ -51,4 +56,17 @@ export const useInfiniteShippingManifests = (
     results,
     total,
   };
+};
+
+export const useShippingManifests = (
+  params: ApiQueryParams,
+  options?: Omit<UseQueryOptions<Page, Error>, "queryKey" | "queryFn">,
+) => {
+  const query = useQuery({
+    queryKey: [SHIPPING_MANIFESTS_QUERY_KEY, params],
+    queryFn: () => getShippingManifests(params),
+    ...options,
+  });
+
+  return query;
 };
