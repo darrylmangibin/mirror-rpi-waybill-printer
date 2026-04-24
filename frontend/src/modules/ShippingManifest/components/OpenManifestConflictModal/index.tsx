@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import type { ShippingManifest } from "@/modules/ShippingManifest/types/shipping
 
 interface OpenManifestConflictModalProps {
   manifest: ShippingManifest | null;
+  isLoading?: boolean;
   onClose: () => void;
   onUseExisting: (manifest: ShippingManifest) => void;
   onCloseAndCreateNew: (manifest: ShippingManifest) => void;
@@ -18,12 +19,16 @@ interface OpenManifestConflictModalProps {
 
 export const OpenManifestConflictModal = ({
   manifest,
+  isLoading = false,
   onClose,
   onUseExisting,
   onCloseAndCreateNew,
 }: OpenManifestConflictModalProps) => {
   return (
-    <Dialog open={!!manifest} onOpenChange={(open) => !open && onClose()}>
+    <Dialog 
+      open={!!manifest} 
+      onOpenChange={(open) => !open && !isLoading && onClose()}
+    >
       <DialogContent className="max-w-md gap-0 p-0 overflow-hidden rounded-2xl border-0 shadow-2xl">
         <div className="bg-amber-50 px-6 py-8 flex flex-col items-center text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm mb-4">
@@ -63,22 +68,39 @@ export const OpenManifestConflictModal = ({
           <Button
             className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl shadow-md transition-all active:scale-[0.98]"
             onClick={() => manifest && onUseExisting(manifest)}
+            disabled={isLoading}
           >
-            Use Existing Manifest
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Use Existing Manifest"
+            )}
           </Button>
 
           <Button
             variant="outline"
             className="w-full h-11 border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all"
             onClick={() => manifest && onCloseAndCreateNew(manifest)}
+            disabled={isLoading}
           >
-            Close and Create New
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Close and Create New"
+            )}
           </Button>
 
           <Button
             variant="ghost"
             className="w-full h-10 text-slate-400 text-sm hover:text-slate-600 transition-all"
             onClick={onClose}
+            disabled={isLoading}
           >
             Cancel
           </Button>

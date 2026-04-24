@@ -67,7 +67,9 @@ export const ShippingManifestListHeader = ({
           <Filter className="h-3.5 w-3.5 text-slate-400" />
           <Select
             value={selectedStatus}
-            onValueChange={(v) => onStatusChange(v as ShippingManifestListStatus)}
+            onValueChange={(v) =>
+              onStatusChange(v as ShippingManifestListStatus)
+            }
           >
             <SelectTrigger className="h-8 w-[170px] border-0 shadow-none focus:ring-0 text-sm">
               <SelectValue placeholder="Select status" />

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TopNavbar } from "@/components/global/components/TopNavbar";
@@ -32,6 +32,8 @@ import { ScannerLayout } from "../ScannerLayout";
 import { OpenManifestConflictModal } from "../OpenManifestConflictModal";
 import { ShippingManifestListHeader } from "../ShippingManifestListHeader";
 import { formatDate, formatLabel } from "../../utils/shipping-manifest.util";
+import { useCloseAndCreate } from "@/modules/ShippingManifest/hooks/useCloseAndCreate";
+import { SHIPPING_MANIFESTS_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 
 type StatusFilter = ShippingManifestListStatus;
 
@@ -143,14 +145,17 @@ const ShippingManifestList = () => {
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("open");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-
+  const [shippingBinCode, setShippingBinCode] = useState("");
   const [conflictManifest, setConflictManifest] =
     useState<ShippingManifest | null>(null);
 
   const { mutate: createShippingManifest, isPending: isCreating } =
     useCreateByShippingBinCode({
       onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: ["shipping-manifests"] });
+        queryClient.invalidateQueries({
+          queryKey: [SHIPPING_MANIFESTS_QUERY_KEY],
+        });
+        setShippingBinCode("");
         toast.success("Shipping manifest created successfully");
         navigate(`/shipping-manifests/${data.id}`);
       },
@@ -164,6 +169,27 @@ const ShippingManifestList = () => {
               "Failed to create shipping manifest",
           );
         }
+      },
+    });
+
+  const { mutate: closeAndCreate, isPending: isClosingAndCreating } =
+    useCloseAndCreate({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({
+          queryKey: [SHIPPING_MANIFESTS_QUERY_KEY],
+        });
+        toast.success("Shipping manifest closed and created successfully");
+        navigate(`/shipping-manifests/${data.id}`);
+      },
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.error?.message ||
+            "Failed to close and create shipping manifest",
+        );
+      },
+      onSettled: () => {
+        setShippingBinCode("");
+        setConflictManifest(null);
       },
     });
 
@@ -197,9 +223,23 @@ const ShippingManifestList = () => {
 
   return (
     <ScannerLayout
-      onScan={(value) => createShippingManifest({ shippingBinCode: value })}
-      isLoading={isCreating}
+      onScan={(value) => {
+        if (isCreating || isClosingAndCreating) return;
+        setShippingBinCode(value);
+        createShippingManifest({ shippingBinCode: value });
+      }}
+      isLoading={isCreating || isClosingAndCreating}
     >
+      {(isCreating || isClosingAndCreating) && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-white/40">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 text-violet-600 animate-spin" />
+            <p className="text-sm font-medium text-slate-600 tracking-tight">
+              Creating manifest...
+            </p>
+          </div>
+        </div>
+      )}
       <TopNavbar />
 
       <div className="min-h-screen bg-slate-50/50">
@@ -424,10 +464,13 @@ const ShippingManifestList = () => {
           navigate(`/shipping-manifests/${manifest.id}`);
           setConflictManifest(null);
         }}
-        onCloseAndCreateNew={(manifest) => {
-          console.log("Action: Close and Create New for", manifest.id);
+        onCloseAndCreateNew={() => {
+          closeAndCreate({
+            shippingBinCode: shippingBinCode,
+          });
           setConflictManifest(null);
         }}
+        isLoading={isClosingAndCreating || isCreating}
       />
     </ScannerLayout>
   );
