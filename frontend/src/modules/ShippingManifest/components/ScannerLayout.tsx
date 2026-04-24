@@ -1,18 +1,26 @@
-import { Outlet } from "react-router-dom";
+import type { ReactNode } from "react";
 import { useScanner } from "../hooks/useScanner";
-import { ScannerStatus } from "../components/ScannerStatus";
+import { ScannerStatus } from "./ScannerStatus";
 
-const ShippingManifestLayout = () => {
+interface ScannerLayoutProps {
+  onScan: (value: string) => void;
+  isLoading?: boolean;
+  children: ReactNode;
+}
+
+export const ScannerLayout = ({
+  onScan,
+  isLoading,
+  children,
+}: ScannerLayoutProps) => {
   const { inputRef, scannedValue, handleKeyDown, handleChange } = useScanner(
-    (value) => {
-      console.log("Global Scanner Captured:", value);
-      // Future: Specific page logic can be implemented here via context or custom events
-    }
+    onScan,
+    { isDisabled: isLoading },
   );
 
   return (
     <div className="relative min-h-screen">
-      {/* Hidden input for global scanner support */}
+      {/* Hidden input for barcode scanner support */}
       <input
         ref={inputRef}
         type="text"
@@ -25,12 +33,12 @@ const ShippingManifestLayout = () => {
       />
 
       {/* Visual Feedback */}
-      <ScannerStatus />
+      <ScannerStatus isLoading={isLoading} />
 
       {/* Page Content */}
-      <Outlet />
+      {children}
     </div>
   );
 };
 
-export default ShippingManifestLayout;
+export default ScannerLayout;

@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 
-export const useScanner = (onScan: (value: string) => void) => {
+export const useScanner = (
+  onScan: (value: string) => void,
+  options: { isDisabled?: boolean } = {},
+) => {
+  const { isDisabled = false } = options;
   const inputRef = useRef<HTMLInputElement>(null);
   const [scannedValue, setScannedValue] = useState("");
 
   useEffect(() => {
+    if (isDisabled) return;
+
     const handleFocus = () => {
       const activeElement = document.activeElement;
-      
+
       // Check if the current focused element is an input or interactive
       const isInput =
         activeElement?.tagName === "INPUT" ||
@@ -32,9 +38,11 @@ export const useScanner = (onScan: (value: string) => void) => {
       document.removeEventListener("click", handleFocus);
       window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [isDisabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isDisabled) return;
+
     if (e.key === "Enter") {
       if (scannedValue.trim()) {
         onScan(scannedValue.trim());
@@ -44,6 +52,7 @@ export const useScanner = (onScan: (value: string) => void) => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isDisabled) return;
     setScannedValue(e.target.value);
   };
 
@@ -52,5 +61,6 @@ export const useScanner = (onScan: (value: string) => void) => {
     scannedValue,
     handleKeyDown,
     handleChange,
+    isDisabled,
   };
 };

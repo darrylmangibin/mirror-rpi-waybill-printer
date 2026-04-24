@@ -29,11 +29,7 @@ nestApi.interceptors.request.use(setTenantHeader);
 
 nestApi.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<{ message?: string }>) => {
-    const errorMessage =
-      error.response?.data?.message ||
-      error.message ||
-      "Unknown error while calling Nest API";
-    return Promise.reject(new Error(errorMessage));
+  (error: AxiosError) => {
+    return Promise.reject(error);
   },
 );

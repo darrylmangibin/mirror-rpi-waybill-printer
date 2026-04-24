@@ -19,6 +19,7 @@ import type {
 } from "@/modules/ShippingManifest/types/shipping-manifest.type";
 import { useNavigate, useParams } from "react-router-dom";
 import ShippingBinItemsList from "@/modules/ShippingBinItem/components/ShippingBinItemsList";
+import { ScannerLayout } from "../ScannerLayout";
 
 type StatusConfig = {
   bg: string;
@@ -321,7 +322,7 @@ const ShippingManifestDetails = () => {
   const manifest = shippingManifest;
 
   return (
-    <>
+    <ScannerLayout onScan={(value) => console.log("Details Page Scan Captured:", value)}>
       <TopNavbar />
       <div className="min-h-screen bg-slate-50/50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -512,7 +513,7 @@ const ShippingManifestDetails = () => {
           )}
         </div>
       </div>
-    </>
+    </ScannerLayout>
   );
 };
 

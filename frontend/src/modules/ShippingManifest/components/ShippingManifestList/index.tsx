@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertCircle,
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -9,6 +10,15 @@ import {
   Package,
   RefreshCw,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,10 +39,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useShippingManifests } from "@/modules/ShippingManifest/hooks/useShippingManifests";
+import { useCreateByShippingBinCode } from "@/modules/ShippingManifest/hooks/useCreateByShippingBinCode";
 import type {
   ShippingManifest,
   ShippingManifestListStatus,
 } from "@/modules/ShippingManifest/types/shipping-manifest.type";
+import { ScannerLayout } from "../ScannerLayout";
 
 type StatusFilter = ShippingManifestListStatus;
 
@@ -161,9 +173,33 @@ const SkeletonRows = ({ rows }: { rows: number }) =>
 
 const ShippingManifestList = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("open");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+
+  const [conflictManifest, setConflictManifest] =
+    useState<ShippingManifest | null>(null);
+
+  const { mutate: createShippingManifest, isPending: isCreating } =
+    useCreateByShippingBinCode({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ["shipping-manifests"] });
+        toast.success("Shipping manifest created successfully");
+        navigate(`/shipping-manifests/${data.id}`);
+      },
+      onError: (error) => {
+        if (error.response?.status === 409) {
+          const openManifest = error.response?.data?.error?.open_manifest;
+          setConflictManifest(openManifest);
+        } else {
+          toast.error(
+            error.response?.data?.error?.message ||
+              "Failed to create shipping manifest",
+          );
+        }
+      },
+    });
 
   const params = useMemo(
     () => ({
@@ -195,7 +231,10 @@ const ShippingManifestList = () => {
   const isFiltered = selectedStatus !== "open";
 
   return (
-    <>
+    <ScannerLayout
+      onScan={(value) => createShippingManifest({ shippingBinCode: value })}
+      isLoading={isCreating}
+    >
       <TopNavbar />
 
       <div className="min-h-screen bg-slate-50/50">
@@ -548,7 +587,85 @@ const ShippingManifestList = () => {
           </div>
         </div>
       </div>
-    </>
+
+      {/* Conflict Resolution Modal */}
+      <Dialog
+        open={!!conflictManifest}
+        onOpenChange={(open) => !open && setConflictManifest(null)}
+      >
+        <DialogContent className="max-w-md gap-0 p-0 overflow-hidden rounded-2xl border-0 shadow-2xl">
+          <div className="bg-amber-50 px-6 py-8 flex flex-col items-center text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm mb-4">
+              <AlertTriangle className="h-7 w-7 text-amber-500" />
+            </div>
+            <DialogHeader className="space-y-2">
+              <DialogTitle className="text-xl font-bold text-slate-900">
+                Open Manifest Exists
+              </DialogTitle>
+              <DialogDescription className="text-slate-600 leading-relaxed">
+                There is already an open shipping manifest for this collection.
+                What would you like to do?
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="bg-white p-6 space-y-3">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 mb-2 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                  Existing Code
+                </span>
+                <span className="font-mono text-sm font-bold text-violet-700">
+                  {conflictManifest?.manifest_code}
+                </span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                  Status
+                </span>
+                <span className="text-xs font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">
+                  Open
+                </span>
+              </div>
+            </div>
+
+            <Button
+              className="w-full h-11 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl shadow-md transition-all active:scale-[0.98]"
+              onClick={() => {
+                if (conflictManifest) {
+                  navigate(`/shipping-manifests/${conflictManifest.id}`);
+                }
+                setConflictManifest(null);
+              }}
+            >
+              Use Existing Manifest
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full h-11 border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all"
+              onClick={() => {
+                console.log(
+                  "Action: Close and Create New for",
+                  conflictManifest?.id,
+                );
+                setConflictManifest(null);
+              }}
+            >
+              Close and Create New
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full h-10 text-slate-400 text-sm hover:text-slate-600 transition-all"
+              onClick={() => setConflictManifest(null)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </ScannerLayout>
   );
 };
 
