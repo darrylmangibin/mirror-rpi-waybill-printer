@@ -5,17 +5,19 @@ import { ScannerStatus } from "./ScannerStatus";
 interface ScannerLayoutProps {
   onScan: (value: string) => void;
   isLoading?: boolean;
+  isDisabled?: boolean;
   children: ReactNode;
 }
 
 export const ScannerLayout = ({
   onScan,
   isLoading,
+  isDisabled,
   children,
 }: ScannerLayoutProps) => {
   const { inputRef, scannedValue, handleKeyDown, handleChange } = useScanner(
     onScan,
-    { isDisabled: isLoading },
+    { isDisabled: isLoading || isDisabled },
   );
 
   return (
@@ -30,10 +32,11 @@ export const ScannerLayout = ({
         onKeyDown={handleKeyDown}
         autoFocus
         aria-hidden="true"
+        disabled={isLoading || isDisabled}
       />
 
       {/* Visual Feedback */}
-      <ScannerStatus isLoading={isLoading} />
+      <ScannerStatus isLoading={isLoading} isDisabled={isDisabled} />
 
       {/* Page Content */}
       {children}
