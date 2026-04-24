@@ -4,17 +4,22 @@ import { cn } from "@/lib/utils";
 interface ScannerStatusProps {
   isLoading?: boolean;
   isDisabled?: boolean;
+  onClick?: () => void;
 }
 
-export const ScannerStatus = ({ isLoading, isDisabled }: ScannerStatusProps) => {
+export const ScannerStatus = ({ isLoading, isDisabled, onClick }: ScannerStatusProps) => {
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <button
+      onClick={onClick}
+      disabled={isLoading}
+      className="group outline-none"
+    >
       <div
         className={cn(
           "flex items-center gap-2.5 rounded-full border px-4 py-2 shadow-lg backdrop-blur-md transition-all duration-300",
           isLoading && "border-violet-200 bg-violet-50/90 shadow-violet-100",
-          isDisabled && !isLoading && "border-slate-200 bg-slate-50/90 opacity-80",
-          !isLoading && !isDisabled && "border-slate-200 bg-white/90 hover:shadow-xl",
+          isDisabled && !isLoading && "border-slate-200 bg-slate-50/90 opacity-80 grayscale-[0.5]",
+          !isLoading && !isDisabled && "border-emerald-200 bg-emerald-50/90 shadow-emerald-100/50 hover:shadow-xl hover:scale-105 active:scale-95",
         )}
       >
         <div className="relative flex h-2 w-2 items-center justify-center">
@@ -32,7 +37,7 @@ export const ScannerStatus = ({ isLoading, isDisabled }: ScannerStatusProps) => 
         <div
           className={cn(
             "flex items-center gap-1.5 border-l pl-2.5 ml-1 transition-colors duration-300",
-            isLoading ? "border-violet-200" : "border-slate-100",
+            isLoading ? "border-violet-200" : isDisabled ? "border-slate-200" : "border-emerald-200",
           )}
         >
           {isDisabled && !isLoading ? (
@@ -43,20 +48,20 @@ export const ScannerStatus = ({ isLoading, isDisabled }: ScannerStatusProps) => 
                 "h-3.5 w-3.5 transition-colors duration-300",
                 isLoading
                   ? "fill-violet-600 text-violet-600"
-                  : "fill-violet-500 text-violet-500",
+                  : "fill-emerald-600 text-emerald-600",
               )}
             />
           )}
           <span
             className={cn(
               "text-[11px] font-bold uppercase tracking-wider transition-colors duration-300",
-              isLoading ? "text-violet-700" : isDisabled ? "text-slate-400" : "text-slate-600",
+              isLoading ? "text-violet-700" : isDisabled ? "text-slate-500" : "text-emerald-700",
             )}
           >
-            {isLoading ? "Processing..." : isDisabled ? "Scanner Off" : "Scanner Ready"}
+            {isLoading ? "Processing..." : isDisabled ? "Offline" : "Online"}
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 };

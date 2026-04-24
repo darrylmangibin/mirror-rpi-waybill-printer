@@ -198,7 +198,7 @@ const ShippingManifestList = () => {
       page,
       perPage,
       query: {
-        where: { status: selectedStatus },
+        where: { status: selectedStatus, tenant_id: null },
         orderBy: { created_at: "desc" },
       },
     }),

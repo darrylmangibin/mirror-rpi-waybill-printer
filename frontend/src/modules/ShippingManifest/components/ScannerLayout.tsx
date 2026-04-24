@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useScanner } from "../hooks/useScanner";
 import { ScannerStatus } from "./ScannerStatus";
 
@@ -15,10 +15,16 @@ export const ScannerLayout = ({
   isDisabled,
   children,
 }: ScannerLayoutProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+
   const { inputRef, scannedValue, handleKeyDown, handleChange } = useScanner(
     onScan,
     { isDisabled: isLoading || isDisabled },
   );
+
+  const handleFocusClick = () => {
+    inputRef.current?.focus();
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -33,10 +39,18 @@ export const ScannerLayout = ({
         autoFocus
         aria-hidden="true"
         disabled={isLoading || isDisabled}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       />
 
-      {/* Visual Feedback */}
-      <ScannerStatus isLoading={isLoading} isDisabled={isDisabled} />
+      {/* Visual Feedback - Floating Top Right */}
+      <div className="fixed top-6 right-6 z-[60] animate-in fade-in slide-in-from-top-4 duration-500">
+        <ScannerStatus
+          isLoading={isLoading}
+          isDisabled={isDisabled || !isFocused}
+          onClick={handleFocusClick}
+        />
+      </div>
 
       {/* Page Content */}
       {children}
