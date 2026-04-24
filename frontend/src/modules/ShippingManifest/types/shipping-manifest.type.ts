@@ -23,6 +23,7 @@ export interface ShippingManifest {
   id: string;
   manifest_code: string;
   shipping_carrier: string;
+  carrier_code: string | null;
   manifest_path: string | null;
   meta_data: ShippingManifestMetaData | null;
   generation_type: ShippingManifestGenerationType;
