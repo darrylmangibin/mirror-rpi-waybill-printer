@@ -75,7 +75,9 @@ const syncStatusConfig: Record<ShippingBinItemSyncStatus, BadgeConfig> = {
   },
 };
 
-const workflowConfig: Partial<Record<ShippingBinItemWorkflowStep, BadgeConfig>> = {
+const workflowConfig: Partial<
+  Record<ShippingBinItemWorkflowStep, BadgeConfig>
+> = {
   at_packing_station: {
     bg: "bg-slate-50",
     text: "text-slate-600",
@@ -120,7 +122,9 @@ const workflowConfig: Partial<Record<ShippingBinItemWorkflowStep, BadgeConfig>> 
   },
 };
 
-const validationConfig: Partial<Record<ShippingBinItemValidationStatus, BadgeConfig>> = {
+const validationConfig: Partial<
+  Record<ShippingBinItemValidationStatus, BadgeConfig>
+> = {
   pending: {
     bg: "bg-amber-50",
     text: "text-amber-700",
@@ -214,7 +218,9 @@ const DateCell = ({ value }: { value: string | null }) => {
 
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-sm font-medium text-slate-700">{formatted.date}</span>
+      <span className="text-sm font-medium text-slate-700">
+        {formatted.date}
+      </span>
       <span className="text-xs text-slate-400">{formatted.time}</span>
     </div>
   );
@@ -224,7 +230,11 @@ const SyncStatusBadge = ({ status }: { status: ShippingBinItemSyncStatus }) => (
   <CompactBadge label={formatLabel(status)} config={syncStatusConfig[status]} />
 );
 
-const WorkflowBadge = ({ status }: { status: ShippingBinItemWorkflowStep | null }) => {
+const WorkflowBadge = ({
+  status,
+}: {
+  status: ShippingBinItemWorkflowStep | null;
+}) => {
   if (!status) {
     return <span className="text-sm text-slate-400">—</span>;
   }
@@ -392,14 +402,21 @@ const ShippingBinItemsList = ({
               title="Refresh"
             >
               <RefreshCw
-                className={cn("h-4 w-4 text-slate-500", isFetching && "animate-spin")}
+                className={cn(
+                  "h-4 w-4 text-slate-500",
+                  isFetching && "animate-spin",
+                )}
               />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className={cn(isFetching && !isLoading && "opacity-70 transition-opacity")}>
+      <div
+        className={cn(
+          isFetching && !isLoading && "opacity-70 transition-opacity",
+        )}
+      >
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
@@ -433,7 +450,10 @@ const ShippingBinItemsList = ({
           <TableBody>
             {!shippingManifestId ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={COLUMNS} className="h-28 text-center text-sm text-slate-500">
+                <TableCell
+                  colSpan={COLUMNS}
+                  className="h-28 text-center text-sm text-slate-500"
+                >
                   Shipping manifest ID is required to load bin items.
                 </TableCell>
               </TableRow>
@@ -454,7 +474,11 @@ const ShippingBinItemsList = ({
                         Please try refreshing the list.
                       </p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetch()}
+                    >
                       Try again
                     </Button>
                   </div>
@@ -542,12 +566,13 @@ const ShippingBinItemsList = ({
       </div>
 
       <div className="flex flex-col gap-3 border-t border-slate-100 bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-slate-500">
+        <div className="text-xs text-slate-500">
           {isLoading ? (
             <Skeleton className="h-3.5 w-44" />
           ) : (
             <>
-              Showing <span className="font-medium text-slate-700">{fromRow}</span>
+              Showing{" "}
+              <span className="font-medium text-slate-700">{fromRow}</span>
               {" – "}
               <span className="font-medium text-slate-700">{toRow}</span>
               {" of "}
@@ -557,7 +582,7 @@ const ShippingBinItemsList = ({
               items
             </>
           )}
-        </p>
+        </div>
 
         <div className="flex items-center gap-1.5">
           <Button
@@ -571,7 +596,10 @@ const ShippingBinItemsList = ({
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          <Select value={String(currentPage)} onValueChange={(value) => setPage(Number(value))}>
+          <Select
+            value={String(currentPage)}
+            onValueChange={(value) => setPage(Number(value))}
+          >
             <SelectTrigger className="h-8 w-[116px] rounded-lg border-slate-200 bg-white text-xs shadow-xs">
               <SelectValue />
             </SelectTrigger>
@@ -589,7 +617,9 @@ const ShippingBinItemsList = ({
             variant="outline"
             size="icon"
             className="h-8 w-8 rounded-lg border-slate-200 shadow-xs hover:bg-slate-50"
-            onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+            onClick={() =>
+              setPage((current) => Math.min(current + 1, totalPages))
+            }
             disabled={currentPage >= totalPages || isFetching}
           >
             <ChevronRight className="h-4 w-4" />
