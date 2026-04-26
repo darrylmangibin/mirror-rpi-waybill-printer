@@ -320,8 +320,6 @@ const ShippingBinItemsList = ({
   const currentPage = data?.meta.current_page ?? page;
   const totalPages = Math.max(data?.meta.last_page ?? 1, 1);
   const totalRows = data?.meta.total ?? 0;
-  const fromRow = data?.meta.from ?? 0;
-  const toRow = data?.meta.to ?? 0;
   const pageOptions = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => String(index + 1)),
     [totalPages],
@@ -571,11 +569,6 @@ const ShippingBinItemsList = ({
             <Skeleton className="h-3.5 w-44" />
           ) : (
             <>
-              Showing{" "}
-              <span className="font-medium text-slate-700">{fromRow}</span>
-              {" – "}
-              <span className="font-medium text-slate-700">{toRow}</span>
-              {" of "}
               <span className="font-medium text-slate-700">
                 {totalRows.toLocaleString()}
               </span>{" "}
@@ -600,7 +593,7 @@ const ShippingBinItemsList = ({
             value={String(currentPage)}
             onValueChange={(value) => setPage(Number(value))}
           >
-            <SelectTrigger className="h-8 w-[116px] rounded-lg border-slate-200 bg-white text-xs shadow-xs">
+            <SelectTrigger className="h-8 w-auto rounded-lg border-slate-200 bg-white text-xs shadow-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
