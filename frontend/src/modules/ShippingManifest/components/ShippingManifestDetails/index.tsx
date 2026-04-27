@@ -14,10 +14,17 @@ import { LoadingState } from "./components/LoadingState";
 import { ErrorState } from "./components/ErrorState";
 
 import { ArrowLeft, CalendarDays, FileText, Route, Truck } from "lucide-react";
+import { useAddItem } from "@/modules/ShippingManifest/hooks/useAddItem";
+import { toast } from "sonner";
+import { LoadingOverlay } from "@/components/loaders";
+import { useQueryClient } from "@tanstack/react-query";
+import { SHIPPING_BIN_ITEMS_QUERY_KEY } from "@/modules/ShippingBinItem/constants/shipping-bin-item.constant";
 
 const ShippingManifestDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+
+  const queryClient = useQueryClient();
 
   const {
     data: shippingManifest,
@@ -30,13 +37,34 @@ const ShippingManifestDetails = () => {
     },
   );
 
+  const { mutate: addItemToManifest, isPending: isAddingItem } = useAddItem({
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
+      });
+      toast.success("Item added to manifest");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.error?.message ||
+          "Failed to add item to manifest",
+      );
+    },
+  });
+
   const manifest = shippingManifest;
 
   return (
     <ScannerLayout
       isDisabled={manifest?.status !== "open"}
-      onScan={(value) => console.log("Details Page Scan Captured:", value)}
+      onScan={(value) => {
+        addItemToManifest({
+          shippingManifestId: manifest?.id || "",
+          payload: { tracking_number: value },
+        });
+      }}
     >
+      {isAddingItem && <LoadingOverlay message="Adding item to manifest..." />}
       <TopNavbar />
       <div className="min-h-screen bg-slate-50/50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
