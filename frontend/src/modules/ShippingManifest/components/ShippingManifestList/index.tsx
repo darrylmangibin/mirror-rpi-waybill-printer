@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TopNavbar } from "@/components/global/components/TopNavbar";
+import { LoadingOverlay } from "@/components/loaders";
 import { useShippingManifests } from "@/modules/ShippingManifest/hooks/useShippingManifests";
 import { useCreateByShippingBinCode } from "@/modules/ShippingManifest/hooks/useCreateByShippingBinCode";
 import type {
@@ -108,14 +108,7 @@ const ShippingManifestList = () => {
       isLoading={isCreating || isClosingAndCreating}
     >
       {(isCreating || isClosingAndCreating) && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-white/40">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 text-violet-600 animate-spin" />
-            <p className="text-sm font-medium text-slate-600 tracking-tight">
-              Creating manifest...
-            </p>
-          </div>
-        </div>
+        <LoadingOverlay message="Creating manifest..." />
       )}
       <TopNavbar />
 
