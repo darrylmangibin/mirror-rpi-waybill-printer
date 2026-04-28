@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Lock,
   PackageSearch,
   RefreshCw,
 } from "lucide-react";
@@ -34,6 +35,8 @@ import type {
 
 export interface ShippingBinItemsListProps {
   shippingManifestId?: string;
+  onCloseManifest?: () => void;
+  onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
 
 type SyncStatusFilter = "all" | ShippingBinItemSyncStatus;
@@ -282,6 +285,8 @@ const LoadingRows = ({ rows }: { rows: number }) =>
 
 const ShippingBinItemsList = ({
   shippingManifestId,
+  onCloseManifest,
+  onSyncItem,
 }: ShippingBinItemsListProps) => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -304,7 +309,7 @@ const ShippingBinItemsList = ({
       perPage,
       query: {
         where,
-        orderBy: { updated_at: "desc" },
+        orderBy: { created_at: "desc" },
       },
     };
   }, [page, perPage, selectedSyncStatus, shippingManifestId]);
@@ -328,20 +333,34 @@ const ShippingBinItemsList = ({
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-            <PackageSearch className="h-5 w-5" />
+        <div className="flex items-start gap-6 flex-col">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <PackageSearch className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">
+                Shipping bin items
+              </h2>
+              <p className="mt-0.5 text-sm text-slate-500">
+                {isLoading
+                  ? "Loading related shipping bin items..."
+                  : `${totalRows.toLocaleString()} item${totalRows !== 1 ? "s" : ""} linked to this manifest`}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">
-              Shipping bin items
-            </h2>
-            <p className="mt-0.5 text-sm text-slate-500">
-              {isLoading
-                ? "Loading related shipping bin items..."
-                : `${totalRows.toLocaleString()} item${totalRows !== 1 ? "s" : ""} linked to this manifest`}
-            </p>
-          </div>
+          {onCloseManifest && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+              onClick={onCloseManifest}
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Close Manifest
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 lg:items-end">
@@ -440,7 +459,7 @@ const ShippingBinItemsList = ({
                 Shipped out
               </TableHead>
               <TableHead className="pr-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Updated
+                Action
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -554,7 +573,18 @@ const ShippingBinItemsList = ({
                     <DateCell value={item.shipped_out_at} />
                   </TableCell>
                   <TableCell className="pr-5 py-3.5 align-top">
-                    <DateCell value={item.updated_at} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-w-[88px] rounded-lg border-slate-200"
+                      onClick={() => onSyncItem?.(item.id)}
+                      disabled={
+                        !onSyncItem || item.sync_status !== "sync_failed"
+                      }
+                    >
+                      Sync
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
