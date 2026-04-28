@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { SectionCard } from "./components/SectionCard";
 import { MetadataCard } from "./components/MetadataCard";
 import { LoadingState } from "./components/LoadingState";
 import { ErrorState } from "./components/ErrorState";
+import { CloseManifestModal } from "./components/CloseManifestModal";
 
 import { ArrowLeft, CalendarDays, FileText, Route, Truck } from "lucide-react";
 import { useAddItem } from "@/modules/ShippingManifest/hooks/useAddItem";
@@ -19,6 +21,8 @@ import { toast } from "sonner";
 import { LoadingOverlay } from "@/components/loaders";
 import { useQueryClient } from "@tanstack/react-query";
 import { SHIPPING_BIN_ITEMS_QUERY_KEY } from "@/modules/ShippingBinItem/constants/shipping-bin-item.constant";
+import { useCloseManifest } from "@/modules/ShippingManifest/hooks/useCloseManifest";
+import { SHIPPING_MANIFEST_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 
 const ShippingManifestDetails = () => {
   const navigate = useNavigate();
@@ -52,6 +56,26 @@ const ShippingManifestDetails = () => {
     },
   });
 
+  const { mutate: closeManifest, isPending: isClosingManifest } =
+    useCloseManifest({
+      onSuccess: (data) => {
+        toast.success("Manifest closed successfully");
+        setShowCloseConfirm(false);
+        queryClient.invalidateQueries({
+          queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [SHIPPING_MANIFEST_QUERY_KEY, data.id],
+        });
+      },
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.error?.message || "Failed to close manifest",
+        );
+      },
+    });
+
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const manifest = shippingManifest;
 
   return (
@@ -68,7 +92,7 @@ const ShippingManifestDetails = () => {
       <TopNavbar />
       <div className="min-h-screen bg-slate-50/50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          <div className="mb-6 flex items-center">
+          <div className="mb-6 flex items-center justify-between">
             <Button
               variant="outline"
               className="rounded-xl border-slate-200 bg-white"
@@ -251,10 +275,23 @@ const ShippingManifestDetails = () => {
         {/* Shipping Bin Items List */}
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           {manifest && (
-            <ShippingBinItemsList shippingManifestId={manifest.id} />
+            <ShippingBinItemsList
+              shippingManifestId={manifest.id}
+              onCloseManifest={
+                manifest.status === "open"
+                  ? () => setShowCloseConfirm(true)
+                  : undefined
+              }
+            />
           )}
         </div>
       </div>
+      <CloseManifestModal
+        open={showCloseConfirm}
+        isPending={isClosingManifest}
+        onClose={() => setShowCloseConfirm(false)}
+        onConfirm={() => manifest && closeManifest({ manifestId: manifest.id })}
+      />
     </ScannerLayout>
   );
 };
