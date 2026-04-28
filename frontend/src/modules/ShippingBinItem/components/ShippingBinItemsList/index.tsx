@@ -36,6 +36,7 @@ import type {
 export interface ShippingBinItemsListProps {
   shippingManifestId?: string;
   onCloseManifest?: () => void;
+  onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
 
 type SyncStatusFilter = "all" | ShippingBinItemSyncStatus;
@@ -285,6 +286,7 @@ const LoadingRows = ({ rows }: { rows: number }) =>
 const ShippingBinItemsList = ({
   shippingManifestId,
   onCloseManifest,
+  onSyncItem,
 }: ShippingBinItemsListProps) => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -307,7 +309,7 @@ const ShippingBinItemsList = ({
       perPage,
       query: {
         where,
-        orderBy: { updated_at: "desc" },
+        orderBy: { created_at: "desc" },
       },
     };
   }, [page, perPage, selectedSyncStatus, shippingManifestId]);
@@ -457,7 +459,7 @@ const ShippingBinItemsList = ({
                 Shipped out
               </TableHead>
               <TableHead className="pr-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Updated
+                Action
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -571,7 +573,18 @@ const ShippingBinItemsList = ({
                     <DateCell value={item.shipped_out_at} />
                   </TableCell>
                   <TableCell className="pr-5 py-3.5 align-top">
-                    <DateCell value={item.updated_at} />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-w-[88px] rounded-lg border-slate-200"
+                      onClick={() => onSyncItem?.(item.id)}
+                      disabled={
+                        !onSyncItem || item.sync_status !== "sync_failed"
+                      }
+                    >
+                      Sync
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

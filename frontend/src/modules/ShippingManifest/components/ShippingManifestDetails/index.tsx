@@ -23,6 +23,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SHIPPING_BIN_ITEMS_QUERY_KEY } from "@/modules/ShippingBinItem/constants/shipping-bin-item.constant";
 import { useCloseManifest } from "@/modules/ShippingManifest/hooks/useCloseManifest";
 import { SHIPPING_MANIFEST_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
+import { useSyncBinItem } from "@/modules/ShippingBinItem/hooks/useSyncBinItem";
 
 const ShippingManifestDetails = () => {
   const navigate = useNavigate();
@@ -75,6 +76,27 @@ const ShippingManifestDetails = () => {
       },
     });
 
+  const { mutate: syncBinItem, isPending: isSyncingBinItem } = useSyncBinItem({
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
+      });
+
+      if (data.data.sync_status === "sync_failed") {
+        toast.error(
+          `Failed to sync item: ${data.data.invoice_number} marketplace integration error`,
+        );
+      } else {
+        toast.success(`Item ${data.data.invoice_number} synced successfully`);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.error?.message || "Failed to sync item",
+      );
+    },
+  });
+
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const manifest = shippingManifest;
 
@@ -89,6 +111,7 @@ const ShippingManifestDetails = () => {
       }}
     >
       {isAddingItem && <LoadingOverlay message="Adding item to manifest..." />}
+      {isSyncingBinItem && <LoadingOverlay message="Syncing bin item..." />}
       <TopNavbar />
       <div className="min-h-screen bg-slate-50/50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -277,6 +300,9 @@ const ShippingManifestDetails = () => {
           {manifest && (
             <ShippingBinItemsList
               shippingManifestId={manifest.id}
+              onSyncItem={(shippingBinItemId) =>
+                syncBinItem({ shippingBinItemId })
+              }
               onCloseManifest={
                 manifest.status === "open"
                   ? () => setShowCloseConfirm(true)
