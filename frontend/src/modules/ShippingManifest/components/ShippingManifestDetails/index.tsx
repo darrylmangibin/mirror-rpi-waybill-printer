@@ -14,6 +14,7 @@ import { MetadataCard } from "./components/MetadataCard";
 import { LoadingState } from "./components/LoadingState";
 import { ErrorState } from "./components/ErrorState";
 import { CloseManifestModal } from "./components/CloseManifestModal";
+import { ManualAddScannedItemModal } from "./components/ManualAddScannedItemModal";
 
 import { ArrowLeft, CalendarDays, FileText, Route, Truck } from "lucide-react";
 import { useAddItem } from "@/modules/ShippingManifest/hooks/useAddItem";
@@ -24,10 +25,16 @@ import { SHIPPING_BIN_ITEMS_QUERY_KEY } from "@/modules/ShippingBinItem/constant
 import { useCloseManifest } from "@/modules/ShippingManifest/hooks/useCloseManifest";
 import { SHIPPING_MANIFEST_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 import { useSyncBinItem } from "@/modules/ShippingBinItem/hooks/useSyncBinItem";
+import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/useTenantConfigurations";
 
 const ShippingManifestDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [openRegisterBinItemModal, setOpenRegisterBinItemModal] =
+    useState(false);
+  const [unregisteredTrackingNumber, setUnregisteredTrackingNumber] = useState<
+    string | null
+  >(null);
 
   const queryClient = useQueryClient();
 
@@ -42,11 +49,14 @@ const ShippingManifestDetails = () => {
     },
   );
 
+  const { data: tenantConfigurations } = useTenantConfigurations({});
+
   const { mutate: addItemToManifest, isPending: isAddingItem } = useAddItem({
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
       });
+      setUnregisteredTrackingNumber(null);
       toast.success("Item added to manifest");
     },
     onError: (error) => {
@@ -55,6 +65,11 @@ const ShippingManifestDetails = () => {
           error.response?.data?.error?.message ||
             "Item cannot be added to manifest. Please check the tracking number and try again.",
         );
+        // open openRegisterBinItemModal to allow user to register the bin item manually
+        setUnregisteredTrackingNumber(
+          error.response?.data.error?.tracking_number || null,
+        );
+        setOpenRegisterBinItemModal(true);
         return;
       }
 
@@ -107,6 +122,11 @@ const ShippingManifestDetails = () => {
 
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const manifest = shippingManifest;
+
+  const closeRegisterBinItemModal = () => {
+    setOpenRegisterBinItemModal(false);
+    setUnregisteredTrackingNumber(null);
+  };
 
   return (
     <ScannerLayout
@@ -325,6 +345,20 @@ const ShippingManifestDetails = () => {
         isPending={isClosingManifest}
         onClose={() => setShowCloseConfirm(false)}
         onConfirm={() => manifest && closeManifest({ manifestId: manifest.id })}
+      />
+      <ManualAddScannedItemModal
+        open={openRegisterBinItemModal}
+        trackingNumber={unregisteredTrackingNumber}
+        tenantConfigurations={tenantConfigurations}
+        isPending={false}
+        onClose={closeRegisterBinItemModal}
+        onConfirm={(tenantId) => {
+          console.log("Manual add scanned item", {
+            tenant_id: tenantId,
+            tracking_number: unregisteredTrackingNumber,
+          });
+          closeRegisterBinItemModal();
+        }}
       />
     </ScannerLayout>
   );
