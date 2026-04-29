@@ -50,6 +50,14 @@ const ShippingManifestDetails = () => {
       toast.success("Item added to manifest");
     },
     onError: (error) => {
+      if (error.status === 422) {
+        toast.warning(
+          error.response?.data?.error?.message ||
+            "Item cannot be added to manifest. Please check the tracking number and try again.",
+        );
+        return;
+      }
+
       toast.error(
         error.response?.data?.error?.message ||
           "Failed to add item to manifest",

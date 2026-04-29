@@ -1,4 +1,8 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, {
+  AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 const DEFAULTS = {
   productionApiUrl: "https://nest-api.fusiontech.asia",
@@ -6,30 +10,43 @@ const DEFAULTS = {
   tenantId: "staging-v2",
 } as const;
 
-const resolveTenantId = (): string =>
-  import.meta.env.VITE_NEST_TENANT_ID?.trim() || DEFAULTS.tenantId;
+const resolveTenantId = (tenantId?: string): string =>
+  tenantId?.trim() || import.meta.env.VITE_NEST_TENANT_ID?.trim() || DEFAULTS.tenantId;
 
-const setTenantHeader = (
-  requestConfig: InternalAxiosRequestConfig,
-): InternalAxiosRequestConfig => {
-  const tenantId = resolveTenantId();
-  requestConfig.headers.set("x-tenant-id", tenantId);
-  return requestConfig;
+const createNestApiClient = (): AxiosInstance =>
+  axios.create({
+    baseURL: DEFAULTS.developmentApiUrl,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+
+const attachInterceptors = (
+  client: AxiosInstance,
+  tenantId?: string,
+): AxiosInstance => {
+  client.interceptors.request.use(
+    (requestConfig: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+      requestConfig.headers.set("x-tenant-id", resolveTenantId(tenantId));
+      return requestConfig;
+    },
+  );
+
+  client.interceptors.response.use(
+    (response) => response,
+    (error: AxiosError) => {
+      return Promise.reject(error);
+    },
+  );
+
+  return client;
 };
 
-export const nestApi = axios.create({
-  baseURL: DEFAULTS.developmentApiUrl,
-  headers: {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
-});
+export const createNestApi = (tenantId?: string): AxiosInstance =>
+  attachInterceptors(createNestApiClient(), tenantId);
 
-nestApi.interceptors.request.use(setTenantHeader);
+export const customAxios = (tenantId: string): AxiosInstance =>
+  createNestApi(tenantId);
 
-nestApi.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  },
-);
+export const nestApi = createNestApi();
