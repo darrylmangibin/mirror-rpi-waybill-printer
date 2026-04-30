@@ -26,6 +26,8 @@ import { useCloseManifest } from "@/modules/ShippingManifest/hooks/useCloseManif
 import { SHIPPING_MANIFEST_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 import { useSyncBinItem } from "@/modules/ShippingBinItem/hooks/useSyncBinItem";
 import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/useTenantConfigurations";
+import { useCreateByTrackingNumber } from "@/modules/ShippingManifest/hooks/useCreateByTrackingNumber";
+import { useGetShippingBins } from "@/modules/ShippingBin/hooks/useGetShippingBins";
 
 const ShippingManifestDetails = () => {
   const navigate = useNavigate();
@@ -39,15 +41,31 @@ const ShippingManifestDetails = () => {
   const queryClient = useQueryClient();
 
   const {
-    data: shippingManifest,
+    data: manifest,
     isLoading,
     isError,
   } = useShippingManifestById(
     { id: id || "" },
     {
       enabled: !!id,
-    },
+    }
   );
+
+  const { data: shippingBins } = useGetShippingBins(
+    {
+      query: {
+        where: {
+          category: "collection_hub",
+          courier_code: manifest?.carrier_code || "",
+        },
+      },
+    },
+    {
+      enabled: !!manifest?.carrier_code,
+    }
+  );
+
+  console.log(shippingBins);
 
   const { data: tenantConfigurations } = useTenantConfigurations({});
 
@@ -63,22 +81,23 @@ const ShippingManifestDetails = () => {
       if (error.status === 422) {
         toast.warning(
           error.response?.data?.error?.message ||
-            "Item cannot be added to manifest. Please check the tracking number and try again.",
+            "Item cannot be added to manifest. Please check the tracking number and try again."
         );
         // open openRegisterBinItemModal to allow user to register the bin item manually
         setUnregisteredTrackingNumber(
-          error.response?.data.error?.tracking_number || null,
+          error.response?.data.error?.tracking_number || null
         );
         setOpenRegisterBinItemModal(true);
         return;
       }
 
       toast.error(
-        error.response?.data?.error?.message ||
-          "Failed to add item to manifest",
+        error.response?.data?.error?.message || "Failed to add item to manifest"
       );
     },
   });
+
+  console.log(unregisteredTrackingNumber);
 
   const { mutate: closeManifest, isPending: isClosingManifest } =
     useCloseManifest({
@@ -94,7 +113,7 @@ const ShippingManifestDetails = () => {
       },
       onError: (error) => {
         toast.error(
-          error.response?.data?.error?.message || "Failed to close manifest",
+          error.response?.data?.error?.message || "Failed to close manifest"
         );
       },
     });
@@ -107,7 +126,7 @@ const ShippingManifestDetails = () => {
 
       if (data.data.sync_status === "sync_failed") {
         toast.error(
-          `Failed to sync item: ${data.data.invoice_number} marketplace integration error`,
+          `Failed to sync item: ${data.data.invoice_number} marketplace integration error`
         );
       } else {
         toast.success(`Item ${data.data.invoice_number} synced successfully`);
@@ -115,13 +134,31 @@ const ShippingManifestDetails = () => {
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.error?.message || "Failed to sync item",
+        error.response?.data?.error?.message || "Failed to sync item"
+      );
+    },
+  });
+
+  const {
+    mutate: createByTrackingNumber,
+    isPending: isCreatingByTrackingNumber,
+  } = useCreateByTrackingNumber({
+    onSuccess: (data) => {
+      console.log(data);
+      queryClient.invalidateQueries({
+        queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
+      });
+      closeRegisterBinItemModal();
+      toast.success("Item added successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.error?.message || "Failed to create item"
       );
     },
   });
 
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const manifest = shippingManifest;
 
   const closeRegisterBinItemModal = () => {
     setOpenRegisterBinItemModal(false);
@@ -350,14 +387,18 @@ const ShippingManifestDetails = () => {
         open={openRegisterBinItemModal}
         trackingNumber={unregisteredTrackingNumber}
         tenantConfigurations={tenantConfigurations}
-        isPending={false}
+        shippingBins={shippingBins?.data}
+        isPending={isCreatingByTrackingNumber}
         onClose={closeRegisterBinItemModal}
-        onConfirm={(tenantId) => {
-          console.log("Manual add scanned item", {
-            tenant_id: tenantId,
-            tracking_number: unregisteredTrackingNumber,
+        onConfirm={(tenantId, shippingBinCode) => {
+          createByTrackingNumber({
+            shippingManifestId: manifest?.id || "",
+            payload: {
+              trackingNumber: unregisteredTrackingNumber || "",
+              tenantId,
+              shippingBinCode,
+            },
           });
-          closeRegisterBinItemModal();
         }}
       />
     </ScannerLayout>

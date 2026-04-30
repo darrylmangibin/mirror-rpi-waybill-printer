@@ -43,8 +43,18 @@ const attachInterceptors = (
   return client;
 };
 
-export const createNestApi = (tenantId?: string): AxiosInstance =>
-  attachInterceptors(createNestApiClient(), tenantId);
+const apiInstances = new Map<string, AxiosInstance>();
+
+export const createNestApi = (tenantId?: string): AxiosInstance => {
+  const cacheKey = resolveTenantId(tenantId);
+  
+  if (!apiInstances.has(cacheKey)) {
+    const newInstance = attachInterceptors(createNestApiClient(), tenantId);
+    apiInstances.set(cacheKey, newInstance);
+  }
+  
+  return apiInstances.get(cacheKey)!;
+};
 
 export const customAxios = (tenantId: string): AxiosInstance =>
   createNestApi(tenantId);

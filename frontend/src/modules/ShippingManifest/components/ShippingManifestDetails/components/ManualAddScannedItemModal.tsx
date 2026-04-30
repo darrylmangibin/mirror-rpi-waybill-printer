@@ -17,26 +17,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TenantConfiguration } from "@/modules/TenantConfiguration/types/tenant-configuration.type";
+import type { ShippingBin } from "@/modules/ShippingBin/types/shipping-bin.type";
 
 type ManualAddScannedItemModalProps = {
   open: boolean;
   trackingNumber: string | null;
   tenantConfigurations?: TenantConfiguration[];
+  shippingBins?: ShippingBin[];
   isPending: boolean;
   onClose: () => void;
-  onConfirm: (tenantId: string) => void;
+  onConfirm: (tenantId: string, shippingBinCode: string) => void;
 };
 
 export const ManualAddScannedItemModal = ({
   open,
   trackingNumber,
   tenantConfigurations,
+  shippingBins,
   isPending,
   onClose,
   onConfirm,
 }: ManualAddScannedItemModalProps) => {
   const tenantOptions = useMemo(() => tenantConfigurations ?? [], [tenantConfigurations]);
+  const shippingBinOptions = useMemo(() => shippingBins ?? [], [shippingBins]);
   const [selectedTenantId, setSelectedTenantId] = useState("");
+  const [selectedShippingBinCode, setSelectedShippingBinCode] = useState("");
 
   useEffect(() => {
     if (!open) {
@@ -44,10 +49,11 @@ export const ManualAddScannedItemModal = ({
     }
 
     setSelectedTenantId("");
-  }, [open, tenantOptions]);
+    setSelectedShippingBinCode(shippingBinOptions[0]?.shipping_bin_code ?? "");
+  }, [open, tenantOptions, shippingBinOptions]);
 
   const isSubmitDisabled =
-    isPending || !trackingNumber?.trim() || !selectedTenantId || tenantOptions.length === 0;
+    isPending || !trackingNumber?.trim() || !selectedTenantId || tenantOptions.length === 0 || !selectedShippingBinCode || shippingBinOptions.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
@@ -96,6 +102,35 @@ export const ManualAddScannedItemModal = ({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-700">Shipping Bin</p>
+            <Select
+              value={selectedShippingBinCode}
+              onValueChange={setSelectedShippingBinCode}
+              disabled={isPending || shippingBinOptions.length === 0}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    shippingBinOptions.length === 0
+                      ? "No shipping bins available"
+                      : "Select shipping bin"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {shippingBinOptions.map((shippingBin) => (
+                  <SelectItem
+                    key={shippingBin.id}
+                    value={shippingBin.shipping_bin_code}
+                  >
+                    {shippingBin.shipping_bin_code} - {shippingBin.courier}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <DialogFooter>
@@ -103,7 +138,7 @@ export const ManualAddScannedItemModal = ({
             Cancel
           </Button>
           <Button
-            onClick={() => onConfirm(selectedTenantId)}
+            onClick={() => onConfirm(selectedTenantId, selectedShippingBinCode)}
             disabled={isSubmitDisabled}
           >
             {isPending ? "Adding..." : "Add Item"}
