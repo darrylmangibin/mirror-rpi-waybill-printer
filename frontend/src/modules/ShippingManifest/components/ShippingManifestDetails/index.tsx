@@ -31,7 +31,10 @@ import { LoadingOverlay } from "@/components/loaders";
 import { useQueryClient } from "@tanstack/react-query";
 import { SHIPPING_BIN_ITEMS_QUERY_KEY } from "@/modules/ShippingBinItem/constants/shipping-bin-item.constant";
 import { useCloseManifest } from "@/modules/ShippingManifest/hooks/useCloseManifest";
-import { SHIPPING_MANIFEST_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
+import {
+  SHIPPING_MANIFEST_QUERY_KEY,
+  SHIPPING_MANIFEST_STATUS_JOBS_QUERY_KEY,
+} from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 import { useSyncBinItem } from "@/modules/ShippingBinItem/hooks/useSyncBinItem";
 import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/useTenantConfigurations";
 import { useCreateByTrackingNumber } from "@/modules/ShippingManifest/hooks/useCreateByTrackingNumber";
@@ -39,6 +42,7 @@ import { useGetShippingBins } from "@/modules/ShippingBin/hooks/useGetShippingBi
 import { cn } from "@/lib/utils";
 import { useShippingManifestStatusJobs } from "@/modules/ShippingManifest/hooks/useShippingManifestStatusJobs";
 import { QueueJobsPanel } from "./components/QueueJobsPanel";
+import { useRetryShippingManifestJob } from "@/modules/ShippingManifest/hooks/useRetryShippingManifestJob";
 
 type ManifestDetailsTab = "items" | "queue-jobs";
 
@@ -186,6 +190,23 @@ const ShippingManifestDetails = () => {
     onError: (error) => {
       toast.error(
         error.response?.data?.error?.message || "Failed to create item"
+      );
+    },
+  });
+
+  const {
+    mutate: retryShippingManifestJob,
+    isPending: isRetryingShippingManifestJob,
+  } = useRetryShippingManifestJob({
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [SHIPPING_MANIFEST_STATUS_JOBS_QUERY_KEY, manifest?.id],
+      });
+      toast.success("Job retried successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.error?.message || "Failed to retry job"
       );
     },
   });
@@ -462,6 +483,15 @@ const ShippingManifestDetails = () => {
                 <QueueJobsPanel
                   jobs={queueJobs ?? []}
                   isLoading={isLoadingQueueJobs}
+                  isRetrying={isRetryingShippingManifestJob}
+                  onRetryJob={(manifestId, jobId) => {
+                    if (manifestId && jobId) {
+                      retryShippingManifestJob({
+                        shippingManifestId: manifestId,
+                        jobId,
+                      });
+                    }
+                  }}
                 />
               )}
             </div>

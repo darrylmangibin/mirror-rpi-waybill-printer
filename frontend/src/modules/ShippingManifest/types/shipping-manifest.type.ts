@@ -59,7 +59,7 @@ export type ManifestQueueJob = {
   manifest_id: string;
   state: QueueJobState;
   progress: number;
-  result: {
+  result?: {
     success_tenants: QueueJobTenantResult[];
     failure_tenants: QueueJobTenantResult[];
   };

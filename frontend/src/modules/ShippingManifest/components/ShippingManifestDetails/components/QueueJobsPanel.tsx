@@ -19,13 +19,16 @@ import {
   Clock3,
   Copy,
   ListChecks,
+  RotateCcw,
   Search,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type TenantResultGroup =
-  ManifestQueueJob["result"][keyof ManifestQueueJob["result"]][number] & {
+  NonNullable<
+    ManifestQueueJob["result"]
+  >[keyof NonNullable<ManifestQueueJob["result"]>][number] & {
     job_ids: string[];
   };
 
@@ -39,6 +42,8 @@ type SelectedTenantInvoices = {
 interface QueueJobsPanelProps {
   jobs: ManifestQueueJob[];
   isLoading: boolean;
+  isRetrying: boolean;
+  onRetryJob?: (manifestId: string, jobId: string) => Promise<void> | void;
 }
 
 const invoicePreviewLimit = 8;
@@ -126,7 +131,9 @@ const groupTenantResults = (
   const groups = new Map<string, TenantResultGroup>();
 
   jobs.forEach((job) => {
-    job.result[resultKey].forEach((tenantResult) => {
+    const tenantResults = job.result?.[resultKey] ?? [];
+
+    tenantResults.forEach((tenantResult) => {
       const existing = groups.get(tenantResult.tenant_id);
 
       if (existing) {
@@ -380,7 +387,12 @@ const TenantResultGroups = ({
   );
 };
 
-export const QueueJobsPanel = ({ jobs, isLoading }: QueueJobsPanelProps) => {
+export const QueueJobsPanel = ({
+  jobs,
+  isLoading,
+  isRetrying,
+  onRetryJob,
+}: QueueJobsPanelProps) => {
   const [selectedTenantInvoices, setSelectedTenantInvoices] =
     useState<SelectedTenantInvoices | null>(null);
   const successTenantGroups = useMemo(
@@ -415,7 +427,11 @@ export const QueueJobsPanel = ({ jobs, isLoading }: QueueJobsPanelProps) => {
             <p className="mt-0.5 text-sm text-slate-500">
               {isLoading
                 ? "Loading queue jobs..."
-                : `${jobs.length.toLocaleString()} job${jobs.length !== 1 ? "s" : ""} with ${totalInvoiceResults.toLocaleString()} invoice result${totalInvoiceResults !== 1 ? "s" : ""}`}
+                : `${jobs.length.toLocaleString()} job${
+                    jobs.length !== 1 ? "s" : ""
+                  } with ${totalInvoiceResults.toLocaleString()} invoice result${
+                    totalInvoiceResults !== 1 ? "s" : ""
+                  }`}
             </p>
           </div>
         </div>
@@ -468,25 +484,53 @@ export const QueueJobsPanel = ({ jobs, isLoading }: QueueJobsPanelProps) => {
             </div>
 
             <div className="space-y-3">
-              {jobs.map((job) => (
-                <div
-                  key={job.job_id}
-                  className="rounded-2xl border border-slate-200 bg-white p-4"
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-mono text-sm font-semibold text-slate-800">
-                        {job.job_id}
-                      </p>
-                      <QueueJobStateBadge state={job.state} />
+              {jobs.map((job) => {
+                const hasFailureTenants =
+                  (job.result?.failure_tenants.length ?? 0) > 0;
+
+                return (
+                  <div
+                    key={job.job_id}
+                    className="rounded-2xl border border-slate-200 bg-white p-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-mono text-sm font-semibold text-slate-800">
+                            {job.job_id}
+                          </p>
+                          <QueueJobStateBadge state={job.state} />
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Manifest ID{" "}
+                          <span className="font-mono">{job.manifest_id}</span>
+                        </p>
+                      </div>
+
+                      {hasFailureTenants && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-fit rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                          disabled={isRetrying}
+                          onClick={() => {
+                            onRetryJob?.(job.manifest_id, job.job_id);
+                          }}
+                        >
+                          <RotateCcw
+                            className={cn(
+                              "h-3.5 w-3.5",
+                              isRetrying && "animate-spin"
+                            )}
+                          />
+                          {isRetrying ? "Retrying..." : "Retry job"}
+                        </Button>
+                      )}
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Manifest ID{" "}
-                      <span className="font-mono">{job.manifest_id}</span>
-                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
