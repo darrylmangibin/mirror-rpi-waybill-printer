@@ -2,6 +2,14 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import ShippingBinItemsList from "@/modules/ShippingBinItem/components/ShippingBinItemsList";
 import { useShippingManifestById } from "@/modules/ShippingManifest/hooks/useShippingManifests";
 import { formatLabel } from "@/modules/ShippingManifest/utils/shipping-manifest.util";
@@ -21,10 +29,12 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Copy,
   FileText,
   ListChecks,
   PackageSearch,
   Route,
+  Search,
   Truck,
   XCircle,
 } from "lucide-react";
@@ -40,37 +50,27 @@ import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/use
 import { useCreateByTrackingNumber } from "@/modules/ShippingManifest/hooks/useCreateByTrackingNumber";
 import { useGetShippingBins } from "@/modules/ShippingBin/hooks/useGetShippingBins";
 import { cn } from "@/lib/utils";
+import type {
+  ManifestQueueJob,
+  QueueJobState,
+} from "@/modules/ShippingManifest/types/shipping-manifest.type";
+import { useShippingManifestStatusJobs } from "@/modules/ShippingManifest/hooks/useShippingManifestStatusJobs";
 
 type ManifestDetailsTab = "items" | "queue-jobs";
 
-type QueueJobState =
-  | "active"
-  | "waiting"
-  | "completed"
-  | "failed"
-  | "delayed"
-  | "paused";
-
-type QueueJobTenantResult = {
-  tenant_id: string;
-  invoice_numbers: string[];
-};
-
-type ManifestQueueJob = {
-  job_id: string;
-  manifest_id: string;
-  state: QueueJobState;
-  progress: number;
-  result: {
-    success_tenants: QueueJobTenantResult[];
-    failure_tenants: QueueJobTenantResult[];
+type TenantResultGroup =
+  ManifestQueueJob["result"][keyof ManifestQueueJob["result"]][number] & {
+    job_ids: string[];
   };
-  created_at: number;
+
+type SelectedTenantInvoices = {
+  title: string;
+  tenantId: string;
+  invoiceNumbers: string[];
+  variant: "success" | "failure";
 };
 
-type TenantResultGroup = QueueJobTenantResult & {
-  job_ids: string[];
-};
+const invoicePreviewLimit = 8;
 
 const tabOptions: Array<{
   value: ManifestDetailsTab;
@@ -85,7 +85,7 @@ const tabOptions: Array<{
   {
     value: "queue-jobs",
     label: "Queue jobs",
-    description: "Background job progress and tenant-level results.",
+    description: "Background job status and tenant-level results.",
   },
 ];
 
@@ -131,44 +131,23 @@ const queueJobStateConfig: Record<
   },
 };
 
-const mockQueueJobs: ManifestQueueJob[] = [
-  {
-    job_id: "dae4297d-0438-4c75-9925-2bb6bc07240f",
-    manifest_id: "726959d7-b1cd-452b-814c-e79849b21cba",
-    state: "completed",
-    progress: 1,
-    result: {
-      success_tenants: [
-        {
-          tenant_id: "staging-v2",
-          invoice_numbers: ["260410F86MVW0X"],
-        },
-        {
-          tenant_id: "staging-v2",
-          invoice_numbers: ["260410N9K7ZH2Q"],
-        },
-      ],
-      failure_tenants: [
-        {
-          tenant_id: "demo-tenant",
-          invoice_numbers: ["260410FAILED01"],
-        },
-      ],
-    },
-    created_at: 1777868633575,
-  },
-];
+const isQueueJobState = (state: unknown): state is QueueJobState =>
+  typeof state === "string" && state in queueJobStateConfig;
 
-const formatCreatedAt = (value: number) =>
-  new Date(value).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const QueueJobStateBadge = ({
+  state,
+}: {
+  state: ManifestQueueJob["state"];
+}) => {
+  if (!isQueueJobState(state)) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600">
+        <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+        Unknown
+      </span>
+    );
+  }
 
-const QueueJobStateBadge = ({ state }: { state: QueueJobState }) => {
   const cfg = queueJobStateConfig[state];
 
   return (
@@ -217,18 +196,144 @@ const groupTenantResults = (
   }));
 };
 
+const InvoiceNumbersModal = ({
+  open,
+  selectedTenantInvoices,
+  onOpenChange,
+}: {
+  open: boolean;
+  selectedTenantInvoices: SelectedTenantInvoices | null;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const invoiceNumbers = useMemo(
+    () => selectedTenantInvoices?.invoiceNumbers ?? [],
+    [selectedTenantInvoices]
+  );
+  const filteredInvoiceNumbers = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+    if (!normalizedSearchTerm) return invoiceNumbers;
+
+    return invoiceNumbers.filter((invoiceNumber) =>
+      invoiceNumber.toLowerCase().includes(normalizedSearchTerm)
+    );
+  }, [invoiceNumbers, searchTerm]);
+
+  const copyInvoices = async () => {
+    if (!selectedTenantInvoices) return;
+
+    try {
+      await navigator.clipboard.writeText(invoiceNumbers.join("\n"));
+      toast.success("Invoice numbers copied");
+    } catch {
+      toast.error("Failed to copy invoice numbers");
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) setSearchTerm("");
+      }}
+    >
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="border-b border-slate-100 px-6 py-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <DialogTitle className="text-base text-slate-900">
+                {selectedTenantInvoices?.title ?? "Invoice numbers"}
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                Tenant{" "}
+                <span className="font-mono">
+                  {selectedTenantInvoices?.tenantId}
+                </span>{" "}
+                has {invoiceNumbers.length.toLocaleString()} invoice
+                {invoiceNumbers.length !== 1 ? "s" : ""}.
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-fit rounded-lg border-slate-200"
+              onClick={copyInvoices}
+              disabled={invoiceNumbers.length === 0}
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copy all
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 p-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search invoice number..."
+              className="h-10 rounded-xl border-slate-200 pl-9"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+            <span>
+              Showing {filteredInvoiceNumbers.length.toLocaleString()} of{" "}
+              {invoiceNumbers.length.toLocaleString()} invoices
+            </span>
+            {selectedTenantInvoices?.variant === "failure" ? (
+              <span className="rounded-full bg-rose-50 px-2.5 py-1 font-medium text-rose-600">
+                Failure results
+              </span>
+            ) : (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-600">
+                Success results
+              </span>
+            )}
+          </div>
+
+          <div className="max-h-[420px] overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+            {filteredInvoiceNumbers.length === 0 ? (
+              <div className="py-12 text-center text-sm text-slate-500">
+                No invoice numbers matched your search.
+              </div>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {filteredInvoiceNumbers.map((invoiceNumber) => (
+                  <div
+                    key={invoiceNumber}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-medium text-slate-700"
+                  >
+                    {invoiceNumber}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const TenantResultGroups = ({
   title,
   description,
   icon: Icon,
   groups,
   variant,
+  onViewInvoices,
 }: {
   title: string;
   description: string;
   icon: typeof CheckCircle2;
   groups: TenantResultGroup[];
   variant: "success" | "failure";
+  onViewInvoices: (selectedTenantInvoices: SelectedTenantInvoices) => void;
 }) => {
   const isSuccess = variant === "success";
 
@@ -257,40 +362,79 @@ const TenantResultGroups = ({
             No {isSuccess ? "successful" : "failed"} tenant results yet.
           </div>
         ) : (
-          groups.map((group) => (
-            <div
-              key={group.tenant_id}
-              className="rounded-xl border border-slate-200 bg-slate-50/70 p-4"
-            >
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <p className="font-mono text-sm font-semibold text-slate-800">
-                  {group.tenant_id}
-                </p>
-                <span className="text-xs text-slate-500">
-                  {group.invoice_numbers.length} invoice
-                  {group.invoice_numbers.length !== 1 ? "s" : ""}
-                </span>
-              </div>
+          groups.map((group) => {
+            const previewInvoiceNumbers = group.invoice_numbers.slice(
+              0,
+              invoicePreviewLimit
+            );
+            const hiddenInvoiceCount =
+              group.invoice_numbers.length - previewInvoiceNumbers.length;
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {group.invoice_numbers.map((invoiceNumber) => (
-                  <span
-                    key={invoiceNumber}
-                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-mono text-xs font-medium text-slate-600"
-                  >
-                    {invoiceNumber}
+            return (
+              <div
+                key={group.tenant_id}
+                className="rounded-xl border border-slate-200 bg-slate-50/70 p-4"
+              >
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="font-mono text-sm font-semibold text-slate-800">
+                    {group.tenant_id}
+                  </p>
+                  <span className="text-xs text-slate-500">
+                    {group.invoice_numbers.length.toLocaleString()} invoice
+                    {group.invoice_numbers.length !== 1 ? "s" : ""}
                   </span>
-                ))}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {previewInvoiceNumbers.map((invoiceNumber) => (
+                    <span
+                      key={invoiceNumber}
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-mono text-xs font-medium text-slate-600"
+                    >
+                      {invoiceNumber}
+                    </span>
+                  ))}
+                  {hiddenInvoiceCount > 0 && (
+                    <span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500">
+                      +{hiddenInvoiceCount.toLocaleString()} more
+                    </span>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 rounded-lg border-slate-200"
+                  onClick={() =>
+                    onViewInvoices({
+                      title,
+                      tenantId: group.tenant_id,
+                      invoiceNumbers: group.invoice_numbers,
+                      variant,
+                    })
+                  }
+                >
+                  View all invoices
+                </Button>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
   );
 };
 
-const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
+const QueueJobsPanel = ({
+  jobs,
+  isLoading,
+}: {
+  jobs: ManifestQueueJob[];
+  isLoading: boolean;
+}) => {
+  const [selectedTenantInvoices, setSelectedTenantInvoices] =
+    useState<SelectedTenantInvoices | null>(null);
   const successTenantGroups = useMemo(
     () => groupTenantResults(jobs, "success_tenants"),
     [jobs]
@@ -321,19 +465,28 @@ const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
               Queue jobs
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
-              {jobs.length.toLocaleString()} job{jobs.length !== 1 ? "s" : ""}{" "}
-              with {totalInvoiceResults.toLocaleString()} invoice result
-              {totalInvoiceResults !== 1 ? "s" : ""}
+              {isLoading
+                ? "Loading queue jobs..."
+                : `${jobs.length.toLocaleString()} job${jobs.length !== 1 ? "s" : ""} with ${totalInvoiceResults.toLocaleString()} invoice result${totalInvoiceResults !== 1 ? "s" : ""}`}
             </p>
           </div>
         </div>
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-          UI preview data
-        </span>
       </div>
 
       <div className="space-y-5 p-5">
-        {jobs.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center">
+            <Clock3 className="h-8 w-8 animate-pulse text-slate-400" />
+            <div>
+              <p className="text-sm font-medium text-slate-700">
+                Loading queue jobs
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                Fetching the latest status job results for this manifest.
+              </p>
+            </div>
+          </div>
+        ) : jobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center">
             <Clock3 className="h-8 w-8 text-slate-400" />
             <div>
@@ -341,7 +494,7 @@ const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
                 No queue jobs found
               </p>
               <p className="mt-1 text-xs text-slate-400">
-                Queue job data will appear here after the API is connected.
+                No status jobs are linked to this shipping manifest yet.
               </p>
             </div>
           </div>
@@ -354,6 +507,7 @@ const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
                 icon={CheckCircle2}
                 groups={successTenantGroups}
                 variant="success"
+                onViewInvoices={setSelectedTenantInvoices}
               />
               <TenantResultGroups
                 title="Failure tenants"
@@ -361,6 +515,7 @@ const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
                 icon={XCircle}
                 groups={failureTenantGroups}
                 variant="failure"
+                onViewInvoices={setSelectedTenantInvoices}
               />
             </div>
 
@@ -370,34 +525,17 @@ const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
                   key={job.job_id}
                   className="rounded-2xl border border-slate-200 bg-white p-4"
                 >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-mono text-sm font-semibold text-slate-800">
-                          {job.job_id}
-                        </p>
-                        <QueueJobStateBadge state={job.state} />
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Created {formatCreatedAt(job.created_at)}
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-mono text-sm font-semibold text-slate-800">
+                        {job.job_id}
                       </p>
+                      <QueueJobStateBadge state={job.state} />
                     </div>
-                    <div className="min-w-[180px]">
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Progress</span>
-                        <span className="font-medium text-slate-700">
-                          {Math.round(job.progress * 100)}%
-                        </span>
-                      </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-slate-900"
-                          style={{
-                            width: `${Math.min(Math.max(job.progress, 0), 1) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Manifest ID{" "}
+                      <span className="font-mono">{job.manifest_id}</span>
+                    </p>
                   </div>
                 </div>
               ))}
@@ -405,6 +543,13 @@ const QueueJobsPanel = ({ jobs }: { jobs: ManifestQueueJob[] }) => {
           </>
         )}
       </div>
+      <InvoiceNumbersModal
+        open={Boolean(selectedTenantInvoices)}
+        selectedTenantInvoices={selectedTenantInvoices}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTenantInvoices(null);
+        }}
+      />
     </section>
   );
 };
@@ -446,6 +591,11 @@ const ShippingManifestDetails = () => {
       enabled: !!manifest?.carrier_code,
     }
   );
+
+  const { data: queueJobs, isLoading: isLoadingQueueJobs } =
+    useShippingManifestStatusJobs(manifest?.id || "", {
+      enabled: activeDetailsTab === "queue-jobs" && !!manifest?.id,
+    });
 
   const { data: tenantConfigurations } = useTenantConfigurations({});
 
@@ -804,7 +954,10 @@ const ShippingManifestDetails = () => {
                   }
                 />
               ) : (
-                <QueueJobsPanel jobs={mockQueueJobs} />
+                <QueueJobsPanel
+                  jobs={queueJobs ?? []}
+                  isLoading={isLoadingQueueJobs}
+                />
               )}
             </div>
           )}
