@@ -25,9 +25,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type TenantResult = NonNullable<
+type TenantResult = NonNullable<ManifestQueueJob["result"]>[keyof NonNullable<
   ManifestQueueJob["result"]
->[keyof NonNullable<ManifestQueueJob["result"]>][number];
+>][number];
 
 type SelectedTenantInvoices = {
   title: string;
@@ -366,7 +366,9 @@ const QueueJobList = ({
               const failureTenants = job.result?.failure_tenants ?? [];
               const tenantResultCount =
                 successTenants.length + failureTenants.length;
-              const canRetry = failureTenants.length > 0 && Boolean(onRetryJob);
+              const canRetry =
+                Boolean(onRetryJob) &&
+                (job.state === "failed" || failureTenants.length > 0);
 
               return (
                 <tr key={job.job_id} className="align-top">
@@ -412,7 +414,9 @@ const QueueJobList = ({
                         size="sm"
                         className="h-7 rounded-md border-rose-200 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                         disabled={isRetrying}
-                        onClick={() => onRetryJob?.(job.manifest_id, job.job_id)}
+                        onClick={() =>
+                          onRetryJob?.(job.manifest_id, job.job_id)
+                        }
                       >
                         <RotateCcw
                           className={cn(
