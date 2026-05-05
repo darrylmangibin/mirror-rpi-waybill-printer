@@ -25,12 +25,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-type TenantResultGroup =
-  NonNullable<
-    ManifestQueueJob["result"]
-  >[keyof NonNullable<ManifestQueueJob["result"]>][number] & {
-    job_ids: string[];
-  };
+type TenantResult = NonNullable<
+  ManifestQueueJob["result"]
+>[keyof NonNullable<ManifestQueueJob["result"]>][number];
 
 type SelectedTenantInvoices = {
   title: string;
@@ -46,7 +43,7 @@ interface QueueJobsPanelProps {
   onRetryJob?: (manifestId: string, jobId: string) => Promise<void> | void;
 }
 
-const invoicePreviewLimit = 8;
+const invoicePreviewLimit = 2;
 
 const queueJobStateConfig: Record<
   QueueJobState,
@@ -122,39 +119,6 @@ const QueueJobStateBadge = ({
       {formatLabel(state)}
     </span>
   );
-};
-
-const groupTenantResults = (
-  jobs: ManifestQueueJob[],
-  resultKey: "success_tenants" | "failure_tenants"
-) => {
-  const groups = new Map<string, TenantResultGroup>();
-
-  jobs.forEach((job) => {
-    const tenantResults = job.result?.[resultKey] ?? [];
-
-    tenantResults.forEach((tenantResult) => {
-      const existing = groups.get(tenantResult.tenant_id);
-
-      if (existing) {
-        existing.invoice_numbers.push(...tenantResult.invoice_numbers);
-        existing.job_ids.push(job.job_id);
-        return;
-      }
-
-      groups.set(tenantResult.tenant_id, {
-        tenant_id: tenantResult.tenant_id,
-        invoice_numbers: [...tenantResult.invoice_numbers],
-        job_ids: [job.job_id],
-      });
-    });
-  });
-
-  return Array.from(groups.values()).map((group) => ({
-    ...group,
-    invoice_numbers: Array.from(new Set(group.invoice_numbers)),
-    job_ids: Array.from(new Set(group.job_ids)),
-  }));
 };
 
 const InvoiceNumbersModal = ({
@@ -281,107 +245,190 @@ const InvoiceNumbersModal = ({
   );
 };
 
-const TenantResultGroups = ({
-  title,
-  description,
-  icon: Icon,
-  groups,
+const JobTenantResults = ({
+  results,
   variant,
   onViewInvoices,
 }: {
-  title: string;
-  description: string;
-  icon: typeof CheckCircle2;
-  groups: TenantResultGroup[];
+  results: TenantResult[];
   variant: "success" | "failure";
   onViewInvoices: (selectedTenantInvoices: SelectedTenantInvoices) => void;
 }) => {
   const isSuccess = variant === "success";
 
+  if (results.length === 0) return null;
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5">
-      <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl",
-            isSuccess
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-rose-50 text-rose-600"
-          )}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-          <p className="mt-0.5 text-xs text-slate-500">{description}</p>
-        </div>
-      </div>
+    <div className="space-y-1.5">
+      {results.map((tenantResult, tenantResultIndex) => {
+        const previewInvoiceNumbers = tenantResult.invoice_numbers.slice(
+          0,
+          invoicePreviewLimit
+        );
+        const hiddenInvoiceCount =
+          tenantResult.invoice_numbers.length - previewInvoiceNumbers.length;
 
-      <div className="mt-4 space-y-3">
-        {groups.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-            No {isSuccess ? "successful" : "failed"} tenant results yet.
-          </div>
-        ) : (
-          groups.map((group) => {
-            const previewInvoiceNumbers = group.invoice_numbers.slice(
-              0,
-              invoicePreviewLimit
-            );
-            const hiddenInvoiceCount =
-              group.invoice_numbers.length - previewInvoiceNumbers.length;
-
-            return (
-              <div
-                key={group.tenant_id}
-                className="rounded-xl border border-slate-200 bg-slate-50/70 p-4"
+        return (
+          <div
+            key={`${variant}-${tenantResult.tenant_id}-${tenantResultIndex}`}
+            className={cn(
+              "rounded-md border px-2 py-1.5",
+              isSuccess
+                ? "border-emerald-100 bg-emerald-50/40"
+                : "border-rose-100 bg-rose-50/40"
+            )}
+          >
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="font-mono text-xs font-semibold text-slate-800">
+                {tenantResult.tenant_id}
+              </p>
+              <span className="text-[11px] text-slate-500">
+                {tenantResult.invoice_numbers.length.toLocaleString()} invoice
+                {tenantResult.invoice_numbers.length !== 1 ? "s" : ""}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 rounded px-1.5 text-[11px] text-slate-600 hover:bg-white"
+                onClick={() =>
+                  onViewInvoices({
+                    title: `${isSuccess ? "Success" : "Failure"} invoices`,
+                    tenantId: tenantResult.tenant_id,
+                    invoiceNumbers: tenantResult.invoice_numbers,
+                    variant,
+                  })
+                }
               >
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="font-mono text-sm font-semibold text-slate-800">
-                    {group.tenant_id}
-                  </p>
-                  <span className="text-xs text-slate-500">
-                    {group.invoice_numbers.length.toLocaleString()} invoice
-                    {group.invoice_numbers.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
+                View
+              </Button>
+            </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {previewInvoiceNumbers.map((invoiceNumber) => (
-                    <span
-                      key={invoiceNumber}
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-mono text-xs font-medium text-slate-600"
-                    >
-                      {invoiceNumber}
-                    </span>
-                  ))}
-                  {hiddenInvoiceCount > 0 && (
-                    <span className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500">
-                      +{hiddenInvoiceCount.toLocaleString()} more
-                    </span>
-                  )}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-4 rounded-lg border-slate-200"
-                  onClick={() =>
-                    onViewInvoices({
-                      title,
-                      tenantId: group.tenant_id,
-                      invoiceNumbers: group.invoice_numbers,
-                      variant,
-                    })
-                  }
+            <div className="mt-1 flex flex-wrap gap-1">
+              {previewInvoiceNumbers.map((invoiceNumber) => (
+                <span
+                  key={invoiceNumber}
+                  className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-600"
                 >
-                  View all invoices
-                </Button>
-              </div>
-            );
-          })
-        )}
+                  {invoiceNumber}
+                </span>
+              ))}
+              {hiddenInvoiceCount > 0 && (
+                <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                  +{hiddenInvoiceCount.toLocaleString()} more
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const QueueJobList = ({
+  jobs,
+  isRetrying,
+  onRetryJob,
+  onViewInvoices,
+}: {
+  jobs: ManifestQueueJob[];
+  isRetrying: boolean;
+  onRetryJob?: (manifestId: string, jobId: string) => Promise<void> | void;
+  onViewInvoices: (selectedTenantInvoices: SelectedTenantInvoices) => void;
+}) => {
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[920px] text-left">
+          <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="w-[190px] px-3 py-2">Job</th>
+              <th className="w-[130px] px-3 py-2">Status</th>
+              <th className="px-3 py-2">
+                <span className="flex items-center gap-1.5">
+                  <XCircle className="h-3.5 w-3.5 text-rose-500" />
+                  Failed tenants
+                </span>
+              </th>
+              <th className="px-3 py-2">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  Success tenants
+                </span>
+              </th>
+              <th className="w-[110px] px-3 py-2 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {jobs.map((job) => {
+              const successTenants = job.result?.success_tenants ?? [];
+              const failureTenants = job.result?.failure_tenants ?? [];
+              const tenantResultCount =
+                successTenants.length + failureTenants.length;
+              const canRetry = failureTenants.length > 0 && Boolean(onRetryJob);
+
+              return (
+                <tr key={job.job_id} className="align-top">
+                  <td className="px-3 py-2.5">
+                    <p className="break-all font-mono text-xs font-semibold text-slate-800">
+                      {job.job_id}
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      {tenantResultCount} tenant result
+                      {tenantResultCount !== 1 ? "s" : ""}
+                    </p>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <QueueJobStateBadge state={job.state} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    {failureTenants.length > 0 ? (
+                      <JobTenantResults
+                        results={failureTenants}
+                        variant="failure"
+                        onViewInvoices={onViewInvoices}
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400">None</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    {successTenants.length > 0 ? (
+                      <JobTenantResults
+                        results={successTenants}
+                        variant="success"
+                        onViewInvoices={onViewInvoices}
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400">None</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    {canRetry && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 rounded-md border-rose-200 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                        disabled={isRetrying}
+                        onClick={() => onRetryJob?.(job.manifest_id, job.job_id)}
+                      >
+                        <RotateCcw
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            isRetrying && "animate-spin"
+                          )}
+                        />
+                        {isRetrying ? "Retrying..." : "Retry"}
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -395,30 +442,43 @@ export const QueueJobsPanel = ({
 }: QueueJobsPanelProps) => {
   const [selectedTenantInvoices, setSelectedTenantInvoices] =
     useState<SelectedTenantInvoices | null>(null);
-  const successTenantGroups = useMemo(
-    () => groupTenantResults(jobs, "success_tenants"),
+  const totalTenantResults = useMemo(
+    () =>
+      jobs.reduce(
+        (total, job) =>
+          total +
+          (job.result?.success_tenants.length ?? 0) +
+          (job.result?.failure_tenants.length ?? 0),
+        0
+      ),
     [jobs]
   );
-  const failureTenantGroups = useMemo(
-    () => groupTenantResults(jobs, "failure_tenants"),
+  const totalInvoiceResults = useMemo(
+    () =>
+      jobs.reduce((total, job) => {
+        const tenantResults = [
+          ...(job.result?.success_tenants ?? []),
+          ...(job.result?.failure_tenants ?? []),
+        ];
+
+        return (
+          total +
+          tenantResults.reduce(
+            (invoiceTotal, tenantResult) =>
+              invoiceTotal + tenantResult.invoice_numbers.length,
+            0
+          )
+        );
+      }, 0),
     [jobs]
   );
-  const totalInvoiceResults =
-    successTenantGroups.reduce(
-      (total, group) => total + group.invoice_numbers.length,
-      0
-    ) +
-    failureTenantGroups.reduce(
-      (total, group) => total + group.invoice_numbers.length,
-      0
-    );
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-            <ListChecks className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <ListChecks className="h-4 w-4" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-slate-900">
@@ -429,7 +489,9 @@ export const QueueJobsPanel = ({
                 ? "Loading queue jobs..."
                 : `${jobs.length.toLocaleString()} job${
                     jobs.length !== 1 ? "s" : ""
-                  } with ${totalInvoiceResults.toLocaleString()} invoice result${
+                  } with ${totalTenantResults.toLocaleString()} tenant result${
+                    totalTenantResults !== 1 ? "s" : ""
+                  } and ${totalInvoiceResults.toLocaleString()} invoice${
                     totalInvoiceResults !== 1 ? "s" : ""
                   }`}
             </p>
@@ -437,10 +499,10 @@ export const QueueJobsPanel = ({
         </div>
       </div>
 
-      <div className="space-y-5 p-5">
+      <div className="space-y-3 p-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center">
-            <Clock3 className="h-8 w-8 animate-pulse text-slate-400" />
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center">
+            <Clock3 className="h-6 w-6 animate-pulse text-slate-400" />
             <div>
               <p className="text-sm font-medium text-slate-700">
                 Loading queue jobs
@@ -451,8 +513,8 @@ export const QueueJobsPanel = ({
             </div>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-14 text-center">
-            <Clock3 className="h-8 w-8 text-slate-400" />
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center">
+            <Clock3 className="h-6 w-6 text-slate-400" />
             <div>
               <p className="text-sm font-medium text-slate-700">
                 No queue jobs found
@@ -464,74 +526,12 @@ export const QueueJobsPanel = ({
           </div>
         ) : (
           <>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <TenantResultGroups
-                title="Success tenants"
-                description="Invoices grouped by tenant from successful job results."
-                icon={CheckCircle2}
-                groups={successTenantGroups}
-                variant="success"
-                onViewInvoices={setSelectedTenantInvoices}
-              />
-              <TenantResultGroups
-                title="Failure tenants"
-                description="Invoices grouped by tenant from failed job results."
-                icon={XCircle}
-                groups={failureTenantGroups}
-                variant="failure"
-                onViewInvoices={setSelectedTenantInvoices}
-              />
-            </div>
-
-            <div className="space-y-3">
-              {jobs.map((job) => {
-                const hasFailureTenants =
-                  (job.result?.failure_tenants.length ?? 0) > 0;
-
-                return (
-                  <div
-                    key={job.job_id}
-                    className="rounded-2xl border border-slate-200 bg-white p-4"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-mono text-sm font-semibold text-slate-800">
-                            {job.job_id}
-                          </p>
-                          <QueueJobStateBadge state={job.state} />
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Manifest ID{" "}
-                          <span className="font-mono">{job.manifest_id}</span>
-                        </p>
-                      </div>
-
-                      {hasFailureTenants && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-fit rounded-lg border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                          disabled={isRetrying}
-                          onClick={() => {
-                            onRetryJob?.(job.manifest_id, job.job_id);
-                          }}
-                        >
-                          <RotateCcw
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              isRetrying && "animate-spin"
-                            )}
-                          />
-                          {isRetrying ? "Retrying..." : "Retry job"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <QueueJobList
+              jobs={jobs}
+              isRetrying={isRetrying}
+              onRetryJob={onRetryJob}
+              onViewInvoices={setSelectedTenantInvoices}
+            />
           </>
         )}
       </div>
