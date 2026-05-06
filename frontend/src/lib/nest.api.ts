@@ -11,11 +11,13 @@ const DEFAULTS = {
 } as const;
 
 const resolveTenantId = (tenantId?: string): string =>
-  tenantId?.trim() || import.meta.env.VITE_NEST_TENANT_ID?.trim() || DEFAULTS.tenantId;
+  tenantId?.trim() ||
+  import.meta.env.VITE_NEST_TENANT_ID?.trim() ||
+  DEFAULTS.tenantId;
 
 const createNestApiClient = (): AxiosInstance =>
   axios.create({
-    baseURL: DEFAULTS.developmentApiUrl,
+    baseURL: DEFAULTS.productionApiUrl,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -24,20 +26,20 @@ const createNestApiClient = (): AxiosInstance =>
 
 const attachInterceptors = (
   client: AxiosInstance,
-  tenantId?: string,
+  tenantId?: string
 ): AxiosInstance => {
   client.interceptors.request.use(
     (requestConfig: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
       requestConfig.headers.set("x-tenant-id", resolveTenantId(tenantId));
       return requestConfig;
-    },
+    }
   );
 
   client.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
       return Promise.reject(error);
-    },
+    }
   );
 
   return client;
@@ -47,12 +49,12 @@ const apiInstances = new Map<string, AxiosInstance>();
 
 export const createNestApi = (tenantId?: string): AxiosInstance => {
   const cacheKey = resolveTenantId(tenantId);
-  
+
   if (!apiInstances.has(cacheKey)) {
     const newInstance = attachInterceptors(createNestApiClient(), tenantId);
     apiInstances.set(cacheKey, newInstance);
   }
-  
+
   return apiInstances.get(cacheKey)!;
 };
 

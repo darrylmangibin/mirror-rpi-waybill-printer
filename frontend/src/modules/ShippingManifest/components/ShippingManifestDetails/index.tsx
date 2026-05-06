@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { Button } from "@/components/ui/button";
 import ShippingBinItemsList from "@/modules/ShippingBinItem/components/ShippingBinItemsList";
 import { useShippingManifestById } from "@/modules/ShippingManifest/hooks/useShippingManifests";
@@ -219,7 +218,6 @@ const ShippingManifestDetails = () => {
     >
       {isAddingItem && <LoadingOverlay message="Adding item to manifest..." />}
       {isSyncingBinItem && <LoadingOverlay message="Syncing bin item..." />}
-      <TopNavbar />
       <div className="min-h-screen bg-slate-50/50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between">
