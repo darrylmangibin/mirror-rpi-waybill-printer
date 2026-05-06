@@ -40,3 +40,28 @@ export interface ShippingManifest {
   receiver_name: string | null;
   vehicle_plate_number: string | null;
 }
+
+export type QueueJobState =
+  | "active"
+  | "waiting"
+  | "completed"
+  | "failed"
+  | "delayed"
+  | "paused";
+
+export type QueueJobTenantResult = {
+  tenant_id: string;
+  invoice_numbers: string[];
+};
+
+export type ManifestQueueJob = {
+  job_id: string;
+  manifest_id: string;
+  state: QueueJobState;
+  progress: number;
+  result?: {
+    success_tenants: QueueJobTenantResult[];
+    failure_tenants: QueueJobTenantResult[];
+  };
+  created_at?: number;
+};

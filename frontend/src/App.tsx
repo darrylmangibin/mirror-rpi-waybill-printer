@@ -3,10 +3,13 @@ import { Toaster } from "@/components/ui/sonner";
 import Home from "@/pages/home/page";
 import ShippingManifestPage from "@/pages/shipping-manifest/page";
 import ShippingManifestDetailsPage from "@/pages/shipping-manifest-details/page";
+import { TopNavbar } from "@/components/global";
 
 function App() {
   return (
     <main className="min-h-screen bg-gray-50">
+      <TopNavbar />
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shipping-manifests" element={<ShippingManifestPage />} />

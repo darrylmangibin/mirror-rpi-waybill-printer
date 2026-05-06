@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { Button } from "@/components/ui/button";
 import ShippingBinItemsList from "@/modules/ShippingBinItem/components/ShippingBinItemsList";
 import { useShippingManifestById } from "@/modules/ShippingManifest/hooks/useShippingManifests";
@@ -8,30 +7,55 @@ import { formatLabel } from "@/modules/ShippingManifest/utils/shipping-manifest.
 import { ScannerLayout } from "../ScannerLayout";
 import { StatusBadge } from "../StatusBadge";
 import { DetailField } from "./components/DetailField";
-import { DateField } from "./components/DateField";
-import { SectionCard } from "./components/SectionCard";
-import { MetadataCard } from "./components/MetadataCard";
 import { LoadingState } from "./components/LoadingState";
 import { ErrorState } from "./components/ErrorState";
 import { CloseManifestModal } from "./components/CloseManifestModal";
 import { ManualAddScannedItemModal } from "./components/ManualAddScannedItemModal";
 
-import { ArrowLeft, CalendarDays, FileText, Route, Truck } from "lucide-react";
+import { ArrowLeft, ListChecks, PackageSearch } from "lucide-react";
 import { useAddItem } from "@/modules/ShippingManifest/hooks/useAddItem";
 import { toast } from "sonner";
 import { LoadingOverlay } from "@/components/loaders";
 import { useQueryClient } from "@tanstack/react-query";
 import { SHIPPING_BIN_ITEMS_QUERY_KEY } from "@/modules/ShippingBinItem/constants/shipping-bin-item.constant";
 import { useCloseManifest } from "@/modules/ShippingManifest/hooks/useCloseManifest";
-import { SHIPPING_MANIFEST_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
+import {
+  SHIPPING_MANIFEST_QUERY_KEY,
+  SHIPPING_MANIFEST_STATUS_JOBS_QUERY_KEY,
+} from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
 import { useSyncBinItem } from "@/modules/ShippingBinItem/hooks/useSyncBinItem";
 import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/useTenantConfigurations";
 import { useCreateByTrackingNumber } from "@/modules/ShippingManifest/hooks/useCreateByTrackingNumber";
 import { useGetShippingBins } from "@/modules/ShippingBin/hooks/useGetShippingBins";
+import { cn } from "@/lib/utils";
+import { useShippingManifestStatusJobs } from "@/modules/ShippingManifest/hooks/useShippingManifestStatusJobs";
+import { QueueJobsPanel } from "./components/QueueJobsPanel";
+import { useRetryShippingManifestJob } from "@/modules/ShippingManifest/hooks/useRetryShippingManifestJob";
+
+type ManifestDetailsTab = "items" | "queue-jobs";
+
+const tabOptions: Array<{
+  value: ManifestDetailsTab;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "items",
+    label: "Shipping bin items",
+    description: "Items currently linked to this manifest.",
+  },
+  {
+    value: "queue-jobs",
+    label: "Queue jobs",
+    description: "Background job status and tenant-level results.",
+  },
+];
 
 const ShippingManifestDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [activeDetailsTab, setActiveDetailsTab] =
+    useState<ManifestDetailsTab>("items");
   const [openRegisterBinItemModal, setOpenRegisterBinItemModal] =
     useState(false);
   const [unregisteredTrackingNumber, setUnregisteredTrackingNumber] = useState<
@@ -65,7 +89,10 @@ const ShippingManifestDetails = () => {
     }
   );
 
-  console.log(shippingBins);
+  const { data: queueJobs, isLoading: isLoadingQueueJobs } =
+    useShippingManifestStatusJobs(manifest?.id || "", {
+      enabled: activeDetailsTab === "queue-jobs" && !!manifest?.id,
+    });
 
   const { data: tenantConfigurations } = useTenantConfigurations({});
 
@@ -96,8 +123,6 @@ const ShippingManifestDetails = () => {
       );
     },
   });
-
-  console.log(unregisteredTrackingNumber);
 
   const { mutate: closeManifest, isPending: isClosingManifest } =
     useCloseManifest({
@@ -143,8 +168,7 @@ const ShippingManifestDetails = () => {
     mutate: createByTrackingNumber,
     isPending: isCreatingByTrackingNumber,
   } = useCreateByTrackingNumber({
-    onSuccess: (data) => {
-      console.log(data);
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
       });
@@ -154,6 +178,23 @@ const ShippingManifestDetails = () => {
     onError: (error) => {
       toast.error(
         error.response?.data?.error?.message || "Failed to create item"
+      );
+    },
+  });
+
+  const {
+    mutate: retryShippingManifestJob,
+    isPending: isRetryingShippingManifestJob,
+  } = useRetryShippingManifestJob({
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [SHIPPING_MANIFEST_STATUS_JOBS_QUERY_KEY, manifest?.id],
+      });
+      toast.success("Job retried successfully");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.error?.message || "Failed to retry job"
       );
     },
   });
@@ -177,7 +218,6 @@ const ShippingManifestDetails = () => {
     >
       {isAddingItem && <LoadingOverlay message="Adding item to manifest..." />}
       {isSyncingBinItem && <LoadingOverlay message="Syncing bin item..." />}
-      <TopNavbar />
       <div className="min-h-screen bg-slate-50/50">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           <div className="mb-6 flex items-center justify-between">
@@ -243,137 +283,91 @@ const ShippingManifestDetails = () => {
                   />
                 </div>
               </section>
-
-              <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-                <div className="space-y-6">
-                  <SectionCard
-                    icon={Truck}
-                    title="Logistics information"
-                    description="Operational details for receiving, loading, and delivery."
-                  >
-                    <DetailField
-                      label="Carrier"
-                      value={manifest.shipping_carrier}
-                    />
-                    <DetailField
-                      label="Manifest Path"
-                      value={manifest.manifest_path}
-                      mono
-                    />
-                    <DetailField
-                      label="Receiver Name"
-                      value={manifest.receiver_name}
-                    />
-                    <DetailField
-                      label="Vehicle Plate Number"
-                      value={manifest.vehicle_plate_number}
-                      mono
-                    />
-                    <DateField
-                      label="Loading Started"
-                      value={manifest.loading_started_at}
-                    />
-                    <DateField label="Loaded At" value={manifest.loaded_at} />
-                    <DateField
-                      label="Delivery Completed"
-                      value={manifest.delivery_completed_at}
-                    />
-                    <DetailField
-                      label="Tenant ID"
-                      value={manifest.tenant_id}
-                      mono
-                    />
-                  </SectionCard>
-
-                  <MetadataCard manifest={manifest} />
-                </div>
-
-                <div className="space-y-6">
-                  <SectionCard
-                    icon={FileText}
-                    title="Manifest overview"
-                    description="Core manifest identifiers and generation metadata."
-                  >
-                    <DetailField label="Manifest ID" value={manifest.id} mono />
-                    <DetailField
-                      label="Manifest Code"
-                      value={manifest.manifest_code}
-                      mono
-                    />
-                    <DetailField
-                      label="Status"
-                      value={formatLabel(manifest.status)}
-                    />
-                    <DetailField
-                      label="Generation Type"
-                      value={formatLabel(manifest.generation_type)}
-                    />
-                    <DetailField
-                      label="Generated By ID"
-                      value={manifest.generated_by_id}
-                      mono
-                    />
-                    <DetailField
-                      label="Generated By Username"
-                      value={manifest.generated_by_username}
-                    />
-                  </SectionCard>
-
-                  <SectionCard
-                    icon={CalendarDays}
-                    title="Timeline"
-                    description="Audit timestamps from creation through latest update."
-                  >
-                    <DateField label="Created At" value={manifest.created_at} />
-                    <DateField label="Updated At" value={manifest.updated_at} />
-                    <DateField label="Loaded At" value={manifest.loaded_at} />
-                    <DateField
-                      label="Delivery Completed"
-                      value={manifest.delivery_completed_at}
-                    />
-                  </SectionCard>
-
-                  <SectionCard
-                    icon={Route}
-                    title="Operational summary"
-                    description="At-a-glance shipping and execution context."
-                  >
-                    <DetailField
-                      label="Current Status"
-                      value={formatLabel(manifest.status)}
-                    />
-                    <DetailField
-                      label="Orders in Manifest"
-                      value={manifest.loaded_orders_count ?? 0}
-                    />
-                    <DetailField
-                      label="Manifest Path Available"
-                      value={manifest.manifest_path ? "Yes" : "No"}
-                    />
-                    <DetailField
-                      label="Metadata Available"
-                      value={manifest.meta_data ? "Yes" : "No"}
-                    />
-                  </SectionCard>
-                </div>
-              </div>
             </div>
           )}
         </div>
-        {/* Shipping Bin Items List */}
+        {/* Shipping Bin Items and Queue Jobs */}
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           {manifest && (
-            <ShippingBinItemsList
-              shippingManifestId={manifest.id}
-              onSyncItem={(shippingBinItemId) =>
-                syncBinItem({ shippingBinItemId })
-              }
-              onCloseManifest={
-                manifest.status === "open"
-                  ? () => setShowCloseConfirm(true)
-                  : undefined
-              }
-            />
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+                <div className="grid gap-2 md:grid-cols-2">
+                  {tabOptions.map((tab) => {
+                    const isActive = activeDetailsTab === tab.value;
+
+                    return (
+                      <button
+                        key={tab.value}
+                        type="button"
+                        className={cn(
+                          "flex items-start gap-3 rounded-xl px-4 py-3 text-left transition-colors",
+                          isActive
+                            ? "bg-slate-900 text-white shadow-sm"
+                            : "text-slate-600 hover:bg-slate-50"
+                        )}
+                        onClick={() => setActiveDetailsTab(tab.value)}
+                      >
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg",
+                            isActive
+                              ? "bg-white/10 text-white"
+                              : "bg-slate-100 text-slate-500"
+                          )}
+                        >
+                          {tab.value === "items" ? (
+                            <PackageSearch className="h-4 w-4" />
+                          ) : (
+                            <ListChecks className="h-4 w-4" />
+                          )}
+                        </div>
+                        <span>
+                          <span className="block text-sm font-semibold">
+                            {tab.label}
+                          </span>
+                          <span
+                            className={cn(
+                              "mt-0.5 block text-xs",
+                              isActive ? "text-white/70" : "text-slate-400"
+                            )}
+                          >
+                            {tab.description}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {activeDetailsTab === "items" ? (
+                <ShippingBinItemsList
+                  shippingManifestId={manifest.id}
+                  onSyncItem={(shippingBinItemId) =>
+                    syncBinItem({ shippingBinItemId })
+                  }
+                  onCloseManifest={
+                    manifest.status === "open"
+                      ? () => setShowCloseConfirm(true)
+                      : undefined
+                  }
+                />
+              ) : (
+                <QueueJobsPanel
+                  jobs={queueJobs ?? []}
+                  isLoading={isLoadingQueueJobs}
+                  isRetrying={isRetryingShippingManifestJob}
+                  onRetryJob={(manifestId, jobId) => {
+                    if (manifestId && jobId) {
+                      retryShippingManifestJob({
+                        shippingManifestId: manifestId,
+                        jobId,
+                      });
+                    }
+                  }}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>

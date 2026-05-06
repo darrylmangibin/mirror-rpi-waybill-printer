@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { LoadingOverlay } from "@/components/loaders";
 import { useShippingManifests } from "@/modules/ShippingManifest/hooks/useShippingManifests";
 import { useCreateByShippingBinCode } from "@/modules/ShippingManifest/hooks/useCreateByShippingBinCode";
@@ -45,7 +44,7 @@ const ShippingManifestList = () => {
         } else {
           toast.error(
             error.response?.data?.error?.message ||
-              "Failed to create shipping manifest",
+              "Failed to create shipping manifest"
           );
         }
       },
@@ -63,7 +62,7 @@ const ShippingManifestList = () => {
       onError: (error) => {
         toast.error(
           error.response?.data?.error?.message ||
-            "Failed to close and create shipping manifest",
+            "Failed to close and create shipping manifest"
         );
       },
       onSettled: () => {
@@ -81,7 +80,7 @@ const ShippingManifestList = () => {
         orderBy: { created_at: "desc" },
       },
     }),
-    [page, perPage, selectedStatus],
+    [page, perPage, selectedStatus]
   );
 
   const { data, isLoading, isFetching, refetch } = useShippingManifests(params);
@@ -93,7 +92,7 @@ const ShippingManifestList = () => {
 
   const pageOptions = useMemo(
     () => Array.from({ length: totalPages }, (_, i) => String(i + 1)),
-    [totalPages],
+    [totalPages]
   );
 
   const isFiltered = selectedStatus !== "open";
@@ -110,7 +109,6 @@ const ShippingManifestList = () => {
       {(isCreating || isClosingAndCreating) && (
         <LoadingOverlay message="Creating manifest..." />
       )}
-      <TopNavbar />
 
       <div className="min-h-screen bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">

@@ -1,7 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/global/components/DataTable";
-import { TopNavbar } from "@/components/global/components/TopNavbar";
 import { SearchBoxInput } from "@/components/global/components/SearchBoxInput";
 import {
   getWaybillColumns,
@@ -184,7 +183,7 @@ const Home = () => {
     [deleteWaybillAsync, actions, clearSelection, resetDeleteMutation]
   );
 
-  const handleBulkDeleteClick = (_rows: WaybillPrint[]) => {
+  const handleBulkDeleteClick = () => {
     setBulkDeleteDialogOpen(true);
   };
 
@@ -197,7 +196,6 @@ const Home = () => {
   if (error) {
     return (
       <>
-        <TopNavbar />
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <h2 className="text-red-900 font-semibold mb-2">
@@ -218,9 +216,6 @@ const Home = () => {
 
   return (
     <>
-      {/* Top Navigation Bar */}
-      <TopNavbar />
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="top-toolbar flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-0 mb-6 sm:mb-3">
