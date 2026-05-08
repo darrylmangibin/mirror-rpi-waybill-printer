@@ -97,12 +97,25 @@ const ShippingManifestDetails = () => {
   const { data: tenantConfigurations } = useTenantConfigurations({});
 
   const { mutate: addItemToManifest, isPending: isAddingItem } = useAddItem({
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
       });
       setUnregisteredTrackingNumber(null);
-      toast.success("Item added to manifest");
+
+      if (data.sync_status === "sync_failed") {
+        toast.warning(
+          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest, but marketplace sync failed.`
+        );
+      } else if (data.sync_status === "cancelled") {
+        toast.warning(
+          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest, but sync was cancelled.`
+        );
+      } else {
+        toast.success(
+          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest.`
+        );
+      }
     },
     onError: (error) => {
       if (error.status === 422) {

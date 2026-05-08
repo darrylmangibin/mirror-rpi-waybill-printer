@@ -204,7 +204,7 @@ const CompactBadge = ({
       "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
       config.bg,
       config.text,
-      config.border,
+      config.border
     )}
   >
     <span className={cn("h-1.5 w-1.5 rounded-full", config.dot)} />
@@ -275,7 +275,7 @@ const LoadingRows = ({ rows }: { rows: number }) =>
           <Skeleton
             className={cn(
               "h-4 rounded",
-              cellIndex === 0 ? "w-28" : cellIndex >= 4 ? "w-24" : "w-20",
+              cellIndex === 0 ? "w-28" : cellIndex >= 4 ? "w-24" : "w-20"
             )}
           />
         </TableCell>
@@ -309,7 +309,7 @@ const ShippingBinItemsList = ({
       perPage,
       query: {
         where,
-        orderBy: { created_at: "desc" },
+        orderBy: { updated_at: "desc" },
       },
     };
   }, [page, perPage, selectedSyncStatus, shippingManifestId]);
@@ -318,7 +318,7 @@ const ShippingBinItemsList = ({
     params,
     {
       enabled: Boolean(shippingManifestId),
-    },
+    }
   );
 
   const items: ShippingBinItem[] = data?.data ?? [];
@@ -327,7 +327,7 @@ const ShippingBinItemsList = ({
   const totalRows = data?.meta.total ?? 0;
   const pageOptions = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => String(index + 1)),
-    [totalPages],
+    [totalPages]
   );
 
   return (
@@ -345,7 +345,9 @@ const ShippingBinItemsList = ({
               <p className="mt-0.5 text-sm text-slate-500">
                 {isLoading
                   ? "Loading related shipping bin items..."
-                  : `${totalRows.toLocaleString()} item${totalRows !== 1 ? "s" : ""} linked to this manifest`}
+                  : `${totalRows.toLocaleString()} item${
+                      totalRows !== 1 ? "s" : ""
+                    } linked to this manifest`}
               </p>
             </div>
           </div>
@@ -376,7 +378,7 @@ const ShippingBinItemsList = ({
                   className={cn(
                     "rounded-full border-slate-200 px-3",
                     isActive &&
-                      "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white",
+                      "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white"
                   )}
                   onClick={() => {
                     setSelectedSyncStatus(status);
@@ -421,7 +423,7 @@ const ShippingBinItemsList = ({
               <RefreshCw
                 className={cn(
                   "h-4 w-4 text-slate-500",
-                  isFetching && "animate-spin",
+                  isFetching && "animate-spin"
                 )}
               />
             </Button>
@@ -431,7 +433,7 @@ const ShippingBinItemsList = ({
 
       <div
         className={cn(
-          isFetching && !isLoading && "opacity-70 transition-opacity",
+          isFetching && !isLoading && "opacity-70 transition-opacity"
         )}
       >
         <Table>
@@ -515,7 +517,9 @@ const ShippingBinItemsList = ({
                       <p className="mt-1 text-xs text-slate-400">
                         {selectedSyncStatus === "all"
                           ? "No bin items are linked to this shipping manifest yet."
-                          : `No items matched the ${formatLabel(selectedSyncStatus)} sync status.`}
+                          : `No items matched the ${formatLabel(
+                              selectedSyncStatus
+                            )} sync status.`}
                       </p>
                     </div>
                   </div>
@@ -527,7 +531,7 @@ const ShippingBinItemsList = ({
                   key={item.id}
                   className={cn(
                     "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30",
+                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
                   )}
                 >
                   <TableCell className="pl-5 py-3.5 align-top">
