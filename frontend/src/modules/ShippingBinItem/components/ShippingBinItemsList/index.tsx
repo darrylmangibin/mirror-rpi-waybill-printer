@@ -66,14 +66,14 @@ const COLUMNS = 8;
 
 const areSyncStatusesEqual = (
   current: ShippingBinItemSyncStatus[],
-  next: ShippingBinItemSyncStatus[]
+  next: ShippingBinItemSyncStatus[],
 ) =>
   current.length === next.length &&
   current.every((status, index) => status === next[index]);
 
 const getSyncStatusFilterLabel = (statuses: ShippingBinItemSyncStatus[]) =>
   syncStatusOptions.find((option) =>
-    areSyncStatusesEqual(option.statuses, statuses)
+    areSyncStatusesEqual(option.statuses, statuses),
   )?.label ?? statuses.map(formatLabel).join(", ");
 
 type BadgeConfig = {
@@ -230,7 +230,7 @@ const CompactBadge = ({
       "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
       config.bg,
       config.text,
-      config.border
+      config.border,
     )}
   >
     <span className={cn("h-1.5 w-1.5 rounded-full", config.dot)} />
@@ -301,7 +301,7 @@ const LoadingRows = ({ rows }: { rows: number }) =>
           <Skeleton
             className={cn(
               "h-4 rounded",
-              cellIndex === 0 ? "w-28" : cellIndex >= 4 ? "w-24" : "w-20"
+              cellIndex === 0 ? "w-28" : cellIndex >= 4 ? "w-24" : "w-20",
             )}
           />
         </TableCell>
@@ -316,8 +316,9 @@ const ShippingBinItemsList = ({
 }: ShippingBinItemsListProps) => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-  const [selectedSyncStatus, setSelectedSyncStatus] =
-    useState<ShippingBinItemSyncStatus[]>([]);
+  const [selectedSyncStatus, setSelectedSyncStatus] = useState<
+    ShippingBinItemSyncStatus[]
+  >([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
 
   const { data: tenantConfigs } = useTenantConfigurations();
@@ -351,7 +352,7 @@ const ShippingBinItemsList = ({
     params,
     {
       enabled: Boolean(shippingManifestId),
-    }
+    },
   );
 
   const items: ShippingBinItem[] = data?.data ?? [];
@@ -360,7 +361,7 @@ const ShippingBinItemsList = ({
   const totalRows = data?.meta.total ?? 0;
   const pageOptions = useMemo(
     () => Array.from({ length: totalPages }, (_, index) => String(index + 1)),
-    [totalPages]
+    [totalPages],
   );
 
   return (
@@ -403,7 +404,7 @@ const ShippingBinItemsList = ({
             {syncStatusOptions.map((option) => {
               const isActive = areSyncStatusesEqual(
                 selectedSyncStatus,
-                option.statuses
+                option.statuses,
               );
               return (
                 <Button
@@ -414,7 +415,7 @@ const ShippingBinItemsList = ({
                   className={cn(
                     "rounded-full border-slate-200 px-3",
                     isActive &&
-                      "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white"
+                      "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white",
                   )}
                   onClick={() => {
                     setSelectedSyncStatus(option.statuses);
@@ -438,7 +439,7 @@ const ShippingBinItemsList = ({
               <SelectTrigger className="h-9 w-[180px] rounded-lg border-slate-200 bg-white text-sm shadow-xs">
                 <SelectValue placeholder="All Tenants" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="h-96">
                 <SelectItem value="all">All Tenants</SelectItem>
                 {tenantConfigs?.map((config) => (
                   <SelectItem key={config.tenant_id} value={config.tenant_id}>
@@ -479,7 +480,7 @@ const ShippingBinItemsList = ({
               <RefreshCw
                 className={cn(
                   "h-4 w-4 text-slate-500",
-                  isFetching && "animate-spin"
+                  isFetching && "animate-spin",
                 )}
               />
             </Button>
@@ -489,7 +490,7 @@ const ShippingBinItemsList = ({
 
       <div
         className={cn(
-          isFetching && !isLoading && "opacity-70 transition-opacity"
+          isFetching && !isLoading && "opacity-70 transition-opacity",
         )}
       >
         <Table>
@@ -574,7 +575,7 @@ const ShippingBinItemsList = ({
                         {selectedSyncStatus.length === 0
                           ? "No bin items are linked to this shipping manifest yet."
                           : `No items matched the ${getSyncStatusFilterLabel(
-                              selectedSyncStatus
+                              selectedSyncStatus,
                             )} sync status.`}
                       </p>
                     </div>
@@ -587,7 +588,7 @@ const ShippingBinItemsList = ({
                   key={item.id}
                   className={cn(
                     "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30",
                   )}
                 >
                   <TableCell className="pl-5 py-3.5 align-top">

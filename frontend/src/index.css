@@ -130,7 +130,8 @@
 
 /* Keyframe animations for custom animations */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -139,7 +140,8 @@
 }
 
 @keyframes slideRight {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(-50px);
   }
   50% {
@@ -148,7 +150,8 @@
 }
 
 @keyframes slideLeft {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(50px);
   }
   50% {
@@ -157,7 +160,8 @@
 }
 
 @keyframes pulseSlow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.5;
   }
   50% {
@@ -172,4 +176,14 @@
   100% {
     background-position: 1000px 0;
   }
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
 }
