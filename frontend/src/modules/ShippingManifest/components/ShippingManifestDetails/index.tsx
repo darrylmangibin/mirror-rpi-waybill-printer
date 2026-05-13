@@ -72,7 +72,7 @@ const ShippingManifestDetails = () => {
     { id: id || "" },
     {
       enabled: !!id,
-    }
+    },
   );
 
   const { data: shippingBins } = useGetShippingBins(
@@ -86,7 +86,7 @@ const ShippingManifestDetails = () => {
     },
     {
       enabled: !!manifest?.carrier_code,
-    }
+    },
   );
 
   const { data: queueJobs, isLoading: isLoadingQueueJobs } =
@@ -105,15 +105,15 @@ const ShippingManifestDetails = () => {
 
       if (data.sync_status === "sync_failed") {
         toast.warning(
-          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest, but marketplace sync failed.`
+          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest, but marketplace sync failed.`,
         );
       } else if (data.sync_status === "cancelled") {
         toast.warning(
-          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest, but sync was cancelled.`
+          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest, but sync was cancelled.`,
         );
       } else {
         toast.success(
-          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest.`
+          `Item ${data.tracking_number} for tenant ${data.tenant_id} was added to the manifest.`,
         );
       }
     },
@@ -121,18 +121,19 @@ const ShippingManifestDetails = () => {
       if (error.status === 422) {
         toast.warning(
           error.response?.data?.error?.message ||
-            "Item cannot be added to manifest. Please check the tracking number and try again."
+            "Item cannot be added to manifest. Please check the tracking number and try again.",
         );
         // open openRegisterBinItemModal to allow user to register the bin item manually
         setUnregisteredTrackingNumber(
-          error.response?.data.error?.tracking_number || null
+          error.response?.data.error?.tracking_number || null,
         );
         setOpenRegisterBinItemModal(true);
         return;
       }
 
       toast.error(
-        error.response?.data?.error?.message || "Failed to add item to manifest"
+        error.response?.data?.error?.message ||
+          "Failed to add item to manifest",
       );
     },
   });
@@ -151,7 +152,7 @@ const ShippingManifestDetails = () => {
       },
       onError: (error) => {
         toast.error(
-          error.response?.data?.error?.message || "Failed to close manifest"
+          error.response?.data?.error?.message || "Failed to close manifest",
         );
       },
     });
@@ -164,7 +165,7 @@ const ShippingManifestDetails = () => {
 
       if (data.data.sync_status === "sync_failed") {
         toast.error(
-          `Failed to sync item: ${data.data.invoice_number} marketplace integration error`
+          `Failed to sync item: ${data.data.invoice_number} marketplace integration error`,
         );
       } else {
         toast.success(`Item ${data.data.invoice_number} synced successfully`);
@@ -172,7 +173,7 @@ const ShippingManifestDetails = () => {
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.error?.message || "Failed to sync item"
+        error.response?.data?.error?.message || "Failed to sync item",
       );
     },
   });
@@ -190,7 +191,7 @@ const ShippingManifestDetails = () => {
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.error?.message || "Failed to create item"
+        error.response?.data?.error?.message || "Failed to create item",
       );
     },
   });
@@ -207,7 +208,7 @@ const ShippingManifestDetails = () => {
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.error?.message || "Failed to retry job"
+        error.response?.data?.error?.message || "Failed to retry job",
       );
     },
   });
@@ -217,6 +218,14 @@ const ShippingManifestDetails = () => {
   const closeRegisterBinItemModal = () => {
     setOpenRegisterBinItemModal(false);
     setUnregisteredTrackingNumber(null);
+  };
+
+  const handleBackClick = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/shipping-manifests");
+    }
   };
 
   return (
@@ -237,7 +246,7 @@ const ShippingManifestDetails = () => {
             <Button
               variant="outline"
               className="rounded-xl border-slate-200 bg-white"
-              onClick={() => navigate("/shipping-manifests")}
+              onClick={handleBackClick}
             >
               <ArrowLeft className="h-4 w-4" />
               Back to manifests
@@ -247,7 +256,7 @@ const ShippingManifestDetails = () => {
           {isLoading ? (
             <LoadingState />
           ) : isError || !manifest ? (
-            <ErrorState onBack={() => navigate("/shipping-manifests")} />
+            <ErrorState onBack={handleBackClick} />
           ) : (
             <div className="space-y-6">
               <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -316,7 +325,7 @@ const ShippingManifestDetails = () => {
                           "flex items-start gap-3 rounded-xl px-4 py-3 text-left transition-colors",
                           isActive
                             ? "bg-slate-900 text-white shadow-sm"
-                            : "text-slate-600 hover:bg-slate-50"
+                            : "text-slate-600 hover:bg-slate-50",
                         )}
                         onClick={() => setActiveDetailsTab(tab.value)}
                       >
@@ -325,7 +334,7 @@ const ShippingManifestDetails = () => {
                             "mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg",
                             isActive
                               ? "bg-white/10 text-white"
-                              : "bg-slate-100 text-slate-500"
+                              : "bg-slate-100 text-slate-500",
                           )}
                         >
                           {tab.value === "items" ? (
@@ -341,7 +350,7 @@ const ShippingManifestDetails = () => {
                           <span
                             className={cn(
                               "mt-0.5 block text-xs",
-                              isActive ? "text-white/70" : "text-slate-400"
+                              isActive ? "text-white/70" : "text-slate-400",
                             )}
                           >
                             {tab.description}

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { LoadingOverlay } from "@/components/loaders";
@@ -16,16 +16,57 @@ import { ActiveFilterPill } from "./ShippingManifestListComponents";
 import { ShippingManifestListTable } from "./ShippingManifestListTable";
 import { useCloseAndCreate } from "@/modules/ShippingManifest/hooks/useCloseAndCreate";
 import { SHIPPING_MANIFESTS_QUERY_KEY } from "@/modules/ShippingManifest/constants/shipping-manifest.constant";
+
+const DEFAULT_SELECTED_STATUS: ShippingManifestListStatus = "open";
+const SELECTED_STATUS_QUERY_PARAM = "selected-status";
+const listStatuses: ShippingManifestListStatus[] = [
+  "open",
+  "closed",
+  "for_loading",
+  "loaded",
+  "completed",
+];
+
+const isShippingManifestListStatus = (
+  value: string | null
+): value is ShippingManifestListStatus =>
+  value !== null && listStatuses.includes(value as ShippingManifestListStatus);
+
 const ShippingManifestList = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [selectedStatus, setSelectedStatus] =
-    useState<ShippingManifestListStatus>("open");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [shippingBinCode, setShippingBinCode] = useState("");
   const [conflictManifest, setConflictManifest] =
     useState<ShippingManifest | null>(null);
+
+  const selectedStatusParam = searchParams.get(SELECTED_STATUS_QUERY_PARAM);
+  const selectedStatus = isShippingManifestListStatus(selectedStatusParam)
+    ? selectedStatusParam
+    : DEFAULT_SELECTED_STATUS;
+
+  useEffect(() => {
+    if (selectedStatusParam === selectedStatus) return;
+
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set(SELECTED_STATUS_QUERY_PARAM, selectedStatus);
+        return next;
+      },
+      { replace: true }
+    );
+  }, [selectedStatus, selectedStatusParam, setSearchParams]);
+
+  const setSelectedStatus = (status: ShippingManifestListStatus) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set(SELECTED_STATUS_QUERY_PARAM, status);
+      return next;
+    });
+  };
 
   const { mutate: createShippingManifest, isPending: isCreating } =
     useCreateByShippingBinCode({
