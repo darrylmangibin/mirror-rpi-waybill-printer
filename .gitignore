@@ -55,3 +55,7 @@ Thumbs.db
 
 # Logs
 app/logs/*
+
+# AI
+.sisyphus/
+.playwright-mcp/

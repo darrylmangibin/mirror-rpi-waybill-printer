@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useShippingBinItems } from "@/modules/ShippingBinItem/hooks/useShippingBinItems";
+import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/useTenantConfigurations";
 import type {
   ShippingBinItem,
   ShippingBinItemSyncStatus,
@@ -39,16 +40,41 @@ export interface ShippingBinItemsListProps {
   onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
 
-type SyncStatusFilter = "all" | ShippingBinItemSyncStatus;
+type SyncStatusFilterOption = {
+  key: string;
+  label: string;
+  statuses: ShippingBinItemSyncStatus[];
+};
 
 const perPageOptions = [10, 20, 50, 100];
-const syncStatusOptions: SyncStatusFilter[] = [
-  "all",
-  "valid",
-  "cancelled",
-  "sync_failed",
+const syncStatusOptions: SyncStatusFilterOption[] = [
+  { key: "all", label: "All", statuses: [] },
+  {
+    key: "included-in-manifest",
+    label: "Included in Manifest",
+    statuses: ["valid", "sync_failed"],
+  },
+  { key: "valid", label: "Valid", statuses: ["valid"] },
+  { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
+  {
+    key: "sync_failed",
+    label: "Sync Failed",
+    statuses: ["sync_failed"],
+  },
 ];
 const COLUMNS = 8;
+
+const areSyncStatusesEqual = (
+  current: ShippingBinItemSyncStatus[],
+  next: ShippingBinItemSyncStatus[]
+) =>
+  current.length === next.length &&
+  current.every((status, index) => status === next[index]);
+
+const getSyncStatusFilterLabel = (statuses: ShippingBinItemSyncStatus[]) =>
+  syncStatusOptions.find((option) =>
+    areSyncStatusesEqual(option.statuses, statuses)
+  )?.label ?? statuses.map(formatLabel).join(", ");
 
 type BadgeConfig = {
   bg: string;
@@ -291,17 +317,24 @@ const ShippingBinItemsList = ({
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [selectedSyncStatus, setSelectedSyncStatus] =
-    useState<SyncStatusFilter>("all");
+    useState<ShippingBinItemSyncStatus[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
+
+  const { data: tenantConfigs } = useTenantConfigurations();
 
   const params = useMemo(() => {
-    const where: Record<string, string> = {};
+    const where: Record<string, unknown> = {};
 
     if (shippingManifestId) {
       where.shipping_manifest_id = shippingManifestId;
     }
 
-    if (selectedSyncStatus !== "all") {
-      where.sync_status = selectedSyncStatus;
+    if (selectedSyncStatus.length > 0) {
+      where.sync_status = { in: selectedSyncStatus };
+    }
+
+    if (selectedTenantId !== "all") {
+      where.tenant_id = selectedTenantId;
     }
 
     return {
@@ -312,7 +345,7 @@ const ShippingBinItemsList = ({
         orderBy: { updated_at: "desc" },
       },
     };
-  }, [page, perPage, selectedSyncStatus, shippingManifestId]);
+  }, [page, perPage, selectedSyncStatus, shippingManifestId, selectedTenantId]);
 
   const { data, isLoading, isFetching, error, refetch } = useShippingBinItems(
     params,
@@ -367,11 +400,14 @@ const ShippingBinItemsList = ({
 
         <div className="flex flex-col gap-3 lg:items-end">
           <div className="flex flex-wrap items-center gap-2">
-            {syncStatusOptions.map((status) => {
-              const isActive = selectedSyncStatus === status;
+            {syncStatusOptions.map((option) => {
+              const isActive = areSyncStatusesEqual(
+                selectedSyncStatus,
+                option.statuses
+              );
               return (
                 <Button
-                  key={status}
+                  key={option.key}
                   type="button"
                   variant="outline"
                   size="sm"
@@ -381,17 +417,37 @@ const ShippingBinItemsList = ({
                       "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white"
                   )}
                   onClick={() => {
-                    setSelectedSyncStatus(status);
+                    setSelectedSyncStatus(option.statuses);
                     setPage(1);
                   }}
                 >
-                  {status === "all" ? "All" : formatLabel(status)}
+                  {option.label}
                 </Button>
               );
             })}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+            <Select
+              value={selectedTenantId}
+              onValueChange={(value) => {
+                setSelectedTenantId(value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[180px] rounded-lg border-slate-200 bg-white text-sm shadow-xs">
+                <SelectValue placeholder="All Tenants" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tenants</SelectItem>
+                {tenantConfigs?.map((config) => (
+                  <SelectItem key={config.tenant_id} value={config.tenant_id}>
+                    {config.system_name || config.tenant_id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select
               value={String(perPage)}
               onValueChange={(value) => {
@@ -515,9 +571,9 @@ const ShippingBinItemsList = ({
                         No shipping bin items found
                       </p>
                       <p className="mt-1 text-xs text-slate-400">
-                        {selectedSyncStatus === "all"
+                        {selectedSyncStatus.length === 0
                           ? "No bin items are linked to this shipping manifest yet."
-                          : `No items matched the ${formatLabel(
+                          : `No items matched the ${getSyncStatusFilterLabel(
                               selectedSyncStatus
                             )} sync status.`}
                       </p>
