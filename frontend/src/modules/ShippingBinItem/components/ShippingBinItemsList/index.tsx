@@ -65,6 +65,7 @@ export interface ShippingBinItemsListProps {
   shippingManifestId?: string;
   onCloseManifest?: () => void;
   onExport?: (payload: ShippingBinItemsExportPayload) => void;
+  exportSelectionResetKey?: number;
   onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
 
@@ -72,6 +73,7 @@ const ShippingBinItemsList = ({
   shippingManifestId,
   onCloseManifest,
   onExport,
+  exportSelectionResetKey,
   onSyncItem,
 }: ShippingBinItemsListProps) => {
   const [page, setPage] = useState(1);
@@ -235,6 +237,15 @@ const ShippingBinItemsList = ({
     });
   };
 
+  const resetExportSelectionControls = () => {
+    setExportFilterType("all");
+    setSelectedExportTenantIds(new Set());
+  };
+
+  useEffect(() => {
+    resetExportSelectionControls();
+  }, [exportSelectionResetKey]);
+
   const handleConfirmExport = () => {
     if (exportFilterType === "selected_shipping_bin_items") {
       onExport?.({
@@ -250,6 +261,11 @@ const ShippingBinItemsList = ({
       onExport?.({ filter_type: "all" });
     }
 
+    setIsExportModalOpen(false);
+  };
+
+  const handleCancelExport = () => {
+    resetExportSelectionControls();
     setIsExportModalOpen(false);
   };
 
@@ -807,7 +823,7 @@ const ShippingBinItemsList = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsExportModalOpen(false)}
+              onClick={handleCancelExport}
             >
               Cancel
             </Button>

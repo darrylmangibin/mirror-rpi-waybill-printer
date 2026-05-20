@@ -6,14 +6,29 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- Completed — export request payload/default filter_type update
+- Completed — export selection reset refinement
 
 ## Current Goal
 
-- Frontend-only Shipping Manifest export request payload support from `tasks/05-shipping-manifest.md` is implemented and verified.
+- `tasks/06-shipping-manifest.md` is implemented and refined: the CSV export flow resets export filter type and selected export tenants after cancel or ready-download click while preserving selected shipping bin item selections.
 
 ## Completed
 
+- Refined Shipping Manifest export selection reset behavior for `tasks/06-shipping-manifest.md`:
+  - cancelling the export selection modal resets the export filter type to `all`
+  - cancelling clears selected export tenants
+  - clicking a ready `Download CSV` triggers the same export-selection reset through `ShippingManifestDetails`
+  - selected shipping bin item row selections are preserved
+- Added frontend-only Shipping Manifest export request/status/download UI wiring for `tasks/06-shipping-manifest.md`:
+  - `handleExport` in `ShippingManifestDetails` calls `useRequestExport` with the selected export payload
+  - request creation errors surface toast errors from the remote API response
+  - successful request creation captures the export id and opens a progress/download modal
+  - `useShippingManifestExportStatus` polls every 2 seconds while the export remains `pending`
+  - polling stops when the export status is no longer pending
+  - completed exports trigger `useExportDownloadUrl`
+  - the modal download button remains disabled until the export is completed and the download URL is loaded
+  - clicking download redirects the browser to the generated CSV URL
+  - the modal displays pending/completed/failed status treatments and warns that closing it discards the current URL
 - Added frontend-only Shipping Manifest export request payload support for `tasks/05-shipping-manifest.md`:
   - `RequestExportPayload` service type with `filter_type`, `shipping_bin_item_ids`, and `tenant_ids`
   - `requestExport(shippingManifestId, payload)` POST body forwarding
@@ -120,13 +135,11 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## In Progress
 
-- No active implementation work for `tasks/04-shipping-manifest.md`.
+- No active implementation work for `tasks/06-shipping-manifest.md`.
 
 ## Next Up
 
-- Wire export modes for all visible/eligible items, selected items, and tenant-scoped subsets as required by the backend contract.
-- Wire export status checks and download URL retrieval into the UI in a future task.
-- Verify CSV download behavior through the browser surface after UI wiring exists.
+- Monitor operator feedback for whether a separate export-request listing page is needed for retrieving older export downloads after a modal is closed.
 
 ## Open Questions
 
@@ -147,6 +160,12 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Session Notes
 
+- 2026-05-20: Implemented export selection reset refinement. `ShippingBinItemsList` now resets only export filter type and selected export tenants on export-modal cancel or reset key changes; `ShippingManifestDetails` increments that reset key when the ready download button is clicked. Selected shipping bin item IDs are intentionally not cleared. Verification pending.
+- 2026-05-20: Completed verification for export selection reset refinement. Targeted ESLint for `ShippingBinItemsList` and `ShippingManifestDetails` passes; `npm run build` passes. Browser QA confirmed export-modal cancel reopens with `All` behavior and no tenant picker while preserving `1 selected` shipping bin item, and confirmed a completed export download click resets the next export modal back to `All` while preserving the selected shipping bin item. Browser console had no errors. LSP diagnostics were skipped because `typescript-language-server` is not installed.
+- 2026-05-20: Started export selection reset refinement for `tasks/06-shipping-manifest.md`. Scope is frontend-only state handling in `ShippingBinItemsList` and `ShippingManifestDetails`; selected shipping bin items must remain selected while export filter type and selected export tenants reset.
+- 2026-05-20: Completed verification for `tasks/06-shipping-manifest.md`. `npm run build` passes. Targeted ESLint for `ShippingManifestDetails` passes. Full `npm run lint` still reports pre-existing unrelated lint errors in shared UI/Home files. Browser QA on the Shipping Manifest details surface used the existing staging Nest API: opened `Export CSV`, confirmed export request creation, observed status polling requests until `completed`, verified the modal showed `Ready to download`, confirmed the download button was enabled only after the URL loaded, clicked `Download CSV` and downloaded `shipping-manifest-J&T-20260518-D1D4B4P-8cc891ec-aba0-4cba-95bc-ebbf48f7b062.csv`, then closed the modal and confirmed the modal/download button were removed. LSP diagnostics were skipped because `typescript-language-server` is not installed; Markdown LSP is not configured.
+- 2026-05-20: Implemented the `tasks/06-shipping-manifest.md` UI wiring in `ShippingManifestDetails`: `handleExport` now requests an export with the selected payload, opens a progress/download modal after request success, polls export status every 2 seconds while pending, stops polling on terminal statuses, fetches the download URL after completion, disables download until ready, and warns that closing the modal discards the current URL. Next step is diagnostics/build and UI-surface QA.
+- 2026-05-20: Started `tasks/06-shipping-manifest.md` implementation. Scope is frontend-only UI wiring in `ShippingManifestDetails`; no backend/API/export generation changes. Current focus is integrating request creation, modal-scoped polling, completed-export download URL fetching, and professional static modal states.
 - 2026-05-20: Implemented export status and download URL services/hooks following the existing ShippingManifest query and mutation patterns. `npm run build` passes; service-surface QA confirmed `getShippingManifestExportStatus('export-qa-1')` calls `GET /shipping-manifest-exports/export-qa-1` and returns `{ status: 'completed' }`, while `getShippingManifestExportDownloadUrl('export-qa-1')` calls `GET /shipping-manifest-exports/export-qa-1/download` and returns `{ url: 'https://example.test/export.csv' }`. LSP diagnostics were skipped because `typescript-language-server` is not installed in the environment.
 - 2026-05-20: Started `tasks/04-shipping-manifest.md` implementation. Scope is frontend-only service/hook scaffolding under `frontend/src/modules/ShippingManifest`; no backend routes, export generation, polling, auto-download behavior, retries, or UI wiring.
 - 2026-05-20: Implemented `requestExport` service and `useRequestExport` hook following the existing `add-item.service.ts` and `useAddItem.ts` module patterns. Next step is targeted diagnostics, build verification, and a minimal hook/service driver QA.
