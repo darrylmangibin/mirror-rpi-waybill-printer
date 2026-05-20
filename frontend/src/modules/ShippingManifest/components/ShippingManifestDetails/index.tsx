@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { useShippingManifestStatusJobs } from "@/modules/ShippingManifest/hooks/useShippingManifestStatusJobs";
 import { QueueJobsPanel } from "./components/QueueJobsPanel";
 import { useRetryShippingManifestJob } from "@/modules/ShippingManifest/hooks/useRetryShippingManifestJob";
+import type { ShippingBinItemsExportPayload } from "@/modules/ShippingBinItem/components/ShippingBinItemsList";
 
 type ManifestDetailsTab = "items" | "queue-jobs";
 
@@ -228,6 +229,12 @@ const ShippingManifestDetails = () => {
     }
   };
 
+  const handleExport = (_payload: ShippingBinItemsExportPayload) => {
+    toast.info(
+      "CSV export selection captured. Download is not implemented yet.",
+    );
+  };
+
   return (
     <ScannerLayout
       isDisabled={manifest?.status !== "open"}
@@ -365,6 +372,7 @@ const ShippingManifestDetails = () => {
               {activeDetailsTab === "items" ? (
                 <ShippingBinItemsList
                   shippingManifestId={manifest.id}
+                  onExport={handleExport}
                   onSyncItem={(shippingBinItemId) =>
                     syncBinItem({ shippingBinItemId })
                   }

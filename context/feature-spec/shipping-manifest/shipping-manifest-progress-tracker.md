@@ -6,14 +6,21 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- In progress — CSV export enhancement
+- Completed — CSV export modal UI implementation
 
 ## Current Goal
 
-- Build the Shipping Manifest CSV export workflow by first preparing reliable shipping bin item selection UI, then wiring the export action to the completed backend endpoint.
+- UI-only Shipping Manifest CSV export modal from `tasks/02-shipping-manifest.md` is implemented and verified.
 
 ## Completed
 
+- Added UI-only CSV export modal wiring for `tasks/02-shipping-manifest.md`:
+  - `Export CSV` button on the shipping bin items detail surface
+  - modal choices for `all`, `selected item`, and `tenants`
+  - confirmation payloads for all-items, selected shipping bin item IDs, and selected tenant IDs
+  - tenant multi-selection using existing tenant configuration data
+  - no backend/API/CSV generation/download changes
+- Drafted the UI-only CSV export modal task spec in `tasks/02-shipping-manifest.md`.
 - Added Shipping Manifest navigation and routes:
   - `/shipping-manifests`
   - `/shipping-manifests/:id`
@@ -91,14 +98,10 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## In Progress
 
-- Shipping bin item CSV export enhancement:
-  - selection UI foundation is implemented
-  - row-level, Shift-range, select-all, deselect-all, and indeterminate header states are implemented
-  - backend/API/export-button wiring is still pending
+- No active implementation work for `tasks/02-shipping-manifest.md`.
 
 ## Next Up
 
-- Add the export button UI to the Shipping Manifest details / shipping bin items surface.
 - Implement the frontend API service/hook for the completed CSV export backend endpoint.
 - Wire export modes for all visible/eligible items, selected items, and tenant-scoped subsets as required by the backend contract.
 - Verify CSV download behavior through the browser surface.
@@ -123,6 +126,9 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Session Notes
 
+- 2026-05-20: Started `tasks/02-shipping-manifest.md` implementation for the UI-only CSV export modal. Scope is limited to `ShippingBinItemsList`, `ShippingManifestDetails`, related UI-only types/components if needed, and this tracker; no backend/API/CSV generation changes.
+- 2026-05-20: Implemented the modal UI and callback payload wiring. Next step is targeted diagnostics, build verification, and browser QA through the shipping manifest details surface.
+- 2026-05-20: Completed verification for `tasks/02-shipping-manifest.md`. `npm run build` passes; browser QA covered opening `Export CSV`, confirming `all`, selecting a shipping bin item and confirming `selected_shipping_bin_items`, selecting multiple tenants and confirming `tenant`. LSP diagnostics were skipped because `typescript-language-server` is not installed in the environment.
 - Reconstructed tracker from completed source code and `feature-overview.md`; not a chronological record of the original implementation sessions.
 - Active implementation task: `context/feature-spec/shipping-manifest/tasks/01-shipping-manifest.md`.
 - Current task status should stay updated while work is running, not only after code changes are finished.

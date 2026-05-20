@@ -3,12 +3,21 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Download,
   Lock,
   PackageSearch,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -42,15 +51,27 @@ import {
 } from "./components/StatusBadges";
 import { areSyncStatusesEqual, getSyncStatusFilterLabel } from "./utils";
 
+type ExportFilterType = "all" | "selected_shipping_bin_items" | "tenant";
+
+export type ShippingBinItemsExportPayload =
+  | { filter_type: "all" }
+  | {
+      filter_type: "selected_shipping_bin_items";
+      shipping_bin_item_ids: string[];
+    }
+  | { filter_type: "tenant"; tenant_ids: string[] };
+
 export interface ShippingBinItemsListProps {
   shippingManifestId?: string;
   onCloseManifest?: () => void;
+  onExport?: (payload: ShippingBinItemsExportPayload) => void;
   onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
 
 const ShippingBinItemsList = ({
   shippingManifestId,
   onCloseManifest,
+  onExport,
   onSyncItem,
 }: ShippingBinItemsListProps) => {
   const [page, setPage] = useState(1);
@@ -62,6 +83,12 @@ const ShippingBinItemsList = ({
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportFilterType, setExportFilterType] =
+    useState<ExportFilterType>("all");
+  const [selectedExportTenantIds, setSelectedExportTenantIds] = useState<
+    Set<string>
+  >(() => new Set());
   const [lastSelectedItemId, setLastSelectedItemId] = useState<string | null>(
     null,
   );
@@ -119,6 +146,7 @@ const ShippingBinItemsList = ({
   const areSomeVisibleItemsSelected =
     selectedVisibleItemCount > 0 && !areAllVisibleItemsSelected;
   const selectedCount = selectedItemIds.size;
+  const selectedExportTenantCount = selectedExportTenantIds.size;
 
   useEffect(() => {
     setSelectedItemIds((current) => (current.size === 0 ? current : new Set()));
@@ -193,6 +221,42 @@ const ShippingBinItemsList = ({
     setLastSelectedItemId(null);
   };
 
+  const toggleExportTenant = (tenantId: string, shouldSelect: boolean) => {
+    setSelectedExportTenantIds((current) => {
+      const next = new Set(current);
+
+      if (shouldSelect) {
+        next.add(tenantId);
+      } else {
+        next.delete(tenantId);
+      }
+
+      return next;
+    });
+  };
+
+  const handleConfirmExport = () => {
+    if (exportFilterType === "selected_shipping_bin_items") {
+      onExport?.({
+        filter_type: "selected_shipping_bin_items",
+        shipping_bin_item_ids: Array.from(selectedItemIds),
+      });
+    } else if (exportFilterType === "tenant") {
+      onExport?.({
+        filter_type: "tenant",
+        tenant_ids: Array.from(selectedExportTenantIds),
+      });
+    } else {
+      onExport?.({ filter_type: "all" });
+    }
+
+    setIsExportModalOpen(false);
+  };
+
+  const isExportConfirmationDisabled =
+    !onExport ||
+    (exportFilterType === "tenant" && selectedExportTenantCount === 0);
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
@@ -219,18 +283,31 @@ const ShippingBinItemsList = ({
               )}
             </div>
           </div>
-          {onCloseManifest && (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-xl border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
-              onClick={onCloseManifest}
+              className="rounded-xl border-violet-200 text-violet-600 hover:bg-violet-50 hover:text-violet-700"
+              onClick={() => setIsExportModalOpen(true)}
+              disabled={!onExport}
             >
-              <Lock className="h-3.5 w-3.5" />
-              Close Manifest
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
             </Button>
-          )}
+            {onCloseManifest && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                onClick={onCloseManifest}
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Close Manifest
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-3 lg:items-end">
@@ -591,6 +668,159 @@ const ShippingBinItemsList = ({
           </Button>
         </div>
       </div>
+
+      <Dialog
+        open={isExportModalOpen}
+        onOpenChange={(nextOpen) => setIsExportModalOpen(nextOpen)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Shipping Bin Items</DialogTitle>
+            <DialogDescription>
+              Choose which shipping bin items should be included in the CSV
+              export.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              {[
+                {
+                  value: "all" as const,
+                  label: "All",
+                  description: "Export all shipping bin items for this manifest.",
+                },
+                {
+                  value: "selected_shipping_bin_items" as const,
+                  label: "Selected item",
+                  description: `${selectedCount.toLocaleString()} selected item${
+                    selectedCount !== 1 ? "s" : ""
+                  } will be included.`,
+                },
+                {
+                  value: "tenant" as const,
+                  label: "Tenants",
+                  description: "Export items for one or more selected tenants.",
+                },
+              ].map((option) => {
+                const isSelected = exportFilterType === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={cn(
+                      "rounded-xl border px-4 py-3 text-left transition-colors",
+                      isSelected
+                        ? "border-violet-300 bg-violet-50 text-violet-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                    )}
+                    onClick={() => setExportFilterType(option.value)}
+                  >
+                    <span className="flex items-start gap-3">
+                      <span
+                        className={cn(
+                          "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+                          isSelected
+                            ? "border-violet-600 bg-violet-600"
+                            : "border-slate-300 bg-white",
+                        )}
+                        aria-hidden="true"
+                      >
+                        {isSelected && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold">
+                          {option.label}
+                        </span>
+                        <span className="mt-1 block text-xs text-slate-500">
+                          {option.description}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {exportFilterType === "tenant" && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">
+                      Select tenants
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {selectedExportTenantCount.toLocaleString()} selected
+                    </p>
+                  </div>
+                </div>
+
+                <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                  {tenantConfigs && tenantConfigs.length > 0 ? (
+                    tenantConfigs.map((config) => {
+                      const isTenantSelected = selectedExportTenantIds.has(
+                        config.tenant_id,
+                      );
+
+                      return (
+                        <label
+                          key={config.id}
+                          className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                        >
+                          <Checkbox
+                            checked={isTenantSelected}
+                            className="mt-0.5 border-slate-300 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600"
+                            onCheckedChange={(checked) =>
+                              toggleExportTenant(
+                                config.tenant_id,
+                                checked === true,
+                              )
+                            }
+                          />
+                          <span className="flex flex-col">
+                            <span className="font-medium text-slate-700">
+                              {config.system_name || config.tenant_id}
+                            </span>
+                            {config.system_name && (
+                              <span className="text-xs text-slate-400">
+                                {config.tenant_id}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <p className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-sm text-slate-500">
+                      No tenant configurations available.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsExportModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmExport}
+              disabled={isExportConfirmationDisabled}
+            >
+              Confirm Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
