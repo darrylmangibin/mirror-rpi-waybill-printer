@@ -6,14 +6,20 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- Completed — export status and download URL service/hook implementation
+- Completed — export request payload/default filter_type update
 
 ## Current Goal
 
-- Frontend-only Shipping Manifest export status and download URL services/hooks from `tasks/04-shipping-manifest.md` are implemented and verified.
+- Frontend-only Shipping Manifest export request payload support from `tasks/05-shipping-manifest.md` is implemented and verified.
 
 ## Completed
 
+- Added frontend-only Shipping Manifest export request payload support for `tasks/05-shipping-manifest.md`:
+  - `RequestExportPayload` service type with `filter_type`, `shipping_bin_item_ids`, and `tenant_ids`
+  - `requestExport(shippingManifestId, payload)` POST body forwarding
+  - `filter_type` defaults to `all` when omitted
+  - `useRequestExport` mutation variables now include the payload object
+  - no backend/API/export generation/download/UI wiring changes
 - Added frontend-only Shipping Manifest export status and download URL scaffolding for `tasks/04-shipping-manifest.md`:
   - `getShippingManifestExportStatus` service using `nestApi`
   - `GET /shipping-manifest-exports/:shippingManifestExportId`

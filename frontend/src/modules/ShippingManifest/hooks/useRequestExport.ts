@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   requestExport,
+  type RequestExportPayload,
   type ShippingManifestExportRequest,
 } from "@/modules/ShippingManifest/services/request-export.service";
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import type { AxiosError } from "axios";
 
 export type UseRequestExportVariables = {
   shippingManifestId: string;
+  payload: RequestExportPayload;
 };
 
 export const useRequestExport = (
@@ -18,8 +20,8 @@ export const useRequestExport = (
   >,
 ) => {
   const mutation = useMutation({
-    mutationFn: async ({ shippingManifestId }) =>
-      requestExport(shippingManifestId),
+    mutationFn: async ({ shippingManifestId, payload }) =>
+      requestExport(shippingManifestId, payload),
     ...options,
   });
 
