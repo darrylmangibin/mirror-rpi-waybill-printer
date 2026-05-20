@@ -261,12 +261,22 @@ const ShippingBinItemsList = ({
       onExport?.({ filter_type: "all" });
     }
 
+    resetExportSelectionControls();
     setIsExportModalOpen(false);
   };
 
   const handleCancelExport = () => {
     resetExportSelectionControls();
     setIsExportModalOpen(false);
+  };
+
+  const handleExportModalOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      handleCancelExport();
+      return;
+    }
+
+    setIsExportModalOpen(true);
   };
 
   const isExportConfirmationDisabled =
@@ -687,11 +697,11 @@ const ShippingBinItemsList = ({
 
       <Dialog
         open={isExportModalOpen}
-        onOpenChange={(nextOpen) => setIsExportModalOpen(nextOpen)}
+        onOpenChange={handleExportModalOpenChange}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Export Shipping Bin Items</DialogTitle>
+            <DialogTitle>Export Orders</DialogTitle>
             <DialogDescription>
               Choose which shipping bin items should be included in the CSV
               export.

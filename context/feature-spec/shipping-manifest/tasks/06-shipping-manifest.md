@@ -25,6 +25,8 @@ Wire the Shipping Manifest CSV export button to the export request flow, show ex
 - Display the export status in the modal as the request progresses.
 - Keep polling lightweight and scoped to the active modal/export request so it does not keep running after the modal closes or after the export reaches a terminal state.
 - Show a warning in the modal that closing it will discard the current download URL and the user will need to request the export again, or use the export-request listing page / Discord guidance if that workflow is available in the product.
+- Change the export selection modal title from `Export Shipping Bin Items` to `Export Orders`.
+- When the export selection modal closes through any close path, clear the selected export tenants back to empty.
 
 ## MUST NOT DO
 
@@ -47,6 +49,8 @@ Wire the Shipping Manifest CSV export button to the export request flow, show ex
 8. The download button should stay disabled until the status is completed and the URL is available.
 9. Clicking the download button should navigate to the download URL.
 10. The modal should warn the user that closing it will lose the current download URL and require a new request.
+11. The export selection modal title should read `Export Orders`.
+12. Closing the export selection modal should reset selected export tenants to empty.
 
 ## UI Behavior
 
@@ -54,6 +58,7 @@ Wire the Shipping Manifest CSV export button to the export request flow, show ex
 - Keep the modal content responsive to status updates without forcing unnecessary refetches when the export is already done or failed.
 - Treat failed exports as terminal and stop polling immediately.
 - Preserve the user’s ability to close the modal at any time.
+- Closing the export selection modal through Cancel, overlay/escape, or dialog close controls should clear selected export tenants.
 
 ## Acceptance Criteria
 
@@ -66,3 +71,5 @@ Wire the Shipping Manifest CSV export button to the export request flow, show ex
 - The download button is disabled until the status is completed and the download URL is present.
 - Clicking download opens the generated export URL.
 - The modal warns users about losing the current download URL if they close it.
+- The export selection modal is titled `Export Orders`.
+- Closing the export selection modal clears selected export tenants.

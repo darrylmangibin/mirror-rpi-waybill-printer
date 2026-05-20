@@ -6,14 +6,22 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- Completed — export selection reset refinement
+- Completed — export modal close reset refinement
 
 ## Current Goal
 
-- `tasks/06-shipping-manifest.md` is implemented and refined: the CSV export flow resets export filter type and selected export tenants after cancel or ready-download click while preserving selected shipping bin item selections.
+- `tasks/06-shipping-manifest.md` is implemented and refined: closing the export selection modal through any close path clears selected export tenants, and the modal title reads `Export Orders`.
 
 ## Completed
 
+- Updated `ShippingBinItemsList` export selection modal:
+  - dialog close paths now route through the reset helper
+  - confirm-close also clears the export filter controls after building the selected payload
+  - modal title now reads `Export Orders`
+- Updated `tasks/06-shipping-manifest.md` with the new export selection modal title and close-reset requirements.
+- Verified with `npm run build` in `frontend/`.
+- Manually QA'd in browser on a real shipping manifest detail page: opened `Export CSV`, confirmed the modal title is `Export Orders`, selected a tenant, closed with Escape, reopened the modal, and confirmed the tenant count reset to `0 selected`.
+- Started `tasks/06-shipping-manifest.md` refinement for export selection modal close behavior and title copy.
 - Refined Shipping Manifest export selection reset behavior for `tasks/06-shipping-manifest.md`:
   - cancelling the export selection modal resets the export filter type to `all`
   - cancelling clears selected export tenants
