@@ -6,14 +6,24 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- Completed — export request service and hook implementation
+- Completed — export status and download URL service/hook implementation
 
 ## Current Goal
 
-- Frontend-only Shipping Manifest export request service and React Query hook from `tasks/03-shipping-manifest.md` are implemented and verified.
+- Frontend-only Shipping Manifest export status and download URL services/hooks from `tasks/04-shipping-manifest.md` are implemented and verified.
 
 ## Completed
 
+- Added frontend-only Shipping Manifest export status and download URL scaffolding for `tasks/04-shipping-manifest.md`:
+  - `getShippingManifestExportStatus` service using `nestApi`
+  - `GET /shipping-manifest-exports/:shippingManifestExportId`
+  - typed status response `{ status: string }`
+  - `useShippingManifestExportStatus` React Query query hook
+  - `getShippingManifestExportDownloadUrl` service using `nestApi`
+  - `GET /shipping-manifest-exports/:exportId/download`
+  - typed download response `{ url: string }`
+  - `useExportDownloadUrl` React Query mutation hook
+  - no backend, export generation, polling, retries, auto-download behavior, or UI wiring changes
 - Added frontend-only Shipping Manifest export request scaffolding for `tasks/03-shipping-manifest.md`:
   - `requestExport` service using `nestApi`
   - `POST /shipping-manifest-exports/:shippingManifestId`
@@ -104,12 +114,13 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## In Progress
 
-- No active implementation work for `tasks/03-shipping-manifest.md`.
+- No active implementation work for `tasks/04-shipping-manifest.md`.
 
 ## Next Up
 
 - Wire export modes for all visible/eligible items, selected items, and tenant-scoped subsets as required by the backend contract.
-- Verify CSV download behavior through the browser surface.
+- Wire export status checks and download URL retrieval into the UI in a future task.
+- Verify CSV download behavior through the browser surface after UI wiring exists.
 
 ## Open Questions
 
@@ -130,6 +141,8 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Session Notes
 
+- 2026-05-20: Implemented export status and download URL services/hooks following the existing ShippingManifest query and mutation patterns. `npm run build` passes; service-surface QA confirmed `getShippingManifestExportStatus('export-qa-1')` calls `GET /shipping-manifest-exports/export-qa-1` and returns `{ status: 'completed' }`, while `getShippingManifestExportDownloadUrl('export-qa-1')` calls `GET /shipping-manifest-exports/export-qa-1/download` and returns `{ url: 'https://example.test/export.csv' }`. LSP diagnostics were skipped because `typescript-language-server` is not installed in the environment.
+- 2026-05-20: Started `tasks/04-shipping-manifest.md` implementation. Scope is frontend-only service/hook scaffolding under `frontend/src/modules/ShippingManifest`; no backend routes, export generation, polling, auto-download behavior, retries, or UI wiring.
 - 2026-05-20: Implemented `requestExport` service and `useRequestExport` hook following the existing `add-item.service.ts` and `useAddItem.ts` module patterns. Next step is targeted diagnostics, build verification, and a minimal hook/service driver QA.
 - 2026-05-20: Completed verification for `tasks/03-shipping-manifest.md`. `npm run build` passes; service-surface QA confirmed `requestExport('manifest-qa-1')` posts to `/shipping-manifest-exports/manifest-qa-1` and returns the parsed `{ exportId, status }` response. LSP diagnostics were skipped because `typescript-language-server` is not installed in the environment.
 - 2026-05-20: Started `tasks/03-shipping-manifest.md` implementation. Scope is frontend-only service/hook scaffolding under `frontend/src/modules/ShippingManifest`; no backend routes, CSV generation, download behavior, polling, or UI wiring.
