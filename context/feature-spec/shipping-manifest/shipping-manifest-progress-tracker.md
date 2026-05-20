@@ -6,14 +6,20 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- Completed — CSV export modal UI implementation
+- Completed — export request service and hook implementation
 
 ## Current Goal
 
-- UI-only Shipping Manifest CSV export modal from `tasks/02-shipping-manifest.md` is implemented and verified.
+- Frontend-only Shipping Manifest export request service and React Query hook from `tasks/03-shipping-manifest.md` are implemented and verified.
 
 ## Completed
 
+- Added frontend-only Shipping Manifest export request scaffolding for `tasks/03-shipping-manifest.md`:
+  - `requestExport` service using `nestApi`
+  - `POST /shipping-manifest-exports/:shippingManifestId`
+  - typed response `{ exportId: string; status: string }`
+  - `useRequestExport` React Query mutation hook
+  - no backend, CSV generation, download behavior, polling, or UI wiring changes
 - Added UI-only CSV export modal wiring for `tasks/02-shipping-manifest.md`:
   - `Export CSV` button on the shipping bin items detail surface
   - modal choices for `all`, `selected item`, and `tenants`
@@ -98,17 +104,15 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## In Progress
 
-- No active implementation work for `tasks/02-shipping-manifest.md`.
+- No active implementation work for `tasks/03-shipping-manifest.md`.
 
 ## Next Up
 
-- Implement the frontend API service/hook for the completed CSV export backend endpoint.
 - Wire export modes for all visible/eligible items, selected items, and tenant-scoped subsets as required by the backend contract.
 - Verify CSV download behavior through the browser surface.
 
 ## Open Questions
 
-- Confirm the exact backend CSV export endpoint, HTTP method, payload/query shape, and response type.
 - Confirm whether “select all” for export means all currently visible rows, all filtered rows across pages, or all manifest items.
 - Confirm with the remote Nest API owner before adding new manifest statuses, queue states, carrier workflows, or marketplace-specific behavior.
 - Confirm expected production tenant configuration if the default `staging-v2` tenant is not appropriate for a deployment.
@@ -126,6 +130,9 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Session Notes
 
+- 2026-05-20: Implemented `requestExport` service and `useRequestExport` hook following the existing `add-item.service.ts` and `useAddItem.ts` module patterns. Next step is targeted diagnostics, build verification, and a minimal hook/service driver QA.
+- 2026-05-20: Completed verification for `tasks/03-shipping-manifest.md`. `npm run build` passes; service-surface QA confirmed `requestExport('manifest-qa-1')` posts to `/shipping-manifest-exports/manifest-qa-1` and returns the parsed `{ exportId, status }` response. LSP diagnostics were skipped because `typescript-language-server` is not installed in the environment.
+- 2026-05-20: Started `tasks/03-shipping-manifest.md` implementation. Scope is frontend-only service/hook scaffolding under `frontend/src/modules/ShippingManifest`; no backend routes, CSV generation, download behavior, polling, or UI wiring.
 - 2026-05-20: Started `tasks/02-shipping-manifest.md` implementation for the UI-only CSV export modal. Scope is limited to `ShippingBinItemsList`, `ShippingManifestDetails`, related UI-only types/components if needed, and this tracker; no backend/API/CSV generation changes.
 - 2026-05-20: Implemented the modal UI and callback payload wiring. Next step is targeted diagnostics, build verification, and browser QA through the shipping manifest details surface.
 - 2026-05-20: Completed verification for `tasks/02-shipping-manifest.md`. `npm run build` passes; browser QA covered opening `Export CSV`, confirming `all`, selecting a shipping bin item and confirming `selected_shipping_bin_items`, selecting multiple tenants and confirming `tenant`. LSP diagnostics were skipped because `typescript-language-server` is not installed in the environment.

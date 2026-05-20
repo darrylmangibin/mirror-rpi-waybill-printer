@@ -17,7 +17,7 @@ const resolveTenantId = (tenantId?: string): string =>
 
 const createNestApiClient = (): AxiosInstance =>
   axios.create({
-    baseURL: DEFAULTS.productionApiUrl,
+    baseURL: DEFAULTS.developmentApiUrl,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -26,20 +26,20 @@ const createNestApiClient = (): AxiosInstance =>
 
 const attachInterceptors = (
   client: AxiosInstance,
-  tenantId?: string
+  tenantId?: string,
 ): AxiosInstance => {
   client.interceptors.request.use(
     (requestConfig: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
       requestConfig.headers.set("x-tenant-id", resolveTenantId(tenantId));
       return requestConfig;
-    }
+    },
   );
 
   client.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
       return Promise.reject(error);
-    }
+    },
   );
 
   return client;
