@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ChevronLeft,
@@ -8,6 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -30,284 +31,22 @@ import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/use
 import type {
   ShippingBinItem,
   ShippingBinItemSyncStatus,
-  ShippingBinItemValidationStatus,
-  ShippingBinItemWorkflowStep,
 } from "@/modules/ShippingBinItem/types/shipping-bin-item.type";
+import { COLUMNS, perPageOptions, syncStatusOptions } from "./constants";
+import { DateCell } from "./components/DateCell";
+import { LoadingRows } from "./components/LoadingRows";
+import {
+  SyncStatusBadge,
+  ValidationBadge,
+  WorkflowBadge,
+} from "./components/StatusBadges";
+import { areSyncStatusesEqual, getSyncStatusFilterLabel } from "./utils";
 
 export interface ShippingBinItemsListProps {
   shippingManifestId?: string;
   onCloseManifest?: () => void;
   onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
-
-type SyncStatusFilterOption = {
-  key: string;
-  label: string;
-  statuses: ShippingBinItemSyncStatus[];
-};
-
-const perPageOptions = [10, 20, 50, 100];
-const syncStatusOptions: SyncStatusFilterOption[] = [
-  { key: "all", label: "All", statuses: [] },
-  {
-    key: "included-in-manifest",
-    label: "Included in Manifest",
-    statuses: ["valid", "sync_failed"],
-  },
-  { key: "valid", label: "Valid", statuses: ["valid"] },
-  { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
-  {
-    key: "sync_failed",
-    label: "Sync Failed",
-    statuses: ["sync_failed"],
-  },
-];
-const COLUMNS = 8;
-
-const areSyncStatusesEqual = (
-  current: ShippingBinItemSyncStatus[],
-  next: ShippingBinItemSyncStatus[],
-) =>
-  current.length === next.length &&
-  current.every((status, index) => status === next[index]);
-
-const getSyncStatusFilterLabel = (statuses: ShippingBinItemSyncStatus[]) =>
-  syncStatusOptions.find((option) =>
-    areSyncStatusesEqual(option.statuses, statuses),
-  )?.label ?? statuses.map(formatLabel).join(", ");
-
-type BadgeConfig = {
-  bg: string;
-  text: string;
-  border: string;
-  dot: string;
-};
-
-const syncStatusConfig: Record<ShippingBinItemSyncStatus, BadgeConfig> = {
-  valid: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-400",
-  },
-  cancelled: {
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
-  },
-  sync_failed: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-  },
-};
-
-const workflowConfig: Partial<
-  Record<ShippingBinItemWorkflowStep, BadgeConfig>
-> = {
-  at_packing_station: {
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-  },
-  being_validated: {
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
-    dot: "bg-blue-400",
-  },
-  in_collection_bin: {
-    bg: "bg-violet-50",
-    text: "text-violet-700",
-    border: "border-violet-200",
-    dot: "bg-violet-400",
-  },
-  shipped_out: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-400",
-  },
-  for_loading: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-200",
-    dot: "bg-orange-400",
-  },
-  loaded: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-200",
-    dot: "bg-purple-400",
-  },
-  not_accepted_by_courier: {
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
-  },
-};
-
-const validationConfig: Partial<
-  Record<ShippingBinItemValidationStatus, BadgeConfig>
-> = {
-  pending: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-  },
-  verified_present: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-400",
-  },
-  missing_from_bin: {
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
-  },
-  not_accepted_by_courier: {
-    bg: "bg-red-50",
-    text: "text-red-700",
-    border: "border-red-200",
-    dot: "bg-red-400",
-  },
-  no_tracking_number: {
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-  },
-};
-
-const defaultBadgeConfig: BadgeConfig = {
-  bg: "bg-slate-50",
-  text: "text-slate-600",
-  border: "border-slate-200",
-  dot: "bg-slate-400",
-};
-
-const formatLabel = (value: string) =>
-  value
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
-const formatDateTime = (value: string | null) => {
-  if (!value) return null;
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-
-  return {
-    date: parsed.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }),
-    time: parsed.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-};
-
-const CompactBadge = ({
-  label,
-  config,
-}: {
-  label: string;
-  config: BadgeConfig;
-}) => (
-  <span
-    className={cn(
-      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-      config.bg,
-      config.text,
-      config.border,
-    )}
-  >
-    <span className={cn("h-1.5 w-1.5 rounded-full", config.dot)} />
-    {label}
-  </span>
-);
-
-const DateCell = ({ value }: { value: string | null }) => {
-  const formatted = formatDateTime(value);
-
-  if (!formatted) {
-    return <span className="text-sm text-slate-400">—</span>;
-  }
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-sm font-medium text-slate-700">
-        {formatted.date}
-      </span>
-      <span className="text-xs text-slate-400">{formatted.time}</span>
-    </div>
-  );
-};
-
-const SyncStatusBadge = ({ status }: { status: ShippingBinItemSyncStatus }) => (
-  <CompactBadge label={formatLabel(status)} config={syncStatusConfig[status]} />
-);
-
-const WorkflowBadge = ({
-  status,
-}: {
-  status: ShippingBinItemWorkflowStep | null;
-}) => {
-  if (!status) {
-    return <span className="text-sm text-slate-400">—</span>;
-  }
-
-  return (
-    <CompactBadge
-      label={formatLabel(status)}
-      config={workflowConfig[status] ?? defaultBadgeConfig}
-    />
-  );
-};
-
-const ValidationBadge = ({
-  status,
-}: {
-  status: ShippingBinItemValidationStatus | null;
-}) => {
-  if (!status) {
-    return <span className="text-sm text-slate-400">—</span>;
-  }
-
-  return (
-    <CompactBadge
-      label={formatLabel(status)}
-      config={validationConfig[status] ?? defaultBadgeConfig}
-    />
-  );
-};
-
-const LoadingRows = ({ rows }: { rows: number }) =>
-  Array.from({ length: rows }).map((_, index) => (
-    <TableRow key={index} className="hover:bg-transparent">
-      {Array.from({ length: COLUMNS }).map((__, cellIndex) => (
-        <TableCell key={cellIndex} className="py-3.5">
-          <Skeleton
-            className={cn(
-              "h-4 rounded",
-              cellIndex === 0 ? "w-28" : cellIndex >= 4 ? "w-24" : "w-20",
-            )}
-          />
-        </TableCell>
-      ))}
-    </TableRow>
-  ));
 
 const ShippingBinItemsList = ({
   shippingManifestId,
@@ -320,6 +59,13 @@ const ShippingBinItemsList = ({
     ShippingBinItemSyncStatus[]
   >([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [lastSelectedItemId, setLastSelectedItemId] = useState<string | null>(
+    null,
+  );
+  const isShiftSelectingRef = useRef(false);
 
   const { data: tenantConfigs } = useTenantConfigurations();
 
@@ -355,7 +101,7 @@ const ShippingBinItemsList = ({
     },
   );
 
-  const items: ShippingBinItem[] = data?.data ?? [];
+  const items: ShippingBinItem[] = useMemo(() => data?.data ?? [], [data?.data]);
   const currentPage = data?.meta.current_page ?? page;
   const totalPages = Math.max(data?.meta.last_page ?? 1, 1);
   const totalRows = data?.meta.total ?? 0;
@@ -363,6 +109,89 @@ const ShippingBinItemsList = ({
     () => Array.from({ length: totalPages }, (_, index) => String(index + 1)),
     [totalPages],
   );
+  const visibleItemIds = useMemo(() => items.map((item) => item.id), [items]);
+  const selectedVisibleItemCount = visibleItemIds.filter((id) =>
+    selectedItemIds.has(id),
+  ).length;
+  const hasVisibleItems = visibleItemIds.length > 0;
+  const areAllVisibleItemsSelected =
+    hasVisibleItems && selectedVisibleItemCount === visibleItemIds.length;
+  const areSomeVisibleItemsSelected =
+    selectedVisibleItemCount > 0 && !areAllVisibleItemsSelected;
+  const selectedCount = selectedItemIds.size;
+
+  useEffect(() => {
+    setSelectedItemIds((current) => (current.size === 0 ? current : new Set()));
+    setLastSelectedItemId(null);
+  }, [page, perPage, selectedSyncStatus, selectedTenantId, shippingManifestId]);
+
+  useEffect(() => {
+    const visibleItemIdSet = new Set(visibleItemIds);
+
+    setSelectedItemIds((current) => {
+      const next = new Set(
+        Array.from(current).filter((id) => visibleItemIdSet.has(id)),
+      );
+
+      return next.size === current.size ? current : next;
+    });
+    setLastSelectedItemId((current) =>
+      current && visibleItemIdSet.has(current) ? current : null,
+    );
+  }, [visibleItemIds]);
+
+  const handleItemSelection = (
+    item: ShippingBinItem,
+    index: number,
+    shouldSelect: boolean,
+    isRangeSelection: boolean,
+  ) => {
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+
+      const anchorIndex = lastSelectedItemId
+        ? items.findIndex((rangeItem) => rangeItem.id === lastSelectedItemId)
+        : -1;
+
+      if (isRangeSelection && anchorIndex !== -1) {
+        const startIndex = Math.min(anchorIndex, index);
+        const endIndex = Math.max(anchorIndex, index);
+        const rangeItemIds = items
+          .slice(startIndex, endIndex + 1)
+          .map((rangeItem) => rangeItem.id);
+
+        rangeItemIds.forEach((id) => {
+          if (shouldSelect) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+        });
+      } else if (shouldSelect) {
+        next.add(item.id);
+      } else {
+        next.delete(item.id);
+      }
+
+      return next;
+    });
+    setLastSelectedItemId(item.id);
+  };
+
+  const toggleVisibleItemsSelection = () => {
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+
+      if (areAllVisibleItemsSelected) {
+        visibleItemIds.forEach((id) => next.delete(id));
+      } else {
+        visibleItemIds.forEach((id) => next.add(id));
+      }
+
+      return next;
+    });
+    setLastSelectedItemId(null);
+  };
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -383,6 +212,11 @@ const ShippingBinItemsList = ({
                       totalRows !== 1 ? "s" : ""
                     } linked to this manifest`}
               </p>
+              {selectedCount > 0 && (
+                <p className="mt-1 text-xs font-medium text-violet-600">
+                  {selectedCount.toLocaleString()} selected
+                </p>
+              )}
             </div>
           </div>
           {onCloseManifest && (
@@ -496,7 +330,26 @@ const ShippingBinItemsList = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead className="pl-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <TableHead className="w-12 pl-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <Checkbox
+                  checked={
+                    areAllVisibleItemsSelected
+                      ? true
+                      : areSomeVisibleItemsSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  aria-label={
+                    areAllVisibleItemsSelected
+                      ? "Deselect all visible shipping bin items"
+                      : "Select all visible shipping bin items"
+                  }
+                  disabled={!hasVisibleItems || isLoading}
+                  className="border-slate-300 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600 data-[state=indeterminate]:border-violet-600 data-[state=indeterminate]:bg-violet-600"
+                  onCheckedChange={toggleVisibleItemsSelection}
+                />
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Invoice / Tracking
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -583,72 +436,100 @@ const ShippingBinItemsList = ({
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((item, index) => (
-                <TableRow
-                  key={item.id}
-                  className={cn(
-                    "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30",
-                  )}
-                >
-                  <TableCell className="pl-5 py-3.5 align-top">
-                    <div className="flex min-w-[200px] flex-col gap-1">
-                      <span className="font-mono text-sm font-semibold text-slate-800">
-                        {item.invoice_number}
-                      </span>
-                      <span className="font-mono text-xs text-slate-400">
-                        {item.tracking_number || "—"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-slate-700">
-                        {item.courier || "—"}
-                      </span>
-                      <span className="text-xs uppercase tracking-wide text-slate-400">
-                        {item.courier_code || "—"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-slate-700">
-                        {item.marketplace || "—"}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {item.platform_slug || "—"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <WorkflowBadge status={item.workflow_step} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <ValidationBadge status={item.validation_status} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <SyncStatusBadge status={item.sync_status} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <DateCell value={item.shipped_out_at} />
-                  </TableCell>
-                  <TableCell className="pr-5 py-3.5 align-top">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="min-w-[88px] rounded-lg border-slate-200"
-                      onClick={() => onSyncItem?.(item.id)}
-                      disabled={
-                        !onSyncItem || item.sync_status !== "sync_failed"
-                      }
-                    >
-                      Sync
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              items.map((item, index) => {
+                const isSelected = selectedItemIds.has(item.id);
+
+                return (
+                  <TableRow
+                    key={item.id}
+                    aria-selected={isSelected}
+                    className={cn(
+                      "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
+                      isSelected
+                        ? "bg-violet-50/70 hover:bg-violet-50"
+                        : index % 2 === 0
+                          ? "bg-white"
+                          : "bg-slate-50/30",
+                    )}
+                  >
+                    <TableCell className="pl-5 py-3.5 align-top">
+                      <Checkbox
+                        checked={isSelected}
+                        aria-label={`Select shipping bin item ${item.invoice_number}`}
+                        className="border-slate-300 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600"
+                        onClick={(event) => {
+                          isShiftSelectingRef.current = event.shiftKey;
+                        }}
+                        onCheckedChange={(checked) => {
+                          handleItemSelection(
+                            item,
+                            index,
+                            checked === true,
+                            isShiftSelectingRef.current,
+                          );
+                          isShiftSelectingRef.current = false;
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <div className="flex min-w-[200px] flex-col gap-1">
+                        <span className="font-mono text-sm font-semibold text-slate-800">
+                          {item.invoice_number}
+                        </span>
+                        <span className="font-mono text-xs text-slate-400">
+                          {item.tracking_number || "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-slate-700">
+                          {item.courier || "—"}
+                        </span>
+                        <span className="text-xs uppercase tracking-wide text-slate-400">
+                          {item.courier_code || "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-slate-700">
+                          {item.marketplace || "—"}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {item.platform_slug || "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <WorkflowBadge status={item.workflow_step} />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <ValidationBadge status={item.validation_status} />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <SyncStatusBadge status={item.sync_status} />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <DateCell value={item.shipped_out_at} />
+                    </TableCell>
+                    <TableCell className="pr-5 py-3.5 align-top">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-w-[88px] rounded-lg border-slate-200"
+                        onClick={() => onSyncItem?.(item.id)}
+                        disabled={
+                          !onSyncItem || item.sync_status !== "sync_failed"
+                        }
+                      >
+                        Sync
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

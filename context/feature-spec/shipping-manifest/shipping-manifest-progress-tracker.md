@@ -1,16 +1,16 @@
 # Shipping Manifest Progress Tracker
 
-Update this file after every meaningful implementation change.
+Update this file at task start, after every meaningful implementation change, and at task completion.
 
 This tracker was reconstructed after the feature was already completed. The entries below are assumed from the current implementation and feature overview rather than from live incremental session history.
 
 ## Current Phase
 
-- Complete
+- In progress — CSV export enhancement
 
 ## Current Goal
 
-- Maintain the completed Shipping Manifest workflow and use this tracker as the baseline for any future fixes or enhancements.
+- Build the Shipping Manifest CSV export workflow by first preparing reliable shipping bin item selection UI, then wiring the export action to the completed backend endpoint.
 
 ## Completed
 
@@ -75,19 +75,38 @@ This tracker was reconstructed after the feature was already completed. The entr
   - queue job tenant results
 - Added module constants, hooks, services, utilities, and UI components needed by the completed workflow.
 - Documented the feature behavior in `context/feature-spec/shipping-manifest/feature-overview.md`.
+- Implemented UI-only shipping bin item row selection for the CSV export preparation task:
+  - row-level checkboxes in the shipping bin item table
+  - header checkbox for selecting or deselecting all currently visible rows
+  - indeterminate header checkbox state when only some visible rows are selected
+  - selected item IDs stored in component state
+  - selected row highlighting and selected-count feedback
+  - Shift-click range selection across the current visible item order
+  - no backend, CSV generation, or export button wiring changes
+- Refactored the Shipping Bin Items list helper block into local files so `ShippingBinItemsList/index.tsx` stays focused on orchestration:
+  - constants and badge configs in `constants.ts`
+  - helper types in `types.ts`
+  - formatting and comparison helpers in `utils.ts`
+  - badge/date/loading row subcomponents under `components/`
 
 ## In Progress
 
-- None. The feature is considered complete.
+- Shipping bin item CSV export enhancement:
+  - selection UI foundation is implemented
+  - row-level, Shift-range, select-all, deselect-all, and indeterminate header states are implemented
+  - backend/API/export-button wiring is still pending
 
 ## Next Up
 
-- No required implementation work is currently planned.
-- Future work, if requested, should start from the completed feature baseline and target a specific improvement, bug, or API contract change.
+- Add the export button UI to the Shipping Manifest details / shipping bin items surface.
+- Implement the frontend API service/hook for the completed CSV export backend endpoint.
+- Wire export modes for all visible/eligible items, selected items, and tenant-scoped subsets as required by the backend contract.
+- Verify CSV download behavior through the browser surface.
 
 ## Open Questions
 
-- None blocking completion.
+- Confirm the exact backend CSV export endpoint, HTTP method, payload/query shape, and response type.
+- Confirm whether “select all” for export means all currently visible rows, all filtered rows across pages, or all manifest items.
 - Confirm with the remote Nest API owner before adding new manifest statuses, queue states, carrier workflows, or marketplace-specific behavior.
 - Confirm expected production tenant configuration if the default `staging-v2` tenant is not appropriate for a deployment.
 
@@ -105,6 +124,8 @@ This tracker was reconstructed after the feature was already completed. The entr
 ## Session Notes
 
 - Reconstructed tracker from completed source code and `feature-overview.md`; not a chronological record of the original implementation sessions.
+- Active implementation task: `context/feature-spec/shipping-manifest/tasks/01-shipping-manifest.md`.
+- Current task status should stay updated while work is running, not only after code changes are finished.
 - Main frontend entry points:
   - `frontend/src/pages/shipping-manifest/page.tsx`
   - `frontend/src/pages/shipping-manifest-details/page.tsx`

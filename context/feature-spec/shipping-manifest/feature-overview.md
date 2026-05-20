@@ -56,7 +56,11 @@ Shipping Manifest is a React/Vite operator workflow for warehouse teams that man
 - Linked shipping bin item table scoped by `shipping_manifest_id`.
 - Item filters for tenant and sync status, including all, included-in-manifest, valid, cancelled, and sync-failed views.
 - Shipping bin item columns for invoice, tracking number, courier, marketplace, tenant, sync status, workflow step, validation status, and updated timestamps.
-- CSV export action for shipping bin items with support for exporting all items, selected items, or a tenant-filtered subset.
+- Row-level shipping bin item selection with selected-count feedback.
+- Header checkbox for selecting or deselecting all currently visible shipping bin item rows.
+- Indeterminate header checkbox state when some, but not all, visible rows are selected.
+- Shift-range selection for contiguous visible shipping bin item rows.
+- CSV export action for shipping bin items with support for exporting all items, selected items, or a tenant-filtered subset; the current selection UI prepares selected-item export, while CSV generation and export wiring are handled separately from the UI-only selection task.
 - Manual sync action for shipping bin items through `POST /shipping-bin-items/:id/sync`.
 - Close-manifest confirmation modal that warns the operator that closed manifests cannot accept more items.
 
@@ -83,6 +87,7 @@ Shipping Manifest is a React/Vite operator workflow for warehouse teams that man
 - React/Vite frontend pages, components, hooks, services, types, constants, and utilities for shipping manifest workflows.
 - FusionTech Nest API calls for manifests, shipping bin items, shipping bins, tenant configurations, item sync, and invoice-status queue jobs.
 - CSV export behavior for shipping bin items on the manifest detail page.
+- UI-only selection behavior for preparing selected shipping bin items for export, including row checkboxes, header select/deselect all, and indeterminate state.
 - Scanner-driven manifest creation and item addition through browser keyboard-style barcode input.
 - Tenant-aware request handling through the shared Nest API client and explicit tenant-specific clients for manual item creation.
 - Operator-facing loading, empty, error, warning, success, and conflict states that are present in the current UI.
@@ -93,6 +98,7 @@ Shipping Manifest is a React/Vite operator workflow for warehouse teams that man
 - Replacing or reimplementing the remote FusionTech Nest API that owns manifest and shipping-bin data.
 - Local CUPS printing, waybill file download/rendering, and print-job monitoring behavior.
 - Authentication, authorization, or role management beyond the current tenant header behavior.
+- Backend, CSV generation, or export-button wiring changes when the task is only about item-selection UI.
 - Creating new manifest statuses, queue states, carrier workflows, or marketplace behavior that is not represented by the current API types and UI flows.
 
 ## Success Criteria
@@ -103,7 +109,8 @@ Shipping Manifest is a React/Vite operator workflow for warehouse teams that man
 4. The manifest detail page can load manifest data, show operator-relevant metadata, and enable tracking-number scanning only while the manifest is open.
 5. Scanned tracking numbers can be added to the manifest, with warnings for sync-failed or cancelled results and a manual registration path for unresolved tracking numbers.
 6. Linked shipping bin items can be listed, filtered, paginated, and manually synced from the manifest detail page.
-7. Shipping bin items can be exported to CSV for all items, selected items, or tenant-scoped subsets from the manifest detail page.
-8. Open manifests can be closed through an explicit confirmation flow, after which the UI no longer enables scanner-based item addition for that manifest.
-9. Queue jobs for manifest invoice-status updates can be viewed by status and tenant result, invoice numbers can be searched or copied, and failed or partially failed jobs can be retried.
-10. All shipping manifest remote requests use the configured Nest API client and preserve tenant scoping through `x-tenant-id` behavior.
+7. Shipping bin item rows can be selected individually, selected by visible range with Shift-click, selected all at once from the table header, deselected all at once from the table header, and represented by an indeterminate header checkbox when partially selected.
+8. Shipping bin items can be exported to CSV for all items, selected items, or tenant-scoped subsets from the manifest detail page once the export action is wired to the backend export behavior.
+9. Open manifests can be closed through an explicit confirmation flow, after which the UI no longer enables scanner-based item addition for that manifest.
+10. Queue jobs for manifest invoice-status updates can be viewed by status and tenant result, invoice numbers can be searched or copied, and failed or partially failed jobs can be retried.
+11. All shipping manifest remote requests use the configured Nest API client and preserve tenant scoping through `x-tenant-id` behavior.
