@@ -1,13 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Download,
   Lock,
   PackageSearch,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -30,288 +40,40 @@ import { useTenantConfigurations } from "@/modules/TenantConfiguration/hooks/use
 import type {
   ShippingBinItem,
   ShippingBinItemSyncStatus,
-  ShippingBinItemValidationStatus,
-  ShippingBinItemWorkflowStep,
 } from "@/modules/ShippingBinItem/types/shipping-bin-item.type";
+import { COLUMNS, perPageOptions, syncStatusOptions } from "./constants";
+import { DateCell } from "./components/DateCell";
+import { LoadingRows } from "./components/LoadingRows";
+import {
+  SyncStatusBadge,
+  ValidationBadge,
+  WorkflowBadge,
+} from "./components/StatusBadges";
+import { areSyncStatusesEqual, getSyncStatusFilterLabel } from "./utils";
+
+type ExportFilterType = "all" | "selected_shipping_bin_items" | "tenant";
+
+export type ShippingBinItemsExportPayload =
+  | { filter_type: "all" }
+  | {
+      filter_type: "selected_shipping_bin_items";
+      shipping_bin_item_ids: string[];
+    }
+  | { filter_type: "tenant"; tenant_ids: string[] };
 
 export interface ShippingBinItemsListProps {
   shippingManifestId?: string;
   onCloseManifest?: () => void;
+  onExport?: (payload: ShippingBinItemsExportPayload) => void;
+  exportSelectionResetKey?: number;
   onSyncItem?: (id: ShippingBinItem["id"]) => void;
 }
-
-type SyncStatusFilterOption = {
-  key: string;
-  label: string;
-  statuses: ShippingBinItemSyncStatus[];
-};
-
-const perPageOptions = [10, 20, 50, 100];
-const syncStatusOptions: SyncStatusFilterOption[] = [
-  { key: "all", label: "All", statuses: [] },
-  {
-    key: "included-in-manifest",
-    label: "Included in Manifest",
-    statuses: ["valid", "sync_failed"],
-  },
-  { key: "valid", label: "Valid", statuses: ["valid"] },
-  { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
-  {
-    key: "sync_failed",
-    label: "Sync Failed",
-    statuses: ["sync_failed"],
-  },
-];
-const COLUMNS = 8;
-
-const areSyncStatusesEqual = (
-  current: ShippingBinItemSyncStatus[],
-  next: ShippingBinItemSyncStatus[],
-) =>
-  current.length === next.length &&
-  current.every((status, index) => status === next[index]);
-
-const getSyncStatusFilterLabel = (statuses: ShippingBinItemSyncStatus[]) =>
-  syncStatusOptions.find((option) =>
-    areSyncStatusesEqual(option.statuses, statuses),
-  )?.label ?? statuses.map(formatLabel).join(", ");
-
-type BadgeConfig = {
-  bg: string;
-  text: string;
-  border: string;
-  dot: string;
-};
-
-const syncStatusConfig: Record<ShippingBinItemSyncStatus, BadgeConfig> = {
-  valid: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-400",
-  },
-  cancelled: {
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
-  },
-  sync_failed: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-  },
-};
-
-const workflowConfig: Partial<
-  Record<ShippingBinItemWorkflowStep, BadgeConfig>
-> = {
-  at_packing_station: {
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-  },
-  being_validated: {
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-200",
-    dot: "bg-blue-400",
-  },
-  in_collection_bin: {
-    bg: "bg-violet-50",
-    text: "text-violet-700",
-    border: "border-violet-200",
-    dot: "bg-violet-400",
-  },
-  shipped_out: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-400",
-  },
-  for_loading: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-200",
-    dot: "bg-orange-400",
-  },
-  loaded: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-200",
-    dot: "bg-purple-400",
-  },
-  not_accepted_by_courier: {
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
-  },
-};
-
-const validationConfig: Partial<
-  Record<ShippingBinItemValidationStatus, BadgeConfig>
-> = {
-  pending: {
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-  },
-  verified_present: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-400",
-  },
-  missing_from_bin: {
-    bg: "bg-rose-50",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-400",
-  },
-  not_accepted_by_courier: {
-    bg: "bg-red-50",
-    text: "text-red-700",
-    border: "border-red-200",
-    dot: "bg-red-400",
-  },
-  no_tracking_number: {
-    bg: "bg-slate-50",
-    text: "text-slate-600",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-  },
-};
-
-const defaultBadgeConfig: BadgeConfig = {
-  bg: "bg-slate-50",
-  text: "text-slate-600",
-  border: "border-slate-200",
-  dot: "bg-slate-400",
-};
-
-const formatLabel = (value: string) =>
-  value
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
-const formatDateTime = (value: string | null) => {
-  if (!value) return null;
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-
-  return {
-    date: parsed.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }),
-    time: parsed.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-};
-
-const CompactBadge = ({
-  label,
-  config,
-}: {
-  label: string;
-  config: BadgeConfig;
-}) => (
-  <span
-    className={cn(
-      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-      config.bg,
-      config.text,
-      config.border,
-    )}
-  >
-    <span className={cn("h-1.5 w-1.5 rounded-full", config.dot)} />
-    {label}
-  </span>
-);
-
-const DateCell = ({ value }: { value: string | null }) => {
-  const formatted = formatDateTime(value);
-
-  if (!formatted) {
-    return <span className="text-sm text-slate-400">—</span>;
-  }
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-sm font-medium text-slate-700">
-        {formatted.date}
-      </span>
-      <span className="text-xs text-slate-400">{formatted.time}</span>
-    </div>
-  );
-};
-
-const SyncStatusBadge = ({ status }: { status: ShippingBinItemSyncStatus }) => (
-  <CompactBadge label={formatLabel(status)} config={syncStatusConfig[status]} />
-);
-
-const WorkflowBadge = ({
-  status,
-}: {
-  status: ShippingBinItemWorkflowStep | null;
-}) => {
-  if (!status) {
-    return <span className="text-sm text-slate-400">—</span>;
-  }
-
-  return (
-    <CompactBadge
-      label={formatLabel(status)}
-      config={workflowConfig[status] ?? defaultBadgeConfig}
-    />
-  );
-};
-
-const ValidationBadge = ({
-  status,
-}: {
-  status: ShippingBinItemValidationStatus | null;
-}) => {
-  if (!status) {
-    return <span className="text-sm text-slate-400">—</span>;
-  }
-
-  return (
-    <CompactBadge
-      label={formatLabel(status)}
-      config={validationConfig[status] ?? defaultBadgeConfig}
-    />
-  );
-};
-
-const LoadingRows = ({ rows }: { rows: number }) =>
-  Array.from({ length: rows }).map((_, index) => (
-    <TableRow key={index} className="hover:bg-transparent">
-      {Array.from({ length: COLUMNS }).map((__, cellIndex) => (
-        <TableCell key={cellIndex} className="py-3.5">
-          <Skeleton
-            className={cn(
-              "h-4 rounded",
-              cellIndex === 0 ? "w-28" : cellIndex >= 4 ? "w-24" : "w-20",
-            )}
-          />
-        </TableCell>
-      ))}
-    </TableRow>
-  ));
 
 const ShippingBinItemsList = ({
   shippingManifestId,
   onCloseManifest,
+  onExport,
+  exportSelectionResetKey,
   onSyncItem,
 }: ShippingBinItemsListProps) => {
   const [page, setPage] = useState(1);
@@ -320,6 +82,19 @@ const ShippingBinItemsList = ({
     ShippingBinItemSyncStatus[]
   >([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("all");
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportFilterType, setExportFilterType] =
+    useState<ExportFilterType>("all");
+  const [selectedExportTenantIds, setSelectedExportTenantIds] = useState<
+    Set<string>
+  >(() => new Set());
+  const [lastSelectedItemId, setLastSelectedItemId] = useState<string | null>(
+    null,
+  );
+  const isShiftSelectingRef = useRef(false);
 
   const { data: tenantConfigs } = useTenantConfigurations();
 
@@ -355,7 +130,7 @@ const ShippingBinItemsList = ({
     },
   );
 
-  const items: ShippingBinItem[] = data?.data ?? [];
+  const items: ShippingBinItem[] = useMemo(() => data?.data ?? [], [data?.data]);
   const currentPage = data?.meta.current_page ?? page;
   const totalPages = Math.max(data?.meta.last_page ?? 1, 1);
   const totalRows = data?.meta.total ?? 0;
@@ -363,6 +138,150 @@ const ShippingBinItemsList = ({
     () => Array.from({ length: totalPages }, (_, index) => String(index + 1)),
     [totalPages],
   );
+  const visibleItemIds = useMemo(() => items.map((item) => item.id), [items]);
+  const selectedVisibleItemCount = visibleItemIds.filter((id) =>
+    selectedItemIds.has(id),
+  ).length;
+  const hasVisibleItems = visibleItemIds.length > 0;
+  const areAllVisibleItemsSelected =
+    hasVisibleItems && selectedVisibleItemCount === visibleItemIds.length;
+  const areSomeVisibleItemsSelected =
+    selectedVisibleItemCount > 0 && !areAllVisibleItemsSelected;
+  const selectedCount = selectedItemIds.size;
+  const selectedExportTenantCount = selectedExportTenantIds.size;
+
+  useEffect(() => {
+    setSelectedItemIds((current) => (current.size === 0 ? current : new Set()));
+    setLastSelectedItemId(null);
+  }, [page, perPage, selectedSyncStatus, selectedTenantId, shippingManifestId]);
+
+  useEffect(() => {
+    const visibleItemIdSet = new Set(visibleItemIds);
+
+    setSelectedItemIds((current) => {
+      const next = new Set(
+        Array.from(current).filter((id) => visibleItemIdSet.has(id)),
+      );
+
+      return next.size === current.size ? current : next;
+    });
+    setLastSelectedItemId((current) =>
+      current && visibleItemIdSet.has(current) ? current : null,
+    );
+  }, [visibleItemIds]);
+
+  const handleItemSelection = (
+    item: ShippingBinItem,
+    index: number,
+    shouldSelect: boolean,
+    isRangeSelection: boolean,
+  ) => {
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+
+      const anchorIndex = lastSelectedItemId
+        ? items.findIndex((rangeItem) => rangeItem.id === lastSelectedItemId)
+        : -1;
+
+      if (isRangeSelection && anchorIndex !== -1) {
+        const startIndex = Math.min(anchorIndex, index);
+        const endIndex = Math.max(anchorIndex, index);
+        const rangeItemIds = items
+          .slice(startIndex, endIndex + 1)
+          .map((rangeItem) => rangeItem.id);
+
+        rangeItemIds.forEach((id) => {
+          if (shouldSelect) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+        });
+      } else if (shouldSelect) {
+        next.add(item.id);
+      } else {
+        next.delete(item.id);
+      }
+
+      return next;
+    });
+    setLastSelectedItemId(item.id);
+  };
+
+  const toggleVisibleItemsSelection = () => {
+    setSelectedItemIds((current) => {
+      const next = new Set(current);
+
+      if (areAllVisibleItemsSelected) {
+        visibleItemIds.forEach((id) => next.delete(id));
+      } else {
+        visibleItemIds.forEach((id) => next.add(id));
+      }
+
+      return next;
+    });
+    setLastSelectedItemId(null);
+  };
+
+  const toggleExportTenant = (tenantId: string, shouldSelect: boolean) => {
+    setSelectedExportTenantIds((current) => {
+      const next = new Set(current);
+
+      if (shouldSelect) {
+        next.add(tenantId);
+      } else {
+        next.delete(tenantId);
+      }
+
+      return next;
+    });
+  };
+
+  const resetExportSelectionControls = () => {
+    setExportFilterType("all");
+    setSelectedExportTenantIds(new Set());
+  };
+
+  useEffect(() => {
+    resetExportSelectionControls();
+  }, [exportSelectionResetKey]);
+
+  const handleConfirmExport = () => {
+    if (exportFilterType === "selected_shipping_bin_items") {
+      onExport?.({
+        filter_type: "selected_shipping_bin_items",
+        shipping_bin_item_ids: Array.from(selectedItemIds),
+      });
+    } else if (exportFilterType === "tenant") {
+      onExport?.({
+        filter_type: "tenant",
+        tenant_ids: Array.from(selectedExportTenantIds),
+      });
+    } else {
+      onExport?.({ filter_type: "all" });
+    }
+
+    resetExportSelectionControls();
+    setIsExportModalOpen(false);
+  };
+
+  const handleCancelExport = () => {
+    resetExportSelectionControls();
+    setIsExportModalOpen(false);
+  };
+
+  const handleExportModalOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      handleCancelExport();
+      return;
+    }
+
+    setIsExportModalOpen(true);
+  };
+
+  const isExportConfirmationDisabled =
+    !onExport ||
+    (exportFilterType === "tenant" && selectedExportTenantCount === 0);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -383,20 +302,38 @@ const ShippingBinItemsList = ({
                       totalRows !== 1 ? "s" : ""
                     } linked to this manifest`}
               </p>
+              {selectedCount > 0 && (
+                <p className="mt-1 text-xs font-medium text-violet-600">
+                  {selectedCount.toLocaleString()} selected
+                </p>
+              )}
             </div>
           </div>
-          {onCloseManifest && (
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-xl border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
-              onClick={onCloseManifest}
+              className="rounded-xl border-violet-200 text-violet-600 hover:bg-violet-50 hover:text-violet-700"
+              onClick={() => setIsExportModalOpen(true)}
+              disabled={!onExport}
             >
-              <Lock className="h-3.5 w-3.5" />
-              Close Manifest
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
             </Button>
-          )}
+            {onCloseManifest && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                onClick={onCloseManifest}
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Close Manifest
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-3 lg:items-end">
@@ -496,7 +433,26 @@ const ShippingBinItemsList = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
-              <TableHead className="pl-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <TableHead className="w-12 pl-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <Checkbox
+                  checked={
+                    areAllVisibleItemsSelected
+                      ? true
+                      : areSomeVisibleItemsSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  aria-label={
+                    areAllVisibleItemsSelected
+                      ? "Deselect all visible shipping bin items"
+                      : "Select all visible shipping bin items"
+                  }
+                  disabled={!hasVisibleItems || isLoading}
+                  className="border-slate-300 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600 data-[state=indeterminate]:border-violet-600 data-[state=indeterminate]:bg-violet-600"
+                  onCheckedChange={toggleVisibleItemsSelection}
+                />
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Invoice / Tracking
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -583,72 +539,100 @@ const ShippingBinItemsList = ({
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((item, index) => (
-                <TableRow
-                  key={item.id}
-                  className={cn(
-                    "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50/30",
-                  )}
-                >
-                  <TableCell className="pl-5 py-3.5 align-top">
-                    <div className="flex min-w-[200px] flex-col gap-1">
-                      <span className="font-mono text-sm font-semibold text-slate-800">
-                        {item.invoice_number}
-                      </span>
-                      <span className="font-mono text-xs text-slate-400">
-                        {item.tracking_number || "—"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-slate-700">
-                        {item.courier || "—"}
-                      </span>
-                      <span className="text-xs uppercase tracking-wide text-slate-400">
-                        {item.courier_code || "—"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-slate-700">
-                        {item.marketplace || "—"}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {item.platform_slug || "—"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <WorkflowBadge status={item.workflow_step} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <ValidationBadge status={item.validation_status} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <SyncStatusBadge status={item.sync_status} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <DateCell value={item.shipped_out_at} />
-                  </TableCell>
-                  <TableCell className="pr-5 py-3.5 align-top">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="min-w-[88px] rounded-lg border-slate-200"
-                      onClick={() => onSyncItem?.(item.id)}
-                      disabled={
-                        !onSyncItem || item.sync_status !== "sync_failed"
-                      }
-                    >
-                      Sync
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              items.map((item, index) => {
+                const isSelected = selectedItemIds.has(item.id);
+
+                return (
+                  <TableRow
+                    key={item.id}
+                    aria-selected={isSelected}
+                    className={cn(
+                      "border-b border-slate-100 transition-colors hover:bg-slate-50/70",
+                      isSelected
+                        ? "bg-violet-50/70 hover:bg-violet-50"
+                        : index % 2 === 0
+                          ? "bg-white"
+                          : "bg-slate-50/30",
+                    )}
+                  >
+                    <TableCell className="pl-5 py-3.5 align-top">
+                      <Checkbox
+                        checked={isSelected}
+                        aria-label={`Select shipping bin item ${item.invoice_number}`}
+                        className="border-slate-300 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600"
+                        onClick={(event) => {
+                          isShiftSelectingRef.current = event.shiftKey;
+                        }}
+                        onCheckedChange={(checked) => {
+                          handleItemSelection(
+                            item,
+                            index,
+                            checked === true,
+                            isShiftSelectingRef.current,
+                          );
+                          isShiftSelectingRef.current = false;
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <div className="flex min-w-[200px] flex-col gap-1">
+                        <span className="font-mono text-sm font-semibold text-slate-800">
+                          {item.invoice_number}
+                        </span>
+                        <span className="font-mono text-xs text-slate-400">
+                          {item.tracking_number || "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-slate-700">
+                          {item.courier || "—"}
+                        </span>
+                        <span className="text-xs uppercase tracking-wide text-slate-400">
+                          {item.courier_code || "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-medium text-slate-700">
+                          {item.marketplace || "—"}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {item.platform_slug || "—"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <WorkflowBadge status={item.workflow_step} />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <ValidationBadge status={item.validation_status} />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <SyncStatusBadge status={item.sync_status} />
+                    </TableCell>
+                    <TableCell className="py-3.5 align-top">
+                      <DateCell value={item.shipped_out_at} />
+                    </TableCell>
+                    <TableCell className="pr-5 py-3.5 align-top">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-w-[88px] rounded-lg border-slate-200"
+                        onClick={() => onSyncItem?.(item.id)}
+                        disabled={
+                          !onSyncItem || item.sync_status !== "sync_failed"
+                        }
+                      >
+                        Sync
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -710,6 +694,159 @@ const ShippingBinItemsList = ({
           </Button>
         </div>
       </div>
+
+      <Dialog
+        open={isExportModalOpen}
+        onOpenChange={handleExportModalOpenChange}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Orders</DialogTitle>
+            <DialogDescription>
+              Choose which shipping bin items should be included in the CSV
+              export.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              {[
+                {
+                  value: "all" as const,
+                  label: "All",
+                  description: "Export all shipping bin items for this manifest.",
+                },
+                {
+                  value: "selected_shipping_bin_items" as const,
+                  label: "Selected item",
+                  description: `${selectedCount.toLocaleString()} selected item${
+                    selectedCount !== 1 ? "s" : ""
+                  } will be included.`,
+                },
+                {
+                  value: "tenant" as const,
+                  label: "Tenants",
+                  description: "Export items for one or more selected tenants.",
+                },
+              ].map((option) => {
+                const isSelected = exportFilterType === option.value;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={cn(
+                      "rounded-xl border px-4 py-3 text-left transition-colors",
+                      isSelected
+                        ? "border-violet-300 bg-violet-50 text-violet-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                    )}
+                    onClick={() => setExportFilterType(option.value)}
+                  >
+                    <span className="flex items-start gap-3">
+                      <span
+                        className={cn(
+                          "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
+                          isSelected
+                            ? "border-violet-600 bg-violet-600"
+                            : "border-slate-300 bg-white",
+                        )}
+                        aria-hidden="true"
+                      >
+                        {isSelected && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold">
+                          {option.label}
+                        </span>
+                        <span className="mt-1 block text-xs text-slate-500">
+                          {option.description}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {exportFilterType === "tenant" && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">
+                      Select tenants
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {selectedExportTenantCount.toLocaleString()} selected
+                    </p>
+                  </div>
+                </div>
+
+                <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                  {tenantConfigs && tenantConfigs.length > 0 ? (
+                    tenantConfigs.map((config) => {
+                      const isTenantSelected = selectedExportTenantIds.has(
+                        config.tenant_id,
+                      );
+
+                      return (
+                        <label
+                          key={config.id}
+                          className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                        >
+                          <Checkbox
+                            checked={isTenantSelected}
+                            className="mt-0.5 border-slate-300 data-[state=checked]:border-violet-600 data-[state=checked]:bg-violet-600"
+                            onCheckedChange={(checked) =>
+                              toggleExportTenant(
+                                config.tenant_id,
+                                checked === true,
+                              )
+                            }
+                          />
+                          <span className="flex flex-col">
+                            <span className="font-medium text-slate-700">
+                              {config.system_name || config.tenant_id}
+                            </span>
+                            {config.system_name && (
+                              <span className="text-xs text-slate-400">
+                                {config.tenant_id}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <p className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-sm text-slate-500">
+                      No tenant configurations available.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelExport}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmExport}
+              disabled={isExportConfirmationDisabled}
+            >
+              Confirm Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

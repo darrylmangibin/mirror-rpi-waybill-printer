@@ -59,3 +59,5 @@ app/logs/*
 # AI
 .sisyphus/
 .playwright-mcp/
+AGENTS.md
+
