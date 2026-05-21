@@ -59,6 +59,17 @@ type ManifestDetailsTab = "items" | "queue-jobs";
 const pendingExportStatus = "pending";
 const completedExportStatus = "completed";
 const failedExportStatus = "failed";
+const scanSuccessSoundPath = "/scan-success.wav";
+const scanErrorSoundPath = "/scan-error.wav";
+
+const playScanFeedbackSound = (soundPath: string) => {
+  try {
+    const audio = new Audio(soundPath);
+    void audio.play().catch(() => undefined);
+  } catch {
+    // Audio feedback must never interrupt scanner handling.
+  }
+};
 
 const getExportStatusLabel = (status: string) => formatLabel(status);
 
@@ -168,6 +179,8 @@ const ShippingManifestDetails = () => {
 
   const { mutate: addItemToManifest, isPending: isAddingItem } = useAddItem({
     onSuccess: (data) => {
+      playScanFeedbackSound(scanSuccessSoundPath);
+
       queryClient.invalidateQueries({
         queryKey: [SHIPPING_BIN_ITEMS_QUERY_KEY],
       });
@@ -188,6 +201,8 @@ const ShippingManifestDetails = () => {
       }
     },
     onError: (error) => {
+      playScanFeedbackSound(scanErrorSoundPath);
+
       if (error.status === 422) {
         toast.warning(
           error.response?.data?.error?.message ||

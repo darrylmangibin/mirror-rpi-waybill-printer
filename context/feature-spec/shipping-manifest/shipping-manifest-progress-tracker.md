@@ -6,14 +6,27 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Current Phase
 
-- Completed — export modal close reset refinement
+- Completed — add-item audio feedback
 
 ## Current Goal
 
-- `tasks/06-shipping-manifest.md` is implemented and refined: closing the export selection modal through any close path clears selected export tenants, and the modal title reads `Export Orders`.
+- `tasks/07-shipping-manifest.md` is implemented: add-item success plays `/scan-success.wav`, add-item errors play `/scan-error.wav`, and existing scanner/toast/manual-registration behavior is preserved.
 
 ## Completed
 
+- Verified `tasks/07-shipping-manifest.md` implementation:
+  - targeted ESLint for `ShippingManifestDetails` passes with `npx eslint src/modules/ShippingManifest/components/ShippingManifestDetails/index.tsx`
+  - `npm run build` passes in `frontend/`
+  - full `npm run lint -- src/modules/ShippingManifest/components/ShippingManifestDetails/index.tsx` still runs the full repo and reports pre-existing unrelated lint errors in shared UI/Home files
+- Implemented guarded add-item audio playback in `ShippingManifestDetails` for `tasks/07-shipping-manifest.md`:
+  - successful add-item outcomes play `/scan-success.wav`
+  - add-item errors play `/scan-error.wav`
+  - audio playback failures are caught so scanner/toast/manual-registration handling continues
+- Drafted `tasks/07-shipping-manifest.md` for frontend-only Shipping Manifest add-item audio feedback:
+  - success add-item outcome should play `frontend/public/scan-success.wav`
+  - error add-item outcome should play `frontend/public/scan-error.wav`
+  - scope is limited to `ShippingManifestDetails` / `useAddItem` behavior
+  - implementation is explicitly deferred
 - Updated `ShippingBinItemsList` export selection modal:
   - dialog close paths now route through the reset helper
   - confirm-close also clears the export filter controls after building the selected payload
@@ -143,10 +156,11 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## In Progress
 
-- No active implementation work for `tasks/06-shipping-manifest.md`.
+- No active implementation work for `tasks/07-shipping-manifest.md`.
 
 ## Next Up
 
+- Manually verify on a real Shipping Manifest detail page with one successful scan and one failing scan so the browser plays both audio assets through the target hardware.
 - Monitor operator feedback for whether a separate export-request listing page is needed for retrieving older export downloads after a modal is closed.
 
 ## Open Questions
@@ -168,6 +182,10 @@ This tracker was reconstructed after the feature was already completed. The entr
 
 ## Session Notes
 
+- 2026-05-21: Completed verification for `tasks/07-shipping-manifest.md`. Targeted ESLint for `ShippingManifestDetails` passes via `npx eslint src/modules/ShippingManifest/components/ShippingManifestDetails/index.tsx`; `npm run build` passes in `frontend/`. The package lint script with a file argument still runs the full repo and reports existing unrelated lint errors in `src/components/ui/*` and `src/modules/Home/*`. Manual browser/audio QA was not run in this session.
+- 2026-05-21: Implemented guarded scan feedback audio in `ShippingManifestDetails`. `useAddItem` success now plays `/scan-success.wav`; `useAddItem` error now plays `/scan-error.wav`; playback failures are swallowed so existing scanner and toast behavior remains authoritative. Verification pending.
+- 2026-05-21: Started `tasks/07-shipping-manifest.md` implementation. Scope is frontend-only and limited to guarded audio playback from the existing `useAddItem` success/error callbacks in `ShippingManifestDetails`.
+- 2026-05-21: Drafted `tasks/07-shipping-manifest.md` for add-item audio feedback. Scope is frontend-only and limited to playing `scan-success.wav` after successful `useAddItem` outcomes and `scan-error.wav` after add-item errors in `ShippingManifestDetails`. No implementation code was changed.
 - 2026-05-20: Implemented export selection reset refinement. `ShippingBinItemsList` now resets only export filter type and selected export tenants on export-modal cancel or reset key changes; `ShippingManifestDetails` increments that reset key when the ready download button is clicked. Selected shipping bin item IDs are intentionally not cleared. Verification pending.
 - 2026-05-20: Completed verification for export selection reset refinement. Targeted ESLint for `ShippingBinItemsList` and `ShippingManifestDetails` passes; `npm run build` passes. Browser QA confirmed export-modal cancel reopens with `All` behavior and no tenant picker while preserving `1 selected` shipping bin item, and confirmed a completed export download click resets the next export modal back to `All` while preserving the selected shipping bin item. Browser console had no errors. LSP diagnostics were skipped because `typescript-language-server` is not installed.
 - 2026-05-20: Started export selection reset refinement for `tasks/06-shipping-manifest.md`. Scope is frontend-only state handling in `ShippingBinItemsList` and `ShippingManifestDetails`; selected shipping bin items must remain selected while export filter type and selected export tenants reset.
