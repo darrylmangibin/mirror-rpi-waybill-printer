@@ -46,3 +46,54 @@ export interface ShippingBinItem {
   shipping_manifest_id: string | null;
   sync_status: ShippingBinItemSyncStatus;
 }
+
+export interface ShippingBinItemAnalyticsParams {
+  created_at_from?: string;
+  created_at_to?: string;
+  tenant_id?: string;
+  marketplace?: string;
+  validation_status?: ShippingBinItemValidationStatus;
+  workflow_step?: ShippingBinItemWorkflowStep;
+  skip_sweeping?: boolean;
+}
+
+export interface ShippingBinItemAnalyticsTotal {
+  total: number;
+}
+
+export interface ShippingBinItemAnalyticsTenantBreakdown
+  extends ShippingBinItemAnalyticsTotal {
+  tenant_id: string | null;
+}
+
+export interface ShippingBinItemAnalyticsCourierBreakdown
+  extends ShippingBinItemAnalyticsTotal {
+  courier: string | null;
+  courier_code: string | null;
+}
+
+export interface ShippingBinItemAnalyticsValidationStatusBreakdown
+  extends ShippingBinItemAnalyticsTotal {
+  validation_status: ShippingBinItemValidationStatus | null;
+}
+
+export interface ShippingBinItemAnalyticsWorkflowStepBreakdown
+  extends ShippingBinItemAnalyticsTotal {
+  workflow_step: ShippingBinItemWorkflowStep | null;
+}
+
+export interface ShippingBinItemAnalyticsSkipSweepingBreakdown
+  extends ShippingBinItemAnalyticsTotal {
+  skip_sweeping: boolean;
+}
+
+export interface ShippingBinItemAnalytics {
+  parcels: ShippingBinItemAnalyticsTotal;
+  orders: ShippingBinItemAnalyticsTotal;
+  shipping_bin_items: ShippingBinItemAnalyticsTotal;
+  tenant_breakdowns: ShippingBinItemAnalyticsTenantBreakdown[];
+  courier_breakdowns: ShippingBinItemAnalyticsCourierBreakdown[];
+  validation_status_breakdowns: ShippingBinItemAnalyticsValidationStatusBreakdown[];
+  workflow_step_breakdowns: ShippingBinItemAnalyticsWorkflowStepBreakdown[];
+  skip_sweeping_breakdowns: ShippingBinItemAnalyticsSkipSweepingBreakdown[];
+}
