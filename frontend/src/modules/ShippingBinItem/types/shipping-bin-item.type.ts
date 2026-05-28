@@ -58,42 +58,47 @@ export interface ShippingBinItemAnalyticsParams {
 }
 
 export interface ShippingBinItemAnalyticsTotal {
-  total: number;
+  total?: number;
+  total_items?: number;
+  count?: number;
 }
 
-export interface ShippingBinItemAnalyticsTenantBreakdown
-  extends ShippingBinItemAnalyticsTotal {
-  tenant_id: string | null;
+export interface ShippingBinItemAnalyticsTenants {
+  count: number;
+  tenant_ids: string[];
 }
 
-export interface ShippingBinItemAnalyticsCourierBreakdown
-  extends ShippingBinItemAnalyticsTotal {
-  courier: string | null;
-  courier_code: string | null;
+export interface ShippingBinItemAnalyticsCourier {
+  count: number;
+  codes: string[];
 }
 
-export interface ShippingBinItemAnalyticsValidationStatusBreakdown
-  extends ShippingBinItemAnalyticsTotal {
-  validation_status: ShippingBinItemValidationStatus | null;
+export interface ShippingBinItemAnalyticsMarketplace {
+  count: number;
+  integration_name: string[];
 }
 
-export interface ShippingBinItemAnalyticsWorkflowStepBreakdown
-  extends ShippingBinItemAnalyticsTotal {
-  workflow_step: ShippingBinItemWorkflowStep | null;
-}
+export type ShippingBinItemAnalyticsValidation = Record<
+  ShippingBinItemValidationStatus,
+  ShippingBinItemAnalyticsTotal
+>;
 
-export interface ShippingBinItemAnalyticsSkipSweepingBreakdown
-  extends ShippingBinItemAnalyticsTotal {
-  skip_sweeping: boolean;
+export type ShippingBinItemAnalyticsWorkflow = Record<
+  ShippingBinItemWorkflowStep,
+  ShippingBinItemAnalyticsTotal
+>;
+
+export interface ShippingBinItemAnalyticsProcess {
+  normal: ShippingBinItemAnalyticsTotal;
+  skip: ShippingBinItemAnalyticsTotal;
 }
 
 export interface ShippingBinItemAnalytics {
-  parcels: ShippingBinItemAnalyticsTotal;
-  orders: ShippingBinItemAnalyticsTotal;
-  shipping_bin_items: ShippingBinItemAnalyticsTotal;
-  tenant_breakdowns: ShippingBinItemAnalyticsTenantBreakdown[];
-  courier_breakdowns: ShippingBinItemAnalyticsCourierBreakdown[];
-  validation_status_breakdowns: ShippingBinItemAnalyticsValidationStatusBreakdown[];
-  workflow_step_breakdowns: ShippingBinItemAnalyticsWorkflowStepBreakdown[];
-  skip_sweeping_breakdowns: ShippingBinItemAnalyticsSkipSweepingBreakdown[];
+  tenants: ShippingBinItemAnalyticsTenants;
+  courier: ShippingBinItemAnalyticsCourier;
+  marketplace: ShippingBinItemAnalyticsMarketplace;
+  validation: ShippingBinItemAnalyticsValidation;
+  workflow: ShippingBinItemAnalyticsWorkflow;
+  process: ShippingBinItemAnalyticsProcess;
+  total_items: number;
 }

@@ -1,4 +1,4 @@
-import { Filter, Package, RefreshCw } from "lucide-react";
+import { BarChart3, Filter, Package, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,6 +20,7 @@ interface ShippingManifestListHeaderProps {
   perPage: number;
   onPerPageChange: (perPage: number) => void;
   onRefresh: () => void;
+  onAnalyticsOpen: () => void;
 }
 
 const statuses: ShippingManifestListStatus[] = [
@@ -41,6 +42,7 @@ export const ShippingManifestListHeader = ({
   perPage,
   onPerPageChange,
   onRefresh,
+  onAnalyticsOpen,
 }: ShippingManifestListHeaderProps) => {
   return (
     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-6">
@@ -62,6 +64,15 @@ export const ShippingManifestListHeader = ({
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          className="h-9 rounded-lg border-slate-200 bg-white shadow-xs"
+          onClick={onAnalyticsOpen}
+        >
+          <BarChart3 className="h-4 w-4 text-slate-500" />
+          Analytics
+        </Button>
+
         {/* Status filter */}
         <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 shadow-xs">
           <Filter className="h-3.5 w-3.5 text-slate-400" />

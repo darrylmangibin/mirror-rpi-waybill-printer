@@ -168,6 +168,9 @@ const ShippingManifestList = () => {
               setPage(1);
             }}
             onRefresh={() => refetch()}
+            onAnalyticsOpen={() =>
+              navigate("/shipping-manifests/shipping-bin-items/analytics")
+            }
           />
 
           {/* ── Active filter pill (shown when not on the default "open" view) ── */}

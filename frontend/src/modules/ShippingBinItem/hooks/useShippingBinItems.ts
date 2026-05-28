@@ -40,7 +40,7 @@ export const useShippingBinItemAnalytics = (
 ) => {
   const query = useQuery({
     queryKey: [SHIPPING_BIN_ITEM_ANALYTICS_QUERY_KEY, params],
-    queryFn: () => getShippingBinItemAnalytics(params),
+    queryFn: async () => await getShippingBinItemAnalytics(params),
     ...options,
   });
 
