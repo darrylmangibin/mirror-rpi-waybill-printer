@@ -9,10 +9,13 @@ change.
 
 ## Current Goal
 
-- Shipping Bin Items Analytics dashboard UI is aligned with the live `/shipping-bin-items/analytics` response shape supplied by the user.
+- Update Shipping Bin Items Analytics bar charts to use a purple bar color while keeping values visible without hover.
 
 ## Completed
 
+- Updated analytics bar charts from the primary theme token to a purple bar color.
+- Changed analytics bar charts to use the primary theme token instead of the secondary chart color.
+- Added persistent `total_items` labels beside each analytics bar so values are visible without hover.
 - Added analytics request parameter typing for date range, tenant, marketplace, validation status, workflow step, and skip-sweeping filters.
 - Added explicit analytics response typing for parcel, order, shipping-bin-item, tenant, courier, validation-status, workflow-step, and skip-sweeping aggregate sections.
 - Added `getShippingBinItemAnalytics` to call `GET /shipping-bin-items/analytics` through `nestApi` with direct query params.
@@ -50,6 +53,10 @@ change.
 
 ## Session Notes
 
+- Follow-up UI color change started after the user requested purple analytics bars instead of the primary color.
+- Verification: `npm run build` from `frontend/` completed successfully after changing analytics bars to purple. The shell emitted the existing oh-my-posh read-only cache warning and Vite emitted its existing large-chunk warning.
+- Follow-up UI polish started for `frontend/src/modules/ShippingBinItem/components/ShippingBinItemAnalytics/index.tsx` after the user requested persistent bar chart values and primary-colored bars.
+- Verification: `npm run build` from `frontend/` completed successfully after adding persistent chart value labels and primary bar color. The shell emitted the existing oh-my-posh read-only cache warning and Vite emitted its existing large-chunk warning.
 - Task started from `context/feature-spec/shipping-bin-items-analytics/tasks/01-shipping-bin-items-analytics.md`.
 - Required context files were read before source inspection.
 - Implementation stayed inside `frontend/src/modules/ShippingBinItem` because the task references existing ShippingBinItem service/hook patterns and no separate analytics module exists yet.

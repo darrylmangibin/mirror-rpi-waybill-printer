@@ -13,6 +13,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   Tooltip,
   XAxis,
   YAxis,
@@ -55,7 +56,7 @@ const ALL_OPTION = "all";
 const chartConfig = {
   total_items: {
     label: "Total Items",
-    color: "var(--chart-2)",
+    color: "#7c3aed",
   },
 } satisfies ChartConfig;
 
@@ -129,6 +130,9 @@ const parseDateOnly = (value: string) => {
 
 const getTotalItems = (total: ShippingBinItemAnalyticsTotal | undefined) =>
   total?.total_items ?? total?.total ?? total?.count ?? 0;
+
+const formatChartValue = (value: unknown) =>
+  typeof value === "number" ? value.toLocaleString() : String(value ?? "");
 
 const hasAnalyticsData = (data: ShippingBinItemAnalyticsData | undefined) => {
   if (!data) return false;
@@ -241,7 +245,7 @@ const BreakdownPanel = ({ title, description, data }: BreakdownPanelProps) => {
           accessibilityLayer
           data={chartData}
           layout="vertical"
-          margin={{ top: 8, right: 16, bottom: 8, left: 8 }}
+          margin={{ top: 8, right: 64, bottom: 8, left: 8 }}
         >
           <CartesianGrid horizontal={false} />
           <YAxis
@@ -262,7 +266,15 @@ const BreakdownPanel = ({ title, description, data }: BreakdownPanelProps) => {
             fill="var(--color-total_items)"
             radius={4}
             maxBarSize={28}
-          />
+          >
+            <LabelList
+              dataKey="total_items"
+              position="right"
+              formatter={formatChartValue}
+              fill="var(--foreground)"
+              fontSize={12}
+            />
+          </Bar>
         </BarChart>
       </ChartContainer>
     </section>
