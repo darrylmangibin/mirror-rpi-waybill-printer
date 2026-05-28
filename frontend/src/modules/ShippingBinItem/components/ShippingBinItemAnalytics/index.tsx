@@ -654,7 +654,7 @@ const ShippingBinItemAnalytics = () => {
               <SummaryCard
                 title="Shipping Bin Items"
                 value={analytics?.total_items ?? 0}
-                description="Primary total_items count for the selected range."
+                description="Primary total items count for the selected range."
                 icon={PackageCheck}
               />
               <SummaryCard
@@ -689,17 +689,17 @@ const ShippingBinItemAnalytics = () => {
               />
               <BreakdownPanel
                 title="Validation State"
-                description="total_items by validation status."
+                description="total items by validation status."
                 data={toValidationChartData(analytics)}
               />
               <BreakdownPanel
                 title="Workflow State"
-                description="total_items by workflow step."
+                description="total items by workflow step."
                 data={toWorkflowChartData(analytics)}
               />
               <BreakdownPanel
                 title="Skip Sweeping"
-                description="total_items for normal and skip-sweeping items."
+                description="total items for normal and skip-sweeping items."
                 data={toProcessChartData(analytics)}
               />
             </div>
