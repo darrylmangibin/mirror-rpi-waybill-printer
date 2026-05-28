@@ -46,3 +46,59 @@ export interface ShippingBinItem {
   shipping_manifest_id: string | null;
   sync_status: ShippingBinItemSyncStatus;
 }
+
+export interface ShippingBinItemAnalyticsParams {
+  created_at_from?: string;
+  created_at_to?: string;
+  tenant_id?: string;
+  marketplace?: string;
+  validation_status?: ShippingBinItemValidationStatus;
+  workflow_step?: ShippingBinItemWorkflowStep;
+  skip_sweeping?: boolean;
+}
+
+export interface ShippingBinItemAnalyticsTotal {
+  total?: number;
+  total_items?: number;
+  count?: number;
+}
+
+export interface ShippingBinItemAnalyticsTenants {
+  count: number;
+  tenant_ids: string[];
+}
+
+export interface ShippingBinItemAnalyticsCourier {
+  count: number;
+  codes: string[];
+}
+
+export interface ShippingBinItemAnalyticsMarketplace {
+  count: number;
+  integration_name: string[];
+}
+
+export type ShippingBinItemAnalyticsValidation = Record<
+  ShippingBinItemValidationStatus,
+  ShippingBinItemAnalyticsTotal
+>;
+
+export type ShippingBinItemAnalyticsWorkflow = Record<
+  ShippingBinItemWorkflowStep,
+  ShippingBinItemAnalyticsTotal
+>;
+
+export interface ShippingBinItemAnalyticsProcess {
+  normal: ShippingBinItemAnalyticsTotal;
+  skip: ShippingBinItemAnalyticsTotal;
+}
+
+export interface ShippingBinItemAnalytics {
+  tenants: ShippingBinItemAnalyticsTenants;
+  courier: ShippingBinItemAnalyticsCourier;
+  marketplace: ShippingBinItemAnalyticsMarketplace;
+  validation: ShippingBinItemAnalyticsValidation;
+  workflow: ShippingBinItemAnalyticsWorkflow;
+  process: ShippingBinItemAnalyticsProcess;
+  total_items: number;
+}

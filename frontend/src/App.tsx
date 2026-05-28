@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import Home from "@/pages/home/page";
 import ShippingManifestPage from "@/pages/shipping-manifest/page";
 import ShippingManifestDetailsPage from "@/pages/shipping-manifest-details/page";
+import ShippingBinItemAnalyticsPage from "@/pages/shipping-bin-items-analytics/page";
 import { TopNavbar } from "@/components/global";
 
 function App() {
@@ -13,6 +14,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shipping-manifests" element={<ShippingManifestPage />} />
+        <Route
+          path="/shipping-manifests/shipping-bin-items/analytics"
+          element={<ShippingBinItemAnalyticsPage />}
+        />
         <Route
           path="/shipping-manifests/:id"
           element={<ShippingManifestDetailsPage />}
