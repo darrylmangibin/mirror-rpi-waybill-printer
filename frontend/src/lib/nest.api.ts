@@ -17,7 +17,7 @@ const resolveTenantId = (tenantId?: string): string =>
 
 const createNestApiClient = (): AxiosInstance =>
   axios.create({
-    baseURL: DEFAULTS.productionApiUrl,
+    baseURL: DEFAULTS.developmentApiUrl,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

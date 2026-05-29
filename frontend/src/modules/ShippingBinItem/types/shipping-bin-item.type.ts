@@ -14,12 +14,22 @@ export type ShippingBinItemWorkflowStep =
   | "loaded"
   | "not_accepted_by_courier";
 
-export type ShippingBinItemSyncStatus =
-  | "valid"
-  | "cancelled"
-  | "sync_failed";
+export type ShippingBinItemSyncStatus = "valid" | "cancelled" | "sync_failed";
 
-export type ShippingBinItemMetaData = Record<string, unknown>;
+export interface ShippingBinItemInvoiceOrdersMeta {
+  id: number;
+  platform: string;
+  packer_id: number;
+  picker_id: number;
+  created_at: string;
+  session_date: string;
+  invoice_number: string;
+}
+
+export interface ShippingBinItemMetaData {
+  invoice_order?: ShippingBinItemInvoiceOrdersMeta | null;
+  [key: string]: unknown;
+}
 
 export interface ShippingBinItem {
   id: string;

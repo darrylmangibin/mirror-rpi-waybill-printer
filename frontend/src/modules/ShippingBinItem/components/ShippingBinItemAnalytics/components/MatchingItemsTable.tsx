@@ -25,11 +25,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { DateCell } from "@/modules/ShippingBinItem/components/ShippingBinItemsList/components/DateCell";
-import {
-  SyncStatusBadge,
-  ValidationBadge,
-  WorkflowBadge,
-} from "@/modules/ShippingBinItem/components/ShippingBinItemsList/components/StatusBadges";
+import { WorkflowBadge } from "@/modules/ShippingBinItem/components/ShippingBinItemsList/components/StatusBadges";
 import { perPageOptions } from "@/modules/ShippingBinItem/components/ShippingBinItemsList/constants";
 import type { MatchingItemsTableProps } from "../types";
 import {
@@ -127,7 +123,13 @@ export const MatchingItemsTable = ({
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
               <TableHead className="pl-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Invoice / Tracking
+                Order date
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Invoice number
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Tracking number
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Tenant
@@ -140,15 +142,6 @@ export const MatchingItemsTable = ({
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Workflow
-              </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Validation
-              </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Sync status
-              </TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Created
               </TableHead>
               <TableHead className="pr-5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Shipped out
@@ -208,14 +201,19 @@ export const MatchingItemsTable = ({
                   )}
                 >
                   <TableCell className="pl-5 py-3.5 align-top">
-                    <div className="flex min-w-[200px] flex-col gap-1">
-                      <span className="font-mono text-sm font-semibold text-slate-800">
-                        {item.invoice_number}
-                      </span>
-                      <span className="font-mono text-xs text-slate-400">
-                        {item.tracking_number || "—"}
-                      </span>
-                    </div>
+                    <DateCell
+                      value={item.meta_data?.invoice_order?.created_at ?? null}
+                    />
+                  </TableCell>
+                  <TableCell className="py-3.5 align-top">
+                    <span className="font-mono text-sm font-semibold text-slate-800">
+                      {item.invoice_number || "—"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3.5 align-top">
+                    <span className="font-mono text-sm font-medium text-slate-600">
+                      {item.tracking_number || "—"}
+                    </span>
                   </TableCell>
                   <TableCell className="py-3.5 align-top">
                     <span className="font-mono text-xs font-medium text-slate-600">
@@ -244,15 +242,6 @@ export const MatchingItemsTable = ({
                   </TableCell>
                   <TableCell className="py-3.5 align-top">
                     <WorkflowBadge status={item.workflow_step} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <ValidationBadge status={item.validation_status} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <SyncStatusBadge status={item.sync_status} />
-                  </TableCell>
-                  <TableCell className="py-3.5 align-top">
-                    <DateCell value={item.created_at} />
                   </TableCell>
                   <TableCell className="pr-5 py-3.5 align-top">
                     <DateCell value={item.shipped_out_at} />

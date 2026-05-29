@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export const RAW_ITEM_TABLE_COLUMNS = 9;
+export const RAW_ITEM_TABLE_COLUMNS = 8;
 
 export const RawItemLoadingRows = ({ rows }: { rows: number }) =>
   Array.from({ length: rows }).map((_, rowIndex) => (

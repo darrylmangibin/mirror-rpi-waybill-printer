@@ -9,10 +9,13 @@ change.
 
 ## Current Goal
 
-- Refactor the Shipping Bin Items Analytics dashboard into smaller component and utility files without changing behavior.
+- Refactor the Shipping Bin Items Analytics matching-items table columns for order date, invoice number, and tracking number.
 
 ## Completed
 
+- Refactored the matching shipping-bin-items analytics table to replace the combined invoice/tracking column with separate order date, invoice number, and tracking number columns.
+- Removed the matching-items table's created-at, validation, and sync-status columns while preserving workflow, shipped-out, loading, empty, error, refresh, and pagination behavior.
+- Typed the shipping bin item metadata invoice-order path and read the order date from `meta_data?.invoice_order?.created_at` with optional chaining.
 - Extracted Shipping Bin Items Analytics presentation pieces from `index.tsx` into local component files for the date picker, summary cards, breakdown panels, value lists, analytics skeleton, raw item loading rows, and matching item table.
 - Extracted analytics dashboard helper functions, filter constants, chart mappers, and local component prop types into `utils.ts` and `types.ts`.
 - Verified `npm run build` from `frontend/` after the component/utility refactor.
@@ -47,6 +50,7 @@ change.
 
 ## Open Questions
 
+- Manual browser verification for task 05 could not be completed because Playwright still reports no Chrome binary at `/opt/google/chrome/chrome`.
 - Manual browser verification could not be completed in this environment because Playwright reported no Chrome binary at `/opt/google/chrome/chrome`, and `npx playwright install chrome` failed because sudo requires an interactive password.
 - The list query uses Prisma-style `where.created_at = { gte: "YYYY-MM-DDT00:00:00.000Z", lte: "YYYY-MM-DDT23:59:59.999Z" }` based on the existing list endpoint's JSON-serialized Prisma query contract; no more specific local API contract was available.
 - The list query uses `where.skip_sweeping = true` when the skip-sweeping switch is enabled, matching the existing analytics parameter name and task requirement.
@@ -67,6 +71,13 @@ change.
 
 ## Session Notes
 
+- Task 05 started from `context/feature-spec/shipping-bin-items-analytics/tasks/05-shipping-bin-items-analytics.md`.
+- Required repository and feature context files were read before source inspection for task 05.
+- Implementation for task 05 stayed inside the ShippingBinItem analytics table component, its loading-row helper, and the shipping-bin-item row type.
+- Verification: LSP diagnostics still could not run because `typescript-language-server` is not installed in the environment.
+- Verification: `npm run build` from `frontend/` completed successfully after the table column refactor. Vite emitted its existing large-chunk warning.
+- Verification: Started the Vite dev server and confirmed `/shipping-manifests/shipping-bin-items/analytics` responds with HTTP 200.
+- Manual browser verification skipped: Playwright could not launch Chrome because `/opt/google/chrome/chrome` is missing.
 - Refactor started after `frontend/src/modules/ShippingBinItem/components/ShippingBinItemAnalytics/index.tsx` grew too long with table, panel, skeleton, date picker, and utility logic.
 - Verification: LSP diagnostics still could not run because `typescript-language-server` is not installed in the environment.
 - Verification: `npm run build` from `frontend/` completed successfully after the refactor. Vite emitted its existing large-chunk warning.
