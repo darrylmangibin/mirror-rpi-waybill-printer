@@ -8,6 +8,7 @@ export interface AnalyticsFilters {
   marketplace: string;
   validation_status: string;
   workflow_step: string;
+  manifest_status: string;
   skip_sweeping: boolean;
 }
 
@@ -24,6 +25,12 @@ export interface SummaryCardProps {
 }
 
 export interface BreakdownPanelProps {
+  title: string;
+  description: string;
+  data: ChartDatum[];
+}
+
+export interface CurrentBinCodesPanelProps {
   title: string;
   description: string;
   data: ChartDatum[];

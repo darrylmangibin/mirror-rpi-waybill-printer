@@ -16,6 +16,16 @@ export type ShippingBinItemWorkflowStep =
 
 export type ShippingBinItemSyncStatus = "valid" | "cancelled" | "sync_failed";
 
+export type ShippingBinItemCurrentBinCategory =
+  | "shipping_station"
+  | "collection_hub";
+
+export type ShippingBinItemManifestStatusFilter =
+  | "with_manifest"
+  | "without_manifest"
+  | "courier_scan_completed"
+  | "courier_dispatch";
+
 export interface ShippingBinItemInvoiceOrdersMeta {
   id: number;
   platform: string;
@@ -65,6 +75,10 @@ export interface ShippingBinItemAnalyticsParams {
   validation_status?: ShippingBinItemValidationStatus;
   workflow_step?: ShippingBinItemWorkflowStep;
   skip_sweeping?: boolean;
+  with_manifest?: boolean;
+  without_manifest?: boolean;
+  courier_scan_completed?: boolean;
+  courier_dispatch?: boolean;
 }
 
 export interface ShippingBinItemAnalyticsTotal {
@@ -103,6 +117,33 @@ export interface ShippingBinItemAnalyticsProcess {
   skip: ShippingBinItemAnalyticsTotal;
 }
 
+export interface ShippingBinItemAnalyticsManifest {
+  with_manifest_count: number;
+  without_manifest_count: number;
+  total_courier_scan_completed: number;
+  total_courier_dispatched: number;
+}
+
+export interface ShippingBinItemAnalyticsCurrentBinCode {
+  count: number;
+  shipping_bin_codes: string;
+}
+
+export interface ShippingBinItemAnalyticsCurrentBinGroup {
+  count: number;
+  shipping_bin_codes: Record<string, ShippingBinItemAnalyticsCurrentBinCode>;
+}
+
+export type ShippingBinItemAnalyticsCurrentBinGroups = Record<
+  ShippingBinItemCurrentBinCategory,
+  ShippingBinItemAnalyticsCurrentBinGroup
+>;
+
+export interface ShippingBinItemAnalyticsCurrentBin
+  extends ShippingBinItemAnalyticsCurrentBinGroups {
+  total_count: number;
+}
+
 export interface ShippingBinItemAnalytics {
   tenants: ShippingBinItemAnalyticsTenants;
   courier: ShippingBinItemAnalyticsCourier;
@@ -110,5 +151,7 @@ export interface ShippingBinItemAnalytics {
   validation: ShippingBinItemAnalyticsValidation;
   workflow: ShippingBinItemAnalyticsWorkflow;
   process: ShippingBinItemAnalyticsProcess;
+  manifest?: ShippingBinItemAnalyticsManifest;
+  current_bin?: ShippingBinItemAnalyticsCurrentBin;
   total_items: number;
 }

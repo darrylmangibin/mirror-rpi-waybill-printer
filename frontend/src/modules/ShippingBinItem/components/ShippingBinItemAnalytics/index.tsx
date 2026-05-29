@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowLeft,
   BarChart3,
+  MapPinned,
   PackageCheck,
   RefreshCw,
   ShoppingBag,
@@ -27,11 +28,13 @@ import {
 import type { ApiQueryParams } from "@/common/types/common.types";
 import type {
   ShippingBinItemAnalyticsParams,
+  ShippingBinItemManifestStatusFilter,
   ShippingBinItemValidationStatus,
   ShippingBinItemWorkflowStep,
 } from "@/modules/ShippingBinItem/types/shipping-bin-item.type";
 import { AnalyticsSkeleton } from "./components/AnalyticsSkeleton";
 import { BreakdownPanel } from "./components/BreakdownPanel";
+import { CurrentBinCodesPanel } from "./components/CurrentBinCodesPanel";
 import { DatePicker } from "./components/DatePicker";
 import { MatchingItemsTable } from "./components/MatchingItemsTable";
 import { SummaryCard } from "./components/SummaryCard";
@@ -40,10 +43,15 @@ import type { AnalyticsFilters } from "./types";
 import {
   ALL_OPTION,
   formatLabel,
+  getManifestStatusAnalyticsParams,
+  getManifestStatusWhere,
   hasAnalyticsData,
+  manifestStatusOptions,
   marketplaceOptions,
   toEndOfDayIso,
+  toManifestChartData,
   toProcessChartData,
+  toShippingBinCodeChartData,
   toStartOfDayIso,
   toValidationChartData,
   toWorkflowChartData,
@@ -62,13 +70,34 @@ const ShippingBinItemAnalytics = () => {
     marketplace: ALL_OPTION,
     validation_status: ALL_OPTION,
     workflow_step: ALL_OPTION,
+    manifest_status: ALL_OPTION,
     skip_sweeping: false,
   });
   const [itemPage, setItemPage] = useState(1);
   const [itemPerPage, setItemPerPage] = useState(10);
 
-  const params = useMemo<ShippingBinItemAnalyticsParams>(
-    () => ({
+  const manifestWhere = useMemo(
+    () =>
+      filters.manifest_status === ALL_OPTION
+        ? undefined
+        : getManifestStatusWhere(
+            filters.manifest_status as ShippingBinItemManifestStatusFilter,
+          ),
+    [filters.manifest_status],
+  );
+
+  const manifestAnalyticsParams = useMemo(
+    () =>
+      filters.manifest_status === ALL_OPTION
+        ? undefined
+        : getManifestStatusAnalyticsParams(
+            filters.manifest_status as ShippingBinItemManifestStatusFilter,
+          ),
+    [filters.manifest_status],
+  );
+
+  const params = useMemo<ShippingBinItemAnalyticsParams>(() => {
+    const analyticsParams: ShippingBinItemAnalyticsParams = {
       created_at_from: filters.created_at_from,
       created_at_to: filters.created_at_to,
       tenant_id:
@@ -84,9 +113,11 @@ const ShippingBinItemAnalytics = () => {
           ? undefined
           : (filters.workflow_step as ShippingBinItemWorkflowStep),
       skip_sweeping: filters.skip_sweeping ? true : undefined,
-    }),
-    [filters],
-  );
+      ...manifestAnalyticsParams,
+    };
+
+    return analyticsParams;
+  }, [filters, manifestAnalyticsParams]);
 
   const analyticsQuery = useShippingBinItemAnalytics(params);
   const listParams = useMemo<ApiQueryParams>(() => {
@@ -117,6 +148,10 @@ const ShippingBinItemAnalytics = () => {
       where.skip_sweeping = true;
     }
 
+    if (manifestWhere) {
+      Object.assign(where, manifestWhere);
+    }
+
     return {
       page: itemPage,
       perPage: itemPerPage,
@@ -125,7 +160,7 @@ const ShippingBinItemAnalytics = () => {
         orderBy: { created_at: "desc" },
       },
     };
-  }, [filters, itemPage, itemPerPage]);
+  }, [filters, itemPage, itemPerPage, manifestWhere]);
 
   const itemQuery = useShippingBinItems(listParams);
   const tenantQuery = useTenantConfigurations();
@@ -300,6 +335,33 @@ const ShippingBinItemAnalytics = () => {
               </Select>
             </div>
 
+            <div className="grid gap-1.5">
+              <label className="text-xs font-medium text-slate-600">
+                Manifest status
+              </label>
+              <Select
+                value={filters.manifest_status}
+                onValueChange={(value) =>
+                  setFilters((current) => ({
+                    ...current,
+                    manifest_status: value,
+                  }))
+                }
+              >
+                <SelectTrigger className="h-9 w-full rounded-md border-slate-200 bg-white shadow-xs">
+                  <SelectValue placeholder="All manifest states" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_OPTION}>All manifest states</SelectItem>
+                  {manifestStatusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {formatLabel(status)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-end">
               <div className="flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 shadow-xs">
                 <label
@@ -352,6 +414,7 @@ const ShippingBinItemAnalytics = () => {
                     marketplace: ALL_OPTION,
                     validation_status: ALL_OPTION,
                     workflow_step: ALL_OPTION,
+                    manifest_status: ALL_OPTION,
                     skip_sweeping: false,
                   });
                 }}
@@ -397,42 +460,87 @@ const ShippingBinItemAnalytics = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              <SummaryCard
-                title="Shipping Bin Items"
-                value={analytics?.total_items ?? 0}
-                description="Primary total items count for the selected range."
-                icon={PackageCheck}
-              />
-              <SummaryCard
-                title="Tenants"
-                value={analytics?.tenants?.count ?? 0}
-                description="Tenant count represented in this analytics slice."
-                icon={Truck}
-              />
-              <SummaryCard
-                title="Couriers"
-                value={analytics?.courier?.count ?? 0}
-                description="Courier count represented in this analytics slice."
-                icon={ShoppingBag}
-              />
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <SummaryCard
+                  title="Shipping Bin Items"
+                  value={analytics?.total_items ?? 0}
+                  description="Primary total items count for the selected range."
+                  icon={PackageCheck}
+                />
+                <SummaryCard
+                  title="Tenants"
+                  value={analytics?.tenants?.count ?? 0}
+                  description="Tenant count represented in this analytics slice."
+                  icon={Truck}
+                />
+                <SummaryCard
+                  title="Couriers"
+                  value={analytics?.courier?.count ?? 0}
+                  description="Courier count represented in this analytics slice."
+                  icon={ShoppingBag}
+                />
+                <SummaryCard
+                  title="Current Bin Items"
+                  value={analytics?.current_bin?.total_count ?? 0}
+                  description="Items currently assigned to shipping stations or collection hubs."
+                  icon={MapPinned}
+                />
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-3">
+                <ValueListPanel
+                  title="Tenant Distribution"
+                  description="Tenant IDs represented in this analytics response."
+                  values={analytics?.tenants?.tenant_ids ?? []}
+                />
+                <ValueListPanel
+                  title="Courier Distribution"
+                  description="Courier codes represented in this analytics response."
+                  values={analytics?.courier?.codes ?? []}
+                />
+                <ValueListPanel
+                  title="Marketplace Distribution"
+                  description="Marketplace integrations represented in this analytics response."
+                  values={analytics?.marketplace?.integration_name ?? []}
+                />
+              </div>
             </div>
 
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-base font-semibold leading-snug text-slate-900">
+                  Current Bin Codes
+                </h2>
+                <p className="text-sm leading-snug text-slate-500">
+                  Dynamic current-bin counts separated by shipping stations and collection hubs.
+                </p>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-2">
+                <CurrentBinCodesPanel
+                  title="Shipping Station Codes"
+                  description="Station bin codes currently holding items in this analytics slice."
+                  data={toShippingBinCodeChartData(
+                    analytics,
+                    "shipping_station",
+                  )}
+                />
+                <CurrentBinCodesPanel
+                  title="Collection Hub Codes"
+                  description="Collection hub codes currently holding items in this analytics slice."
+                  data={toShippingBinCodeChartData(
+                    analytics,
+                    "collection_hub",
+                  )}
+                />
+              </div>
+            </section>
+
             <div className="grid gap-4 xl:grid-cols-2">
-              <ValueListPanel
-                title="Tenant Distribution"
-                description="Tenant IDs represented in this analytics response."
-                values={analytics?.tenants?.tenant_ids ?? []}
-              />
-              <ValueListPanel
-                title="Courier Distribution"
-                description="Courier codes represented in this analytics response."
-                values={analytics?.courier?.codes ?? []}
-              />
-              <ValueListPanel
-                title="Marketplace Distribution"
-                description="Marketplace integrations represented in this analytics response."
-                values={analytics?.marketplace?.integration_name ?? []}
+              <BreakdownPanel
+                title="Manifest Status"
+                description="Items with manifests, without manifests, and courier dispatch milestones."
+                data={toManifestChartData(analytics)}
               />
               <BreakdownPanel
                 title="Validation State"

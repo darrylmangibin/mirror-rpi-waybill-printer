@@ -7,12 +7,14 @@ export const ValueListPanel = ({
   values,
 }: ValueListPanelProps) => (
   <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs">
-    <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
-        <p className="text-sm text-slate-500">{description}</p>
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <h2 className="text-sm font-semibold leading-snug text-slate-900">
+          {title}
+        </h2>
+        <p className="text-sm leading-snug text-slate-500">{description}</p>
       </div>
-      <div className="sm:text-right">
+      <div className="shrink-0 sm:text-right">
         <p className="text-2xl font-semibold tabular-nums text-slate-950">
           {values.length.toLocaleString()}
         </p>
